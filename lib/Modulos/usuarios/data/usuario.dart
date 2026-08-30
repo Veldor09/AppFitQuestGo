@@ -39,6 +39,19 @@ class Usuario {
   final int idrol;
   final Rol? rol;
 
+  /// Etiqueta del rol en espanol para mostrar en la UI (Usuario / Empresa /
+  /// Admin), independiente de como lo nombre el backend (`UserNormal`, ...).
+  String get etiquetaRol {
+    switch (idrol) {
+      case 2:
+        return 'Empresa';
+      case 3:
+        return 'Admin';
+      default:
+        return 'Usuario';
+    }
+  }
+
   /// Nombre del rol; usa la relacion cargada o el catalogo local como respaldo.
   String get nombreRol =>
       rol?.nombreRol ?? rolesDisponibles[idrol] ?? 'Rol $idrol';
@@ -60,9 +73,10 @@ class Usuario {
   }
 }
 
-/// Catalogo de roles del backend (`RoleId`). El id 3 es Admin.
+/// Catalogo de roles (`RoleId` del backend) con etiqueta en espanol para los
+/// selectores. El id 3 es Admin.
 const Map<int, String> rolesDisponibles = <int, String>{
-  1: 'UserNormal',
+  1: 'Usuario',
   2: 'Empresa',
   3: 'Admin',
 };
