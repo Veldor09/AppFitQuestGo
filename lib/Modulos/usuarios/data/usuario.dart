@@ -38,9 +38,30 @@ class Usuario {
   final String emailUser;
   final int idrol;
   final Rol? rol;
+
+  /// Nombre del rol; usa la relacion cargada o el catalogo local como respaldo.
+  String get nombreRol =>
+      rol?.nombreRol ?? rolesDisponibles[idrol] ?? 'Rol $idrol';
+
+  /// Iniciales para el avatar de la fila / detalle.
+  String get iniciales {
+    final List<String> partes = nombreUser
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((String p) => p.isNotEmpty)
+        .toList();
+    if (partes.isEmpty) return '?';
+    if (partes.length == 1) {
+      final String u = partes.first;
+      return u.substring(0, u.length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return (partes.first.substring(0, 1) + partes[1].substring(0, 1))
+        .toUpperCase();
+  }
 }
 
-const Map<int, String> rolesDisponibles = {
+/// Catalogo de roles del backend (`RoleId`). El id 3 es Admin.
+const Map<int, String> rolesDisponibles = <int, String>{
   1: 'UserNormal',
   2: 'Empresa',
   3: 'Admin',
