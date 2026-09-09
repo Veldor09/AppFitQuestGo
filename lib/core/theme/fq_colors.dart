@@ -61,9 +61,9 @@ abstract final class FqColors {
   static const Color progressTrack = Color(0xFFE0E5DE);
   static const Color toggleOff = Color(0xFFCFD6CF);
 
-  // Sombra estandar del sistema (0 18px 50px #13233f24).
   static const List<BoxShadow> softShadow = <BoxShadow>[
-    BoxShadow(color: Color(0x2413233F), blurRadius: 50, offset: Offset(0, 18)),
+    BoxShadow(color: Color(0x14101828), blurRadius: 4, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x2613233F), blurRadius: 22, offset: Offset(0, 12)),
   ];
 
   static const List<BoxShadow> panelShadow = <BoxShadow>[

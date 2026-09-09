@@ -39,11 +39,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 260));
     expect(find.text('Algo fallo'), findsOneWidget);
+    expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('ok'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 260));
     expect(find.text('Todo bien'), findsOneWidget);
+    expect(tester.takeException(), isNull);
 
     // Se auto-descartan pasados unos segundos (y no dejan timers colgados).
     await tester.pump(const Duration(seconds: 6));

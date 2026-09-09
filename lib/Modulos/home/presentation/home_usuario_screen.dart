@@ -3,7 +3,6 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 
-/// Pantalla principal para una cuenta autenticada que no es administradora.
 class HomeUsuarioScreen extends StatelessWidget {
   const HomeUsuarioScreen({super.key});
 
@@ -11,34 +10,31 @@ class HomeUsuarioScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          if (_accessToken.isNotEmpty)
-            MapWidget(
-              key: const ValueKey<String>('fitquest-map'),
-              cameraOptions: CameraOptions(
-                center: Point(coordinates: Position(-84.0907, 9.9281)),
-                zoom: 13.5,
-              ),
-            )
-          else
-            const _MissingTokenBackground(),
-          const SafeArea(
-            child: Column(
-              children: <Widget>[
-                _TopControls(),
-                SizedBox(height: 8),
-                _FilterChips(),
-                Spacer(),
-                _NearbyPanel(),
-                _BottomNavigation(),
-              ],
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        if (_accessToken.isNotEmpty)
+          MapWidget(
+            key: const ValueKey<String>('fitquest-map'),
+            cameraOptions: CameraOptions(
+              center: Point(coordinates: Position(-84.0907, 9.9281)),
+              zoom: 13.5,
             ),
+          )
+        else
+          const _MissingTokenBackground(),
+        const SafeArea(
+          child: Column(
+            children: <Widget>[
+              _TopControls(),
+              SizedBox(height: 8),
+              _FilterChips(),
+              Spacer(),
+              _NearbyPanel(),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -226,59 +222,6 @@ class _ResultTile extends StatelessWidget {
               label,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomNavigation extends StatelessWidget {
-  const _BottomNavigation();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 62,
-      color: FqColors.white.withValues(alpha: .96),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <Widget>[
-          _NavItem(icon: Icons.map_outlined, label: 'Mapa', selected: true),
-          _NavItem(icon: Icons.route_outlined, label: 'Rutas'),
-          _NavItem(icon: Icons.add_rounded, label: 'Crear'),
-          _NavItem(icon: Icons.auto_awesome_outlined, label: 'Eventos'),
-          _NavItem(icon: Icons.person_outline_rounded, label: 'Perfil'),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.label, this.selected = false});
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color color = selected ? FqColors.voltDark : FqColors.muted;
-    return SizedBox(
-      width: 58,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(icon, size: 23, color: color),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              color: selected ? FqColors.night : color,
-              fontSize: 9,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
         ],

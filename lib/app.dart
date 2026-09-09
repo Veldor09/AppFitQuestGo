@@ -7,7 +7,7 @@ import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/bienvenida_screen.dart';
-import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart';
+import 'package:fit_quest_go/Modulos/home/presentation/user_shell.dart';
 
 /// Widget raiz. Publica el [AuthRepositorio] al arbol y monta el `MaterialApp`.
 class FitQuestGoApp extends StatelessWidget {
@@ -31,13 +31,6 @@ class FitQuestGoApp extends StatelessWidget {
   }
 }
 
-/// Decide la pantalla inicial segun la sesion:
-///  - sin sesion        -> Bienvenida (flujo de auth)
-///  - sesion + Admin     -> panel de administracion
-///  - sesion + otro rol  -> home de usuario
-///
-/// Al escuchar el [AuthRepositorio] via [AuthScope.of], cualquier login,
-/// registro o cierre de sesion recompone esta vista automaticamente.
 class _RootGate extends StatelessWidget {
   const _RootGate();
 
@@ -49,6 +42,6 @@ class _RootGate extends StatelessWidget {
       return const BienvenidaScreen();
     }
     final UsuarioSesion usuario = auth.usuario!;
-    return usuario.esAdmin ? const AdminShell() : const HomeUsuarioScreen();
+    return usuario.esAdmin ? const AdminShell() : const UserShell();
   }
 }

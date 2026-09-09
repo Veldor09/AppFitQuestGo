@@ -74,22 +74,29 @@ class _NotificacionesHostState extends State<NotificacionesHost> {
       children: <Widget>[
         widget.child,
         Positioned(
-          top: 16,
-          right: 16,
+          top: 12,
+          right: 12,
+          left: 12,
           child: SafeArea(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  for (final _Aviso a in _avisos)
-                    _Toast(
-                      key: ValueKey<int>(a.id),
-                      aviso: a,
-                      onCerrar: () => _quitar(a.id),
-                    ),
-                ],
+            left: false,
+            right: false,
+            bottom: false,
+            child: Align(
+              alignment: Alignment.topRight,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    for (final _Aviso a in _avisos)
+                      _Toast(
+                        key: ValueKey<int>(a.id),
+                        aviso: a,
+                        onCerrar: () => _quitar(a.id),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -117,22 +124,37 @@ class _Toast extends StatefulWidget {
   State<_Toast> createState() => _ToastState();
 }
 
+
+const List<BoxShadow> _sombraToast = <BoxShadow>[
+  BoxShadow(color: Color(0x14101828), blurRadius: 3, offset: Offset(0, 1)),
+  BoxShadow(color: Color(0x1F13233F), blurRadius: 14, offset: Offset(0, 8)),
+];
+
 class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 220),
-  )..forward();
+    duration: const Duration(milliseconds: 200),
+  );
+  late final CurvedAnimation _t =
+      CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
+  late final Animation<Offset> _entrada = Tween<Offset>(
+    begin: const Offset(0.12, 0),
+    end: Offset.zero,
+  ).animate(_t);
+
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    _c.forward();
     _timer = Timer(const Duration(seconds: 4), _cerrar);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _t.dispose();
     _c.dispose();
     super.dispose();
   }
@@ -141,7 +163,7 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
     _timer?.cancel();
     if (!mounted) return;
     await _c.reverse();
-    widget.onCerrar();
+    if (mounted) widget.onCerrar();
   }
 
   ({Color color, IconData icono}) get _estilo {
@@ -157,40 +179,36 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final CurvedAnimation t =
-        CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
     final ({Color color, IconData icono}) e = _estilo;
 
     return SizeTransition(
-      sizeFactor: t,
+      sizeFactor: _t,
       alignment: Alignment.topCenter,
       child: FadeTransition(
-        opacity: t,
+        opacity: _t,
         child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.15, 0),
-            end: Offset.zero,
-          ).animate(t),
+          position: _entrada,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8),
+            // `Material` transparente: da el ancestro que necesita el boton de
+            // cerrar sin pintar nada (el fondo lo pone el `Container`).
             child: Material(
-              color: FqColors.white,
-              elevation: 0,
-              borderRadius: FqRadius.allLg,
+              type: MaterialType.transparency,
               child: Container(
                 decoration: BoxDecoration(
                   color: FqColors.white,
                   borderRadius: FqRadius.allLg,
                   border: Border.all(color: FqColors.border),
-                  boxShadow: FqColors.softShadow,
+                  boxShadow: _sombraToast,
                 ),
-                padding: const EdgeInsets.fromLTRB(0, 0, 6, 0),
+                clipBehavior: Clip.antiAlias,
                 child: IntrinsicHeight(
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Container(width: 4, color: e.color),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 11),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 11),
                         child: Icon(e.icono, size: 18, color: e.color),
@@ -210,16 +228,17 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       IconButton(
                         onPressed: _cerrar,
-                        icon: const Icon(Icons.close, size: 14),
+                        icon: const Icon(Icons.close_rounded, size: 15),
                         color: FqColors.muted,
-                        splashRadius: 14,
+                        visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints:
-                            const BoxConstraints(minWidth: 28, minHeight: 28),
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
+                      const SizedBox(width: 4),
                     ],
                   ),
                 ),
