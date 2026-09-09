@@ -13,15 +13,8 @@ import 'package:fit_quest_go/core/widgets/fq_tag.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 
-/// Modo con el que abre el modal de usuario.
 enum ModoUsuarioModal { ver, editar, crear }
 
-/// Modal centrado de usuario (ver / editar / crear) con fondo desenfocado.
-///
-/// En "ver" muestra los datos (sin ID) y permite pasar a edicion; en
-/// "editar"/"crear" cada campo se valida en vivo (texto rojo debajo, contador
-/// abajo a la derecha) y, al intentar guardar con errores, ademas se dispara
-/// una notificacion de error.
 class UsuarioModal extends StatefulWidget {
   const UsuarioModal({
     super.key,
@@ -78,10 +71,12 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   late ModoUsuarioModal _modo = widget.modo;
 
-  late final TextEditingController _nombre =
-      TextEditingController(text: widget.usuario?.nombreUser ?? '');
-  late final TextEditingController _email =
-      TextEditingController(text: widget.usuario?.emailUser ?? '');
+  late final TextEditingController _nombre = TextEditingController(
+    text: widget.usuario?.nombreUser ?? '',
+  );
+  late final TextEditingController _email = TextEditingController(
+    text: widget.usuario?.emailUser ?? '',
+  );
   final TextEditingController _password = TextEditingController();
   late int _idrol = widget.usuario?.idrol ?? 1;
 
@@ -256,10 +251,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
                 ),
               ),
               const SizedBox(height: 3),
-              FqTag(
-                rolesDisponibles[_idrol] ?? 'Usuario',
-                tone: _tono(_idrol),
-              ),
+              FqTag(rolesDisponibles[_idrol] ?? 'Usuario', tone: _tono(_idrol)),
             ],
           ),
         ),
@@ -316,16 +308,16 @@ class _UsuarioModalState extends State<UsuarioModal> {
           bloqueado: _rolBloqueado,
           onChanged: (int v) => setState(() => _idrol = v),
         ),
-        const SizedBox(height: FqGap.sm),
-        CampoTexto(
-          label: _esCrear
-              ? 'Contrasena'
-              : 'Nueva contrasena (vacio = no cambiar)',
-          controller: _password,
-          reglas: _reglasPassword,
-          obscureText: true,
-          forzarError: _forzarError,
-        ),
+        if (_esCrear) ...<Widget>[
+          const SizedBox(height: FqGap.sm),
+          CampoTexto(
+            label: 'Contraseña',
+            controller: _password,
+            reglas: _reglasPassword,
+            obscureText: true,
+            forzarError: _forzarError,
+          ),
+        ],
       ],
     );
   }
@@ -339,13 +331,6 @@ class _UsuarioModalState extends State<UsuarioModal> {
             label: 'Cerrar',
             expand: false,
             onPressed: () => _cerrar(),
-          ),
-          const SizedBox(width: 8),
-          FqButton.primary(
-            label: 'Editar',
-            icon: Icons.edit_outlined,
-            expand: false,
-            onPressed: () => setState(() => _modo = ModoUsuarioModal.editar),
           ),
         ],
       );

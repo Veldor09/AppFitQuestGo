@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -14,6 +15,7 @@ import 'package:fit_quest_go/Modulos/auth/presentation/registro/pasos/paso_permi
 import 'package:fit_quest_go/Modulos/auth/presentation/registro/registro_completado.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_progress_steps.dart';
+import 'package:fit_quest_go/Modulos/auth/presentation/widgets/terminos_modal.dart';
 
 /// APP-04 .. APP-08 · Asistente de registro.
 ///
@@ -47,6 +49,8 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
   int _paso = 0;
   bool _enviando = false;
   bool _forzarError = false;
+  bool _aceptaTerminos = false;
+  bool _forzarErrorTerminos = false;
 
   @override
   void dispose() {
@@ -79,9 +83,17 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
 
   void _avanzarDesdeDatos() {
     FocusScope.of(context).unfocus();
-    if (!_datosValidos()) {
-      setState(() => _forzarError = true);
-      notificarError('Revisa los campos marcados en rojo');
+    final bool datosValidos = _datosValidos();
+    if (!datosValidos || !_aceptaTerminos) {
+      setState(() {
+        _forzarError = !datosValidos;
+        _forzarErrorTerminos = !_aceptaTerminos;
+      });
+      notificarError(
+        !_aceptaTerminos
+            ? 'Debes aceptar los terminos y condiciones para continuar'
+            : 'Revisa los campos marcados en rojo',
+      );
       return;
     }
     setState(() => _paso = 1);
@@ -191,6 +203,12 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
             password: _password,
             ciudad: _ciudad,
             forzarError: _forzarError,
+            aceptaTerminos: _aceptaTerminos,
+            forzarErrorTerminos: _forzarErrorTerminos,
+            onAceptaTerminosChanged: (bool v) => setState(() {
+              _aceptaTerminos = v;
+              if (v) _forzarErrorTerminos = false;
+            }),
           ),
         );
       case 1:
@@ -254,6 +272,9 @@ class _PasoDatos extends StatelessWidget {
     required this.password,
     required this.ciudad,
     required this.forzarError,
+    required this.aceptaTerminos,
+    required this.forzarErrorTerminos,
+    required this.onAceptaTerminosChanged,
   });
 
   final TextEditingController nombre;
@@ -261,6 +282,9 @@ class _PasoDatos extends StatelessWidget {
   final TextEditingController password;
   final TextEditingController ciudad;
   final bool forzarError;
+  final bool aceptaTerminos;
+  final bool forzarErrorTerminos;
+  final ValueChanged<bool> onAceptaTerminosChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -310,6 +334,100 @@ class _PasoDatos extends StatelessWidget {
           textInputAction: TextInputAction.done,
           // Opcional: el backend aun no persiste la ciudad.
         ),
+        const SizedBox(height: FqGap.md),
+        _TerminosCheckbox(
+          valor: aceptaTerminos,
+          forzarError: forzarErrorTerminos,
+          onChanged: onAceptaTerminosChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class _TerminosCheckbox extends StatelessWidget {
+  const _TerminosCheckbox({
+    required this.valor,
+    required this.forzarError,
+    required this.onChanged,
+  });
+
+  final bool valor;
+  final bool forzarError;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool mostrarError = forzarError && !valor;
+    // El toggle y el enlace usan recognizers de texto independientes (no un
+    // InkWell envolvente) para que tocar "terminos y condiciones" solo abra
+    // el modal, sin alterar el estado de la casilla.
+    final TapGestureRecognizer toggleRecognizer = TapGestureRecognizer()
+      ..onTap = () => onChanged(!valor);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Checkbox(
+                value: valor,
+                onChanged: (bool? v) => onChanged(v ?? false),
+                activeColor: FqColors.voltDark,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                side: mostrarError
+                    ? const BorderSide(color: FqColors.risk, width: 1.4)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 11,
+                      height: 1.4,
+                      color: FqColors.muted,
+                    ),
+                    children: <InlineSpan>[
+                      TextSpan(
+                        text: 'Acepto los ',
+                        recognizer: toggleRecognizer,
+                      ),
+                      TextSpan(
+                        text: 'terminos y condiciones',
+                        style: const TextStyle(
+                          color: FqColors.river,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => TerminosModal.mostrar(context),
+                      ),
+                      TextSpan(
+                        text: ' de FitQuest Go.',
+                        recognizer: toggleRecognizer,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (mostrarError)
+          const Padding(
+            padding: EdgeInsets.only(left: 30, top: 2),
+            child: Text(
+              'Debes aceptar los terminos para crear tu cuenta',
+              style: TextStyle(fontSize: 10, color: FqColors.risk),
+            ),
+          ),
       ],
     );
   }

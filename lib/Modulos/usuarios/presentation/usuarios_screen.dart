@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -33,6 +34,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   late final UsuariosApi _api = widget.api ?? UsuariosApi();
   final TextEditingController _busqueda = TextEditingController();
   final GlobalKey _filtrosKey = GlobalKey();
+  Timer? _debounceBusqueda;
 
   late Future<List<Usuario>> _futuro;
 
@@ -60,6 +62,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   @override
   void dispose() {
+    _debounceBusqueda?.cancel();
     _busqueda.dispose();
     super.dispose();
   }
@@ -369,10 +372,16 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           Expanded(
             child: TextField(
               controller: _busqueda,
-              onChanged: (String v) => setState(() {
-                _filtroTexto = v;
-                _pagina = 0;
-              }),
+              onChanged: (String v) {
+                _debounceBusqueda?.cancel();
+                _debounceBusqueda = Timer(const Duration(milliseconds: 250), () {
+                  if (!mounted) return;
+                  setState(() {
+                    _filtroTexto = v;
+                    _pagina = 0;
+                  });
+                });
+              },
               style: const TextStyle(fontSize: 11, color: FqColors.ink),
               decoration: const InputDecoration(
                 isDense: true,
