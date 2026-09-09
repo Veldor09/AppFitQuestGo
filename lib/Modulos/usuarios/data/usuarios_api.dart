@@ -38,5 +38,12 @@ class UsuariosApi {
     return Usuario.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<void> remove(int id) => _client.delete('/usuarios/$id');
+  /// Baja / alta logica: `PATCH /usuarios/:id/estado`.
+  Future<Usuario> cambiarEstado(int id, String estado) async {
+    final dynamic data = await _client.patch(
+      '/usuarios/$id/estado',
+      <String, dynamic>{'estado': estado},
+    );
+    return Usuario.fromJson(data as Map<String, dynamic>);
+  }
 }

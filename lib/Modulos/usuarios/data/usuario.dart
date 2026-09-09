@@ -12,12 +12,20 @@ class Rol {
   final String nombreRol;
 }
 
+/// Estados de cuenta que expone el backend.
+class EstadoUsuario {
+  const EstadoUsuario._();
+  static const String activado = 'Activado';
+  static const String desactivado = 'Desactivado';
+}
+
 class Usuario {
   const Usuario({
     required this.id,
     required this.nombreUser,
     required this.emailUser,
     required this.idrol,
+    this.estado = EstadoUsuario.activado,
     this.rol,
   });
 
@@ -27,6 +35,7 @@ class Usuario {
       nombreUser: json['nombreUser'] as String,
       emailUser: json['emailUser'] as String,
       idrol: json['idrol'] as int,
+      estado: (json['estado'] as String?) ?? EstadoUsuario.activado,
       rol: json['rol'] == null
           ? null
           : Rol.fromJson(json['rol'] as Map<String, dynamic>),
@@ -37,7 +46,10 @@ class Usuario {
   final String nombreUser;
   final String emailUser;
   final int idrol;
+  final String estado;
   final Rol? rol;
+
+  bool get activo => estado == EstadoUsuario.activado;
 
   /// Etiqueta del rol en espanol para mostrar en la UI (Usuario / Empresa /
   /// Admin), independiente de como lo nombre el backend (`UserNormal`, ...).

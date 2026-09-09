@@ -67,10 +67,14 @@ void main() {
     expect(find.text('NOMBRE'), findsOneWidget);
     expect(find.text('CORREO'), findsOneWidget);
     expect(find.text('ROL'), findsOneWidget);
+    expect(find.text('ESTADO'), findsOneWidget);
     expect(find.text('ACCIONES'), findsOneWidget);
 
     expect(find.text('Ana Uno'), findsOneWidget);
     expect(find.text('beto@x.co'), findsOneWidget);
+    // Estado por defecto + accion de baja.
+    expect(find.text('ACTIVADO'), findsWidgets);
+    expect(find.text('Desactivar'), findsWidgets);
 
     expect(find.text('Filtros'), findsOneWidget);
     expect(find.text('Nuevo usuario'), findsOneWidget);

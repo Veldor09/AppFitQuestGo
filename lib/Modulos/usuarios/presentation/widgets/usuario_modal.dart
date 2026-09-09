@@ -3,41 +3,47 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
+import 'package:fit_quest_go/core/validaciones/validadores.dart';
+import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
-import 'package:fit_quest_go/core/widgets/fq_text_field.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 
 /// Modo con el que abre el modal de usuario.
 enum ModoUsuarioModal { ver, editar, crear }
 
-/// Modal centrado de usuario (ver / editar / crear).
+/// Modal centrado de usuario (ver / editar / crear) con fondo desenfocado.
 ///
-/// Aparece en el centro de la pantalla, con esquinas redondeadas y el fondo
-/// desenfocado y translucido (`BackdropFilter`). En modo "ver" muestra los datos
-/// y ofrece pasar a edicion; en "editar"/"crear" cada dato es un campo editable.
-/// Nunca se muestra el ID.
+/// En "ver" muestra los datos (sin ID) y permite pasar a edicion; en
+/// "editar"/"crear" cada campo se valida en vivo (texto rojo debajo, contador
+/// abajo a la derecha) y, al intentar guardar con errores, ademas se dispara
+/// una notificacion de error.
 class UsuarioModal extends StatefulWidget {
   const UsuarioModal({
     super.key,
     required this.modo,
     this.usuario,
     this.api,
+    this.miId,
   });
 
   final ModoUsuarioModal modo;
   final Usuario? usuario;
   final UsuariosApi? api;
 
-  /// Abre el modal y devuelve `true` si hubo un cambio que persistir.
+  /// Id del usuario en sesion: se usa para impedir que se quite su propio rol.
+  final int? miId;
+
   static Future<bool?> abrir(
     BuildContext context, {
     required ModoUsuarioModal modo,
     Usuario? usuario,
     UsuariosApi? api,
+    int? miId,
   }) {
     return showGeneralDialog<bool>(
       context: context,
@@ -46,7 +52,7 @@ class UsuarioModal extends StatefulWidget {
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 190),
       pageBuilder: (_, _, _) =>
-          UsuarioModal(modo: modo, usuario: usuario, api: api),
+          UsuarioModal(modo: modo, usuario: usuario, api: api, miId: miId),
       transitionBuilder: (_, Animation<double> anim, _, Widget child) {
         final double t = Curves.easeOutCubic.transform(anim.value);
         return FadeTransition(
@@ -55,10 +61,7 @@ class UsuarioModal extends StatefulWidget {
             filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
             child: ColoredBox(
               color: const Color(0x5A0B1220),
-              child: Transform.scale(
-                scale: 0.95 + 0.05 * t,
-                child: child,
-              ),
+              child: Transform.scale(scale: 0.95 + 0.05 * t, child: child),
             ),
           ),
         );
@@ -72,7 +75,6 @@ class UsuarioModal extends StatefulWidget {
 
 class _UsuarioModalState extends State<UsuarioModal> {
   late final UsuariosApi _api = widget.api ?? UsuariosApi();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   late ModoUsuarioModal _modo = widget.modo;
 
@@ -84,10 +86,18 @@ class _UsuarioModalState extends State<UsuarioModal> {
   late int _idrol = widget.usuario?.idrol ?? 1;
 
   bool _guardando = false;
-  String? _error;
+  bool _forzarError = false;
 
   bool get _esCrear => _modo == ModoUsuarioModal.crear;
   bool get _esVer => _modo == ModoUsuarioModal.ver;
+
+  /// Al editarse a si mismo, un admin no puede cambiar su propio rol.
+  bool get _rolBloqueado =>
+      !_esCrear && widget.usuario != null && widget.usuario!.id == widget.miId;
+
+  List<Validador> get _reglasPassword => _esCrear
+      ? <Validador>[requerido('La contrasena es obligatoria'), minCaracteres(8)]
+      : <Validador>[minCaracteresSiPresente(8)];
 
   @override
   void dispose() {
@@ -111,11 +121,9 @@ class _UsuarioModalState extends State<UsuarioModal> {
   void _cerrar([bool cambio = false]) => Navigator.of(context).pop(cambio);
 
   void _cancelarEdicion() {
-    // Si se entro directo a editar/crear, se cierra; si se venia de "ver",
-    // se regresa a "ver".
     if (widget.modo == ModoUsuarioModal.ver) {
       setState(() {
-        _error = null;
+        _forzarError = false;
         _nombre.text = widget.usuario!.nombreUser;
         _email.text = widget.usuario!.emailUser;
         _password.clear();
@@ -127,12 +135,21 @@ class _UsuarioModalState extends State<UsuarioModal> {
     }
   }
 
+  bool _camposValidos() {
+    return todoValido(<(String, List<Validador>)>[
+      (_nombre.text, reglasNombre()),
+      (_email.text, reglasCorreo()),
+      (_password.text, _reglasPassword),
+    ]);
+  }
+
   Future<void> _guardar() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _guardando = true;
-      _error = null;
-    });
+    if (!_camposValidos()) {
+      setState(() => _forzarError = true);
+      notificarError('Revisa los campos marcados en rojo');
+      return;
+    }
+    setState(() => _guardando = true);
     try {
       if (_esCrear) {
         await _api.create(
@@ -145,7 +162,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
         final Map<String, dynamic> cambios = <String, dynamic>{
           'nombreUser': _nombre.text.trim(),
           'emailUser': _email.text.trim(),
-          'idrol': _idrol,
+          if (!_rolBloqueado) 'idrol': _idrol,
         };
         if (_password.text.isNotEmpty) {
           cambios['passwordUserHash'] = _password.text;
@@ -163,10 +180,8 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   void _fallar(String mensaje) {
     if (!mounted) return;
-    setState(() {
-      _guardando = false;
-      _error = mensaje;
-    });
+    setState(() => _guardando = false);
+    notificarError(mensaje);
   }
 
   @override
@@ -190,15 +205,8 @@ class _UsuarioModalState extends State<UsuarioModal> {
                   const SizedBox(height: 14),
                   const Divider(height: 1, color: FqColors.border),
                   const SizedBox(height: 16),
-                  Form(key: _formKey, child: _cuerpo()),
-                  if (_error != null) ...<Widget>[
-                    const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      style: const TextStyle(fontSize: 11, color: FqColors.risk),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
+                  _cuerpo(),
+                  const SizedBox(height: 18),
                   _acciones(),
                 ],
               ),
@@ -275,7 +283,8 @@ class _UsuarioModalState extends State<UsuarioModal> {
         children: <Widget>[
           _DatoLinea(label: 'Nombre', value: u.nombreUser),
           _DatoLinea(label: 'Correo', value: u.emailUser),
-          _DatoLinea(label: 'Rol', value: u.etiquetaRol, ultimo: true),
+          _DatoLinea(label: 'Rol', value: u.etiquetaRol),
+          _DatoLinea(label: 'Estado', value: u.estado, ultimo: true),
         ],
       );
     }
@@ -283,39 +292,39 @@ class _UsuarioModalState extends State<UsuarioModal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FqTextField(
+        CampoTexto(
           label: 'Nombre',
           controller: _nombre,
+          reglas: reglasNombre(),
+          maxCaracteres: kMaxNombreUsuario,
+          forzarError: _forzarError,
           textInputAction: TextInputAction.next,
-          validator: (String? v) =>
-              (v == null || v.trim().isEmpty) ? 'Requerido' : null,
         ),
-        const SizedBox(height: FqGap.md),
-        FqTextField(
+        const SizedBox(height: FqGap.sm),
+        CampoTexto(
           label: 'Correo',
           controller: _email,
+          reglas: reglasCorreo(),
+          maxCaracteres: kMaxCorreoUsuario,
+          forzarError: _forzarError,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
-          validator: (String? v) =>
-              (v == null || !v.contains('@')) ? 'Correo invalido' : null,
         ),
-        const SizedBox(height: FqGap.md),
+        const SizedBox(height: FqGap.sm),
         _SelectorRol(
           valor: _idrol,
+          bloqueado: _rolBloqueado,
           onChanged: (int v) => setState(() => _idrol = v),
         ),
-        const SizedBox(height: FqGap.md),
-        FqTextField(
+        const SizedBox(height: FqGap.sm),
+        CampoTexto(
           label: _esCrear
               ? 'Contrasena'
-              : 'Nueva contrasena (dejar vacio para no cambiar)',
+              : 'Nueva contrasena (vacio = no cambiar)',
           controller: _password,
+          reglas: _reglasPassword,
           obscureText: true,
-          validator: (String? v) {
-            if (!_esCrear && (v == null || v.isEmpty)) return null;
-            if (v == null || v.length < 8) return 'Minimo 8 caracteres';
-            return null;
-          },
+          forzarError: _forzarError,
         ),
       ],
     );
@@ -421,58 +430,85 @@ class _DatoLinea extends StatelessWidget {
 }
 
 class _SelectorRol extends StatelessWidget {
-  const _SelectorRol({required this.valor, required this.onChanged});
+  const _SelectorRol({
+    required this.valor,
+    required this.onChanged,
+    this.bloqueado = false,
+  });
 
   final int valor;
   final ValueChanged<int> onChanged;
+  final bool bloqueado;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: FqColors.white,
-        borderRadius: FqRadius.allMd,
-        border: Border.all(color: FqColors.fieldBorder),
-      ),
-      padding: const EdgeInsets.fromLTRB(10, 7, 10, 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Text(
-            'ROL',
-            style: TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-              color: FqColors.fieldLabel,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          decoration: BoxDecoration(
+            color: FqColors.white,
+            borderRadius: FqRadius.allMd,
+            border: Border.all(color: FqColors.fieldBorder),
           ),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: valor,
-              isDense: true,
-              isExpanded: true,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: FqColors.ink,
+          padding: const EdgeInsets.fromLTRB(10, 7, 10, 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Text(
+                'ROL',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                  color: FqColors.fieldLabel,
+                ),
               ),
-              items: rolesDisponibles.entries
-                  .map(
-                    (MapEntry<int, String> e) => DropdownMenuItem<int>(
-                      value: e.key,
-                      child: Text(e.value),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (int? v) {
-                if (v != null) onChanged(v);
-              },
-            ),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: valor,
+                  isDense: true,
+                  isExpanded: true,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: FqColors.ink,
+                  ),
+                  items: rolesDisponibles.entries
+                      .map(
+                        (MapEntry<int, String> e) => DropdownMenuItem<int>(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: bloqueado
+                      ? null
+                      : (int? v) {
+                          if (v != null) onChanged(v);
+                        },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 3),
+        SizedBox(
+          height: 14,
+          child: bloqueado
+              ? const Text(
+                  'No puedes cambiar tu propio rol',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: FqColors.muted,
+                  ),
+                )
+              : null,
+        ),
+      ],
     );
   }
 }

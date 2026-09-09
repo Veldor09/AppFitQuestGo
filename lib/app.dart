@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_theme.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/admin_shell.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
@@ -23,6 +24,8 @@ class FitQuestGoApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: buildFqTheme(),
         home: const _RootGate(),
+        builder: (BuildContext context, Widget? child) =>
+            NotificacionesHost(child: child ?? const SizedBox.shrink()),
       ),
     );
   }

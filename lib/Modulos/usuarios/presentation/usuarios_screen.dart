@@ -3,10 +3,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_panel.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/paginacion_bar.dart';
@@ -86,42 +88,49 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     return filtrados.skip(inicio).take(_filasPorPagina).toList();
   }
 
+  int? get _miId => AuthScope.maybeOf(context)?.usuario?.id;
+
   Future<void> _abrirModal(ModoUsuarioModal modo, [Usuario? usuario]) async {
     final bool? cambio = await UsuarioModal.abrir(
       context,
       modo: modo,
       usuario: usuario,
       api: _api,
+      miId: _miId,
     );
     if (!mounted) return;
     if (cambio == true) {
       _recargar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            modo == ModoUsuarioModal.crear
-                ? 'Usuario creado.'
-                : 'Cambios guardados.',
-          ),
-        ),
+      notificarExito(
+        modo == ModoUsuarioModal.crear
+            ? 'Usuario creado correctamente'
+            : 'Cambios guardados',
       );
     }
   }
 
-  Future<void> _desactivar(Usuario u) async {
-    final bool? confirmar = await _confirmarDesactivar(u);
-    if (confirmar != true || !mounted) return;
+  Future<void> _cambiarEstado(Usuario u) async {
+    final bool desactivando = u.activo;
+    final String destino =
+        desactivando ? EstadoUsuario.desactivado : EstadoUsuario.activado;
+
+    if (desactivando) {
+      final bool? ok = await _confirmarDesactivar(u);
+      if (ok != true || !mounted) return;
+    }
     try {
-      await _api.remove(u.id);
+      await _api.cambiarEstado(u.id, destino);
       if (!mounted) return;
       _recargar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${u.nombreUser} fue dado de baja.')),
+      notificarExito(
+        desactivando
+            ? '${u.nombreUser} fue desactivado'
+            : '${u.nombreUser} fue activado',
       );
     } on ApiException catch (e) {
-      _avisar(e.message);
+      notificarError(e.message);
     } catch (_) {
-      _avisar('No se pudo completar la accion.');
+      notificarError('No se pudo completar la accion');
     }
   }
 
@@ -154,9 +163,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Se dara de baja la cuenta de ${u.nombreUser}. El backend '
-                    'todavia no tiene baja logica, asi que la cuenta se '
-                    'eliminara de forma permanente.',
+                    'La cuenta de ${u.nombreUser} pasara a "Desactivado" y no '
+                    'podra iniciar sesion. Puedes reactivarla despues.',
                     style: const TextStyle(
                       fontSize: 11,
                       height: 1.5,
@@ -250,11 +258,6 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     }
   }
 
-  void _avisar(String mensaje) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
-  }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Usuario>>(
@@ -287,6 +290,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                     if (_rolFiltro != 0) _chipFiltroActivo(),
                     UsuariosTabla(
                       usuarios: _paginar(filtrados),
+                      miId: _miId,
                       loading: cargando,
                       error: error,
                       onReintentar: _recargar,
@@ -297,7 +301,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                           _abrirModal(ModoUsuarioModal.ver, u),
                       onEditar: (Usuario u) =>
                           _abrirModal(ModoUsuarioModal.editar, u),
-                      onDesactivar: _desactivar,
+                      onCambiarEstado: _cambiarEstado,
                     ),
                     if (!cargando && error == null && filtrados.isNotEmpty)
                       PaginacionBar(

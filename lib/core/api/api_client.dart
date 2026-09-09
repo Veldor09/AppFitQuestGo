@@ -31,6 +31,9 @@ class ApiClient {
 
   Future<dynamic> put(String path, Object? body) => _enviar('PUT', path, body);
 
+  Future<dynamic> patch(String path, Object? body) =>
+      _enviar('PATCH', path, body);
+
   Future<dynamic> delete(String path) => _enviar('DELETE', path);
 
   Future<dynamic> _enviar(
@@ -71,6 +74,8 @@ class ApiClient {
         return _client.post(uri, headers: headers, body: cuerpo);
       case 'PUT':
         return _client.put(uri, headers: headers, body: cuerpo);
+      case 'PATCH':
+        return _client.patch(uri, headers: headers, body: cuerpo);
       case 'DELETE':
         return _client.delete(uri, headers: headers);
       default:
@@ -106,10 +111,17 @@ class ApiClient {
   dynamic _procesar(http.Response res) {
     final dynamic body = res.body.isEmpty ? null : jsonDecode(res.body);
     if (res.statusCode >= 200 && res.statusCode < 300) return body;
-    final String mensaje = body is Map && body['message'] != null
-        ? body['message'].toString()
-        : (res.reasonPhrase ?? 'Error ${res.statusCode}');
-    throw ApiException(res.statusCode, mensaje);
+    throw ApiException(res.statusCode, _mensajeError(body, res));
+  }
+
+  String _mensajeError(dynamic body, http.Response res) {
+    if (body is Map && body['message'] != null) {
+      final dynamic m = body['message'];
+      // El ValidationPipe de Nest devuelve una lista de mensajes.
+      if (m is List) return m.map((dynamic e) => e.toString()).join('\n');
+      return m.toString();
+    }
+    return res.reasonPhrase ?? 'Error ${res.statusCode}';
   }
 
   void close() => _client.close();

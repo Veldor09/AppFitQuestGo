@@ -27,4 +27,9 @@ class AuthScope extends InheritedNotifier<AuthRepositorio> {
     assert(scope != null, 'No se encontro AuthScope en el arbol de widgets.');
     return scope!.notifier!;
   }
+
+  /// Igual que [of] pero devuelve `null` si no hay `AuthScope` (util en pruebas).
+  static AuthRepositorio? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AuthScope>()?.notifier;
+  }
 }

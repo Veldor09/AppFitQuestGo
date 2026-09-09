@@ -5,18 +5,18 @@ import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 
-/// Tabla de usuarios con columnas Nombre / Correo / Rol / Acciones.
+/// Tabla de usuarios: Nombre / Correo / Rol / Estado / Acciones.
 ///
-/// Las acciones por fila son Ver, Editar y Desactivar. Gestiona sus estados de
-/// carga / error / vacio. En pantallas angostas la tabla scrollea en horizontal
-/// para no comprimir las columnas.
+/// Acciones por fila: Ver, Editar y Activar/Desactivar (segun el estado). La
+/// fila del propio usuario ([miId]) no ofrece el cambio de estado.
 class UsuariosTabla extends StatelessWidget {
   const UsuariosTabla({
     super.key,
     required this.usuarios,
     required this.onVer,
     required this.onEditar,
-    required this.onDesactivar,
+    required this.onCambiarEstado,
+    this.miId,
     this.loading = false,
     this.error,
     this.onReintentar,
@@ -26,13 +26,14 @@ class UsuariosTabla extends StatelessWidget {
   final List<Usuario> usuarios;
   final ValueChanged<Usuario> onVer;
   final ValueChanged<Usuario> onEditar;
-  final ValueChanged<Usuario> onDesactivar;
+  final ValueChanged<Usuario> onCambiarEstado;
+  final int? miId;
   final bool loading;
   final String? error;
   final VoidCallback? onReintentar;
   final String? mensajeVacio;
 
-  static const double _minWidth = 780;
+  static const double _minWidth = 900;
 
   @override
   Widget build(BuildContext context) {
@@ -76,9 +77,10 @@ class UsuariosTabla extends StatelessWidget {
               for (final Usuario u in usuarios)
                 _Fila(
                   usuario: u,
+                  esYo: u.id == miId,
                   onVer: () => onVer(u),
                   onEditar: () => onEditar(u),
-                  onDesactivar: () => onDesactivar(u),
+                  onCambiarEstado: () => onCambiarEstado(u),
                 ),
             ],
           ),
@@ -98,7 +100,19 @@ class UsuariosTabla extends StatelessWidget {
 const int _flexNombre = 3;
 const int _flexCorreo = 4;
 const int _flexRol = 2;
+const int _flexEstado = 2;
 const double _anchoAcciones = 252;
+
+FqTagTone _tonoRol(int idrol) {
+  switch (idrol) {
+    case 3:
+      return FqTagTone.dark;
+    case 2:
+      return FqTagTone.amber;
+    default:
+      return FqTagTone.green;
+  }
+}
 
 class _EncabezadoFila extends StatelessWidget {
   const _EncabezadoFila();
@@ -121,6 +135,7 @@ class _EncabezadoFila extends StatelessWidget {
           Expanded(flex: _flexNombre, child: Text('NOMBRE', style: estilo)),
           Expanded(flex: _flexCorreo, child: Text('CORREO', style: estilo)),
           Expanded(flex: _flexRol, child: Text('ROL', style: estilo)),
+          Expanded(flex: _flexEstado, child: Text('ESTADO', style: estilo)),
           SizedBox(
             width: _anchoAcciones,
             child: Text('ACCIONES', style: estilo, textAlign: TextAlign.right),
@@ -134,15 +149,17 @@ class _EncabezadoFila extends StatelessWidget {
 class _Fila extends StatefulWidget {
   const _Fila({
     required this.usuario,
+    required this.esYo,
     required this.onVer,
     required this.onEditar,
-    required this.onDesactivar,
+    required this.onCambiarEstado,
   });
 
   final Usuario usuario;
+  final bool esYo;
   final VoidCallback onVer;
   final VoidCallback onEditar;
-  final VoidCallback onDesactivar;
+  final VoidCallback onCambiarEstado;
 
   @override
   State<_Fila> createState() => _FilaState();
@@ -150,17 +167,6 @@ class _Fila extends StatefulWidget {
 
 class _FilaState extends State<_Fila> {
   bool _hover = false;
-
-  FqTagTone _tono(int idrol) {
-    switch (idrol) {
-      case 3:
-        return FqTagTone.dark;
-      case 2:
-        return FqTagTone.amber;
-      default:
-        return FqTagTone.green;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +209,17 @@ class _FilaState extends State<_Fila> {
               flex: _flexRol,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: FqTag(u.etiquetaRol, tone: _tono(u.idrol)),
+                child: FqTag(u.etiquetaRol, tone: _tonoRol(u.idrol)),
+              ),
+            ),
+            Expanded(
+              flex: _flexEstado,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FqTag(
+                  u.estado,
+                  tone: u.activo ? FqTagTone.green : FqTagTone.neutral,
+                ),
               ),
             ),
             SizedBox(
@@ -223,11 +239,21 @@ class _FilaState extends State<_Fila> {
                     color: FqColors.ink,
                     onTap: widget.onEditar,
                   ),
-                  _AccionBtn(
-                    label: 'Desactivar',
-                    color: FqColors.risk,
-                    onTap: widget.onDesactivar,
-                  ),
+                  if (widget.esYo)
+                    const Tooltip(
+                      message: 'No puedes desactivar tu propia cuenta',
+                      child: _AccionBtn(
+                        label: 'Desactivar',
+                        color: FqColors.stone,
+                        onTap: null,
+                      ),
+                    )
+                  else
+                    _AccionBtn(
+                      label: u.activo ? 'Desactivar' : 'Activar',
+                      color: u.activo ? FqColors.risk : FqColors.trail,
+                      onTap: widget.onCambiarEstado,
+                    ),
                 ],
               ),
             ),
@@ -247,7 +273,7 @@ class _AccionBtn extends StatelessWidget {
 
   final String label;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
