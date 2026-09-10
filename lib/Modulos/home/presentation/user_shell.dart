@@ -6,6 +6,8 @@ import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/user_nav_bar.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/perfil_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/planificar_ruta_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 
 
 class UserShell extends StatefulWidget {
@@ -24,8 +26,8 @@ class _UserShellState extends State<UserShell> {
   Widget build(BuildContext context) {
     final List<Widget> pestanas = <Widget>[
       const HomeUsuarioScreen(),
-      const _Pendiente(titulo: 'Rutas', icono: Icons.route_outlined),
-      const _Pendiente(titulo: 'Crear', icono: Icons.add_location_alt_outlined),
+      const RutasScreen(),
+      const PlanificarRutaScreen(),
       const _Pendiente(titulo: 'Eventos', icono: Icons.auto_awesome_outlined),
       PerfilScreen(onCerrarSesion: _cerrarSesion),
     ];
