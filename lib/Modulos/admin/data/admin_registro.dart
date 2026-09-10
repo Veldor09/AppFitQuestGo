@@ -5,6 +5,9 @@ import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
+import 'package:fit_quest_go/Modulos/alertas/presentation/alertas_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/nodos/presentation/nodos_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
 
 /// Registro unico de las pantallas del panel de administracion (ADM-01..ADM-13).
@@ -48,7 +51,7 @@ final List<AdminSeccion> adminSecciones = <AdminSeccion>[
     headerTitle: 'Rutas',
     descripcion: 'Administrar la cola de moderacion de rutas.',
     icono: Icons.route_outlined,
-    builder: (_) => const RutasScreen(),
+    builder: (_) => const RutasAdminScreen(),
   ),
   AdminSeccion(
     code: 'ADM-05',
@@ -64,7 +67,7 @@ final List<AdminSeccion> adminSecciones = <AdminSeccion>[
     headerTitle: 'Alertas activas',
     descripcion: 'Supervisar reportes comunitarios en vivo.',
     icono: Icons.warning_amber_outlined,
-    builder: (_) => const AlertasScreen(),
+    builder: (_) => const AlertasAdminScreen(),
   ),
   AdminSeccion(
     code: 'ADM-07',
@@ -72,7 +75,7 @@ final List<AdminSeccion> adminSecciones = <AdminSeccion>[
     headerTitle: 'Nodos / POIs',
     descripcion: 'Revisar puntos de interes propuestos.',
     icono: Icons.location_on_outlined,
-    builder: (_) => const NodosScreen(),
+    builder: (_) => const NodosAdminScreen(),
   ),
   AdminSeccion(
     code: 'ADM-08',

@@ -42,7 +42,7 @@ class ApiClient {
     Object? body,
     bool permitirReintento = true,
   ]) async {
-    final http.Response res = await _peticion(metodo, path, body);
+    final http.Response res = await _peticionConReintentoDeRed(metodo, path, body);
     if (res.statusCode != 401 || !permitirReintento) {
       return _procesar(res);
     }
@@ -52,6 +52,24 @@ class ApiClient {
       return _procesar(res);
     }
     return _enviar(metodo, path, body, false);
+  }
+
+  /// Absorbe un hipo de red puntual (timeout, conexion reiniciada, comun en
+  /// el emulador) con un unico reintento. No aplica a POST: reintentar una
+  /// creacion podria duplicarla si el primer intento sí llego al servidor y
+  /// solo se perdio la respuesta. GET/PUT/PATCH/DELETE son seguros de repetir.
+  Future<http.Response> _peticionConReintentoDeRed(
+    String metodo,
+    String path,
+    Object? body,
+  ) async {
+    try {
+      return await _peticion(metodo, path, body);
+    } on Exception {
+      if (metodo == 'POST') rethrow;
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      return _peticion(metodo, path, body);
+    }
   }
 
   Future<http.Response> _peticion(

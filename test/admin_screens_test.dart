@@ -12,9 +12,6 @@ void main() {
   final Map<String, Widget> pantallas = <String, Widget>{
     'Dashboard': const DashboardScreen(),
     'Revision de ruta': const RevisionRutaScreen(),
-    'Rutas': const RutasScreen(),
-    'Alertas': const AlertasScreen(),
-    'Nodos': const NodosScreen(),
     'Eventos': const EventosScreen(),
     'Patrocinadores': const PatrocinadoresScreen(),
     'Insignias': const InsigniasScreen(),

@@ -8,45 +8,6 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_lista_maqu
 /// pestanas de estado y tabla) mediante [AdminListaMaqueta], con la tabla en
 /// estado vacio para no inventar datos.
 
-/// ADM-04 · Gestion de rutas.
-class RutasScreen extends StatelessWidget {
-  const RutasScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en rutas',
-        emptyTitle: 'Sin rutas en la cola',
-        emptyMessage:
-            'Las rutas enviadas a moderacion apareceran aqui para revisarlas.',
-      );
-}
-
-/// ADM-06 · Gestion de alertas.
-class AlertasScreen extends StatelessWidget {
-  const AlertasScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en alertas activas',
-        emptyTitle: 'Sin alertas activas',
-        emptyMessage:
-            'Los reportes comunitarios en vivo se listaran aqui en tiempo real.',
-      );
-}
-
-/// ADM-07 · Gestion de nodos / POIs.
-class NodosScreen extends StatelessWidget {
-  const NodosScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en nodos / pois',
-        emptyTitle: 'Sin puntos propuestos',
-        emptyMessage:
-            'Los puntos de interes propuestos por la comunidad llegaran aqui.',
-      );
-}
-
 /// ADM-08 · Gestion de eventos.
 class EventosScreen extends StatelessWidget {
   const EventosScreen({super.key});

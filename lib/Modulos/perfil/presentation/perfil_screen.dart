@@ -24,7 +24,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
   late Future<Usuario> _futuro = _api.miPerfil();
 
   void _recargar() {
-    setState(() => _futuro = _api.miPerfil());
+    // Bloque, no expresion: `=> _futuro = x` devuelve el Future asignado,
+    // y setState no acepta un callback que devuelva un Future.
+    setState(() {
+      _futuro = _api.miPerfil();
+    });
   }
 
   @override
