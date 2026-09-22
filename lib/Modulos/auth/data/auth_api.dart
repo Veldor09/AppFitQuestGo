@@ -10,11 +10,13 @@ class AuthApi {
     required String nombre,
     required String email,
     required String contrasena,
+    required bool aceptaTerminos,
   }) async {
     final dynamic data = await _client.post('/auth/registro', {
       'nombre': nombre,
       'email': email,
       'contrasena': contrasena,
+      'aceptaTerminos': aceptaTerminos,
     });
     return Sesion.fromJson(data as Map<String, dynamic>);
   }
