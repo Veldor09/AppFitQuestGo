@@ -52,4 +52,49 @@ void main() {
     expect(cuerpoRecibido, isNotNull);
     expect(cuerpoRecibido!['aceptaTerminos'], true);
   });
+
+  test('olvideContrasena() llama a /auth/olvide-contrasena con el email', () async {
+    String? rutaLlamada;
+    Map<String, dynamic>? cuerpoRecibido;
+    final MockClient client = MockClient((http.Request req) async {
+      rutaLlamada = req.url.path;
+      cuerpoRecibido = jsonDecode(req.body) as Map<String, dynamic>;
+      return http.Response('', 204);
+    });
+    final AuthApi api = AuthApi(ApiClient(
+      client: client,
+      baseUrl: 'http://test',
+      tokens: _MockAlmacenTokens(),
+    ));
+
+    await api.olvideContrasena(email: 'ana@x.co');
+
+    expect(rutaLlamada, '/auth/olvide-contrasena');
+    expect(cuerpoRecibido!['email'], 'ana@x.co');
+  });
+
+  test('restablecerContrasena() llama a /auth/restablecer-contrasena con los 3 campos', () async {
+    Map<String, dynamic>? cuerpoRecibido;
+    final MockClient client = MockClient((http.Request req) async {
+      cuerpoRecibido = jsonDecode(req.body) as Map<String, dynamic>;
+      return http.Response('', 204);
+    });
+    final AuthApi api = AuthApi(ApiClient(
+      client: client,
+      baseUrl: 'http://test',
+      tokens: _MockAlmacenTokens(),
+    ));
+
+    await api.restablecerContrasena(
+      email: 'ana@x.co',
+      codigo: '123456',
+      nuevaContrasena: 'nueva12345',
+    );
+
+    expect(cuerpoRecibido, <String, dynamic>{
+      'email': 'ana@x.co',
+      'codigo': '123456',
+      'nuevaContrasena': 'nueva12345',
+    });
+  });
 }

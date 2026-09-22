@@ -8,6 +8,7 @@ import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/auth/presentation/olvide_contrasena_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
 
 /// APP-03 · Login. Autentica contra `POST /auth/inicio-sesion` mediante
@@ -134,8 +135,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: TextButton(
-                            onPressed: () => notificarInfo(
-                              'Si el correo existe, te enviaremos instrucciones',
+                            onPressed: () => Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const OlvideContrasenaScreen(),
+                              ),
                             ),
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
