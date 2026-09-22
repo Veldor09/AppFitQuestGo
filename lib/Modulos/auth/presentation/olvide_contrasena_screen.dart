@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
@@ -57,6 +58,9 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
           ),
         ),
       );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      notificarError(e.message);
     } catch (_) {
       if (!mounted) return;
       notificarError('No se pudo conectar con el servidor. Intenta de nuevo.');

@@ -71,7 +71,9 @@ class _RestablecerContrasenaScreenState
       );
       if (!mounted) return;
       notificarExito('Contrasena actualizada. Inicia sesion con la nueva.');
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context)
+        ..pop() // cierra RestablecerContrasenaScreen
+        ..pop(); // cierra OlvideContrasenaScreen, vuelve a LoginScreen
     } on ApiException catch (e) {
       _fallar(
         e.statusCode == 401 ? 'Codigo invalido o expirado' : e.message,
@@ -120,6 +122,10 @@ class _RestablecerContrasenaScreenState
                           controller: _codigo,
                           keyboardType: TextInputType.number,
                           maxCaracteres: 6,
+                          reglas: <Validador>[
+                            requerido('Ingresa el codigo'),
+                            (String v) => v.trim().length == 6 ? null : 'El codigo tiene 6 digitos',
+                          ],
                           forzarError: _forzarError,
                           textInputAction: TextInputAction.next,
                         ),
