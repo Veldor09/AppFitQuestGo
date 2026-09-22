@@ -52,6 +52,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   _ModoRuta _modo = _ModoRuta.dibujar;
   StreamSubscription<geo.Position>? _suscripcionGps;
   bool _grabando = false;
+  bool _iniciando = false;
   DateTime? _inicioGrabacion;
 
   @override
@@ -94,54 +95,60 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _iniciarGrabacion() async {
-    // `widget.posicionStream` inyectado (tests) trae su propio stream falso:
-    // no toca los platform channels reales de permisos/servicio de
-    // ubicacion, que no existen fuera de un dispositivo/emulador real.
-    final Stream<geo.Position> stream;
-    if (widget.posicionStream != null) {
-      stream = widget.posicionStream!();
-    } else {
-      final bool servicioActivo = await geo.Geolocator.isLocationServiceEnabled();
-      if (!servicioActivo) {
-        notificarError('Activa la ubicacion del dispositivo para grabar');
-        return;
-      }
+    setState(() => _iniciando = true);
+    try {
+      // `widget.posicionStream` inyectado (tests) trae su propio stream falso:
+      // no toca los platform channels reales de permisos/servicio de
+      // ubicacion, que no existen fuera de un dispositivo/emulador real.
+      final Stream<geo.Position> stream;
+      if (widget.posicionStream != null) {
+        stream = widget.posicionStream!();
+      } else {
+        final bool servicioActivo = await geo.Geolocator.isLocationServiceEnabled();
+        if (!servicioActivo) {
+          notificarError('Activa la ubicacion del dispositivo para grabar');
+          return;
+        }
 
-      geo.LocationPermission permiso = await geo.Geolocator.checkPermission();
-      if (permiso == geo.LocationPermission.denied) {
-        permiso = await geo.Geolocator.requestPermission();
-      }
-      if (permiso == geo.LocationPermission.denied) {
-        notificarError('Se necesita permiso de ubicacion para grabar');
-        return;
-      }
-      if (permiso == geo.LocationPermission.deniedForever) {
-        notificarError(
-          'Permiso de ubicacion bloqueado. Habilitalo desde Ajustes del sistema.',
+        geo.LocationPermission permiso = await geo.Geolocator.checkPermission();
+        if (permiso == geo.LocationPermission.denied) {
+          permiso = await geo.Geolocator.requestPermission();
+        }
+        if (permiso == geo.LocationPermission.denied) {
+          notificarError('Se necesita permiso de ubicacion para grabar');
+          return;
+        }
+        if (permiso == geo.LocationPermission.deniedForever) {
+          notificarError(
+            'Permiso de ubicacion bloqueado. Habilitalo desde Ajustes del sistema.',
+          );
+          return;
+        }
+
+        stream = geo.Geolocator.getPositionStream(
+          locationSettings: geo.LocationSettings(
+            accuracy: geo.LocationAccuracy.high,
+            distanceFilter: _distanciaMinimaEntrePuntosM.toInt(),
+          ),
         );
-        return;
       }
 
-      stream = geo.Geolocator.getPositionStream(
-        locationSettings: geo.LocationSettings(
-          accuracy: geo.LocationAccuracy.high,
-          distanceFilter: _distanciaMinimaEntrePuntosM.toInt(),
-        ),
-      );
-    }
-
-    setState(() {
-      _grabando = true;
-      _inicioGrabacion = DateTime.now();
-    });
-
-    _suscripcionGps = stream.listen((geo.Position posicion) async {
       if (!mounted) return;
       setState(() {
-        _puntos.add(PuntoRuta(lat: posicion.latitude, lng: posicion.longitude));
+        _grabando = true;
+        _inicioGrabacion = DateTime.now();
       });
-      await _redibujar();
-    });
+
+      _suscripcionGps = stream.listen((geo.Position posicion) async {
+        if (!mounted) return;
+        setState(() {
+          _puntos.add(PuntoRuta(lat: posicion.latitude, lng: posicion.longitude));
+        });
+        await _redibujar();
+      });
+    } finally {
+      if (mounted) setState(() => _iniciando = false);
+    }
   }
 
   Future<void> _detenerGrabacion() async {
@@ -357,7 +364,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                 child: _SelectorModo(
                   modo: _modo,
-                  habilitado: !_grabando && !_guardando,
+                  habilitado: !_grabando && !_guardando && !_iniciando,
                   onCambiar: _cambiarModo,
                 ),
               ),
@@ -446,8 +453,9 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                       : FqButton.secondary(
                                           label: 'Iniciar grabacion',
                                           dense: true,
-                                          onPressed:
-                                              _guardando ? null : _iniciarGrabacion,
+                                          onPressed: _guardando || _iniciando
+                                              ? null
+                                              : _iniciarGrabacion,
                                         ),
                                 ),
                                 if (!_grabando) ...<Widget>[
