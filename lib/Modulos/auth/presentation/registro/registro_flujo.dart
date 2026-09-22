@@ -106,6 +106,7 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
         nombre: _nombre.text.trim(),
         email: _email.text.trim(),
         contrasena: _password.text,
+        aceptaTerminos: _aceptaTerminos,
       );
       if (!mounted) return;
       notificarExito('Cuenta creada. Bienvenido a FitQuest Go');

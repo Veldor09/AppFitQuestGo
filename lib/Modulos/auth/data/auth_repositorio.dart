@@ -33,11 +33,13 @@ class AuthRepositorio extends ChangeNotifier {
     required String nombre,
     required String email,
     required String contrasena,
+    required bool aceptaTerminos,
   }) async {
     final Sesion sesion = await _api.registrar(
       nombre: nombre,
       email: email,
       contrasena: contrasena,
+      aceptaTerminos: aceptaTerminos,
     );
     await _persistir(sesion);
   }

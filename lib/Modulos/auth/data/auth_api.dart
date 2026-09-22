@@ -10,11 +10,13 @@ class AuthApi {
     required String nombre,
     required String email,
     required String contrasena,
+    required bool aceptaTerminos,
   }) async {
     final dynamic data = await _client.post('/auth/registro', {
       'nombre': nombre,
       'email': email,
       'contrasena': contrasena,
+      'aceptaTerminos': aceptaTerminos,
     });
     return Sesion.fromJson(data as Map<String, dynamic>);
   }
@@ -37,5 +39,21 @@ class AuthApi {
 
   Future<void> cerrarSesion(String? refreshToken) async {
     await _client.post('/auth/cerrar-sesion', {'refreshToken': ?refreshToken});
+  }
+
+  Future<void> olvideContrasena({required String email}) async {
+    await _client.post('/auth/olvide-contrasena', {'email': email});
+  }
+
+  Future<void> restablecerContrasena({
+    required String email,
+    required String codigo,
+    required String nuevaContrasena,
+  }) async {
+    await _client.post('/auth/restablecer-contrasena', {
+      'email': email,
+      'codigo': codigo,
+      'nuevaContrasena': nuevaContrasena,
+    });
   }
 }

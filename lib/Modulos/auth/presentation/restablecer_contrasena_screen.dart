@@ -7,22 +7,29 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
-import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
-import 'package:fit_quest_go/Modulos/auth/presentation/olvide_contrasena_screen.dart';
+import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
 
-/// APP-03 · Login. Autentica contra `POST /auth/inicio-sesion` mediante
-/// [AuthRepositorio]. Los errores de campo se muestran en rojo bajo cada input;
-/// el resultado del intento (exito / credenciales) se comunica por notificacion.
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+/// Segundo paso de recuperacion: el usuario ya recibio el codigo por correo
+/// (ver [OlvideContrasenaScreen]) y lo escribe junto con la contrasena nueva.
+class RestablecerContrasenaScreen extends StatefulWidget {
+  const RestablecerContrasenaScreen({super.key, required this.email, this.api});
+
+  final String email;
+
+  /// Inyectable para pruebas; en produccion se crea uno por defecto.
+  final AuthApi? api;
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RestablecerContrasenaScreen> createState() =>
+      _RestablecerContrasenaScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _email = TextEditingController();
+class _RestablecerContrasenaScreenState
+    extends State<RestablecerContrasenaScreen> {
+  late final AuthApi _api = widget.api ?? AuthApi();
+
+  final TextEditingController _codigo = TextEditingController();
   final TextEditingController _password = TextEditingController();
 
   bool _cargando = false;
@@ -30,20 +37,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _email.dispose();
+    _codigo.dispose();
     _password.dispose();
     super.dispose();
   }
 
   bool _valido() {
     return todoValido(<(String, List<Validador>)>[
-      (_email.text, <Validador>[requerido('El correo es obligatorio'),
-        formatoCorreo]),
-      (_password.text, <Validador>[requerido('Ingresa tu contrasena')]),
+      (_codigo.text, <Validador>[
+        requerido('Ingresa el codigo'),
+        (String v) => v.trim().length == 6 ? null : 'El codigo tiene 6 digitos',
+      ]),
+      (_password.text, <Validador>[
+        requerido('Ingresa la nueva contrasena'),
+        minCaracteres(8),
+      ]),
     ]);
   }
 
-  Future<void> _iniciar() async {
+  Future<void> _confirmar() async {
     FocusScope.of(context).unfocus();
     if (!_valido()) {
       setState(() => _forzarError = true);
@@ -52,18 +64,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => _cargando = true);
     try {
-      await AuthScope.read(context).iniciarSesion(
-        email: _email.text.trim(),
-        contrasena: _password.text,
+      await _api.restablecerContrasena(
+        email: widget.email,
+        codigo: _codigo.text.trim(),
+        nuevaContrasena: _password.text,
       );
       if (!mounted) return;
-      notificarExito('Inicio de sesion exitoso');
-      Navigator.of(context).pop();
+      notificarExito('Contrasena actualizada. Inicia sesion con la nueva.');
+      Navigator.of(context)
+        ..pop() // cierra RestablecerContrasenaScreen
+        ..pop(); // cierra OlvideContrasenaScreen, vuelve a LoginScreen
     } on ApiException catch (e) {
       _fallar(
-        e.statusCode == 401
-            ? 'Correo o contrasena incorrectos'
-            : e.message,
+        e.statusCode == 401 ? 'Codigo invalido o expirado' : e.message,
       );
     } catch (_) {
       _fallar('No se pudo conectar con el servidor. Intenta de nuevo.');
@@ -84,8 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: <Widget>[
             FqAppHeader(
-              title: 'Bienvenido de vuelta',
-              subtitle: 'Continua tu recorrido',
+              title: 'Ingresa el codigo',
+              subtitle: 'Lo enviamos a ${widget.email}',
               onLeading: () => Navigator.of(context).maybePop(),
             ),
             Expanded(
@@ -105,62 +118,38 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         CampoTexto(
-                          label: 'Correo',
-                          controller: _email,
-                          hintText: 'tucorreo@dominio.com',
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const <String>[AutofillHints.email],
-                          forzarError: _forzarError,
+                          label: 'Codigo de 6 digitos',
+                          controller: _codigo,
+                          keyboardType: TextInputType.number,
+                          maxCaracteres: 6,
                           reglas: <Validador>[
-                            requerido('El correo es obligatorio'),
-                            formatoCorreo,
+                            requerido('Ingresa el codigo'),
+                            (String v) => v.trim().length == 6 ? null : 'El codigo tiene 6 digitos',
                           ],
+                          forzarError: _forzarError,
+                          textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: FqGap.sm),
                         CampoTexto(
-                          label: 'Contrasena',
+                          label: 'Contrasena nueva',
                           controller: _password,
                           obscureText: true,
                           textInputAction: TextInputAction.done,
                           autofillHints: const <String>[
-                            AutofillHints.password,
+                            AutofillHints.newPassword,
                           ],
                           forzarError: _forzarError,
-                          onSubmitted: (_) => _iniciar(),
+                          onSubmitted: (_) => _confirmar(),
                           reglas: <Validador>[
-                            requerido('Ingresa tu contrasena'),
+                            requerido('Ingresa la nueva contrasena'),
+                            minCaracteres(8),
                           ],
-                        ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).push<void>(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const OlvideContrasenaScreen(),
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 0),
-                              tapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              foregroundColor: FqColors.river,
-                            ),
-                            child: const Text(
-                              'Olvidaste tu contrasena?',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
                         ),
                         const SizedBox(height: FqGap.xl),
                         FqButton.primary(
-                          label: 'Iniciar sesion',
+                          label: 'Actualizar contrasena',
                           loading: _cargando,
-                          onPressed: _cargando ? null : _iniciar,
+                          onPressed: _cargando ? null : _confirmar,
                         ),
                       ],
                     ),
