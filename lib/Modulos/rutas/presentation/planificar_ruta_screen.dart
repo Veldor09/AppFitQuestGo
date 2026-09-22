@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
@@ -9,15 +11,28 @@ import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 
-/// RTE-05/06/07 · Planificar ruta. Cada toque en el mapa agrega un punto al
-/// trazo; "Guardar" abre el formulario y crea la ruta como Privada
-/// (`POST /rutas`). La distancia se calcula sola (haversine) a partir de los
-/// puntos: no se le pide al usuario que la adivine.
+enum _ModoRuta { dibujar, gps }
+
+/// RTE-05/06/07 · Planificar ruta. Modo "Dibujar": cada toque en el mapa
+/// agrega un punto. Modo "Grabar GPS": cada posicion del dispositivo (con un
+/// filtro de distancia minima) agrega un punto mientras se graba. En ambos
+/// modos "Guardar" abre el mismo formulario y crea la ruta como Privada
+/// (`POST /rutas`); la distancia se calcula sola (haversine) a partir de los
+/// puntos, vengan de donde vengan.
+///
+/// Nota: `geolocator` se importa con prefijo (`geo.`) porque su clase
+/// `Position` (lectura de GPS) colisiona por nombre con `Position` de
+/// `mapbox_maps_flutter` (coordenadas del mapa, reexportada via
+/// `turf`/`geotypes`) — son dos tipos distintos con el mismo nombre.
 class PlanificarRutaScreen extends StatefulWidget {
-  const PlanificarRutaScreen({super.key, this.api});
+  const PlanificarRutaScreen({super.key, this.api, this.posicionStream});
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
+
+  /// Fabrica del stream de posicion, inyectable para pruebas. En produccion
+  /// usa `Geolocator.getPositionStream`.
+  final Stream<geo.Position> Function()? posicionStream;
 
   @override
   State<PlanificarRutaScreen> createState() => _PlanificarRutaScreenState();
@@ -25,6 +40,7 @@ class PlanificarRutaScreen extends StatefulWidget {
 
 class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   static const String _accessToken = String.fromEnvironment('ACCESS_TOKEN');
+  static const double _distanciaMinimaEntrePuntosM = 8;
 
   late final RutaApi _api = widget.api ?? RutaApi();
   CircleAnnotationManager? _pines;
@@ -33,13 +49,24 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   final List<PuntoRuta> _puntos = <PuntoRuta>[];
   bool _guardando = false;
 
+  _ModoRuta _modo = _ModoRuta.dibujar;
+  StreamSubscription<geo.Position>? _suscripcionGps;
+  bool _grabando = false;
+  DateTime? _inicioGrabacion;
+
+  @override
+  void dispose() {
+    _suscripcionGps?.cancel();
+    super.dispose();
+  }
+
   Future<void> _onMapCreated(MapboxMap controller) async {
     _pines = await controller.annotations.createCircleAnnotationManager();
     _lineas = await controller.annotations.createPolylineAnnotationManager();
   }
 
   Future<void> _onTap(MapContentGestureContext contexto) async {
-    if (_guardando) return;
+    if (_guardando || _modo != _ModoRuta.dibujar) return;
     final Position posicion = contexto.point.coordinates;
     setState(() {
       _puntos.add(
@@ -50,15 +77,78 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _deshacer() async {
-    if (_puntos.isEmpty) return;
+    if (_puntos.isEmpty || _grabando) return;
     setState(() => _puntos.removeLast());
     await _redibujar();
   }
 
   Future<void> _limpiar() async {
-    if (_puntos.isEmpty) return;
+    if (_puntos.isEmpty || _grabando) return;
     setState(() => _puntos.clear());
     await _redibujar();
+  }
+
+  void _cambiarModo(_ModoRuta modo) {
+    if (_grabando || _guardando) return;
+    setState(() => _modo = modo);
+  }
+
+  Future<void> _iniciarGrabacion() async {
+    // `widget.posicionStream` inyectado (tests) trae su propio stream falso:
+    // no toca los platform channels reales de permisos/servicio de
+    // ubicacion, que no existen fuera de un dispositivo/emulador real.
+    final Stream<geo.Position> stream;
+    if (widget.posicionStream != null) {
+      stream = widget.posicionStream!();
+    } else {
+      final bool servicioActivo = await geo.Geolocator.isLocationServiceEnabled();
+      if (!servicioActivo) {
+        notificarError('Activa la ubicacion del dispositivo para grabar');
+        return;
+      }
+
+      geo.LocationPermission permiso = await geo.Geolocator.checkPermission();
+      if (permiso == geo.LocationPermission.denied) {
+        permiso = await geo.Geolocator.requestPermission();
+      }
+      if (permiso == geo.LocationPermission.denied) {
+        notificarError('Se necesita permiso de ubicacion para grabar');
+        return;
+      }
+      if (permiso == geo.LocationPermission.deniedForever) {
+        notificarError(
+          'Permiso de ubicacion bloqueado. Habilitalo desde Ajustes del sistema.',
+        );
+        return;
+      }
+
+      stream = geo.Geolocator.getPositionStream(
+        locationSettings: geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.high,
+          distanceFilter: _distanciaMinimaEntrePuntosM.toInt(),
+        ),
+      );
+    }
+
+    setState(() {
+      _grabando = true;
+      _inicioGrabacion = DateTime.now();
+    });
+
+    _suscripcionGps = stream.listen((geo.Position posicion) async {
+      if (!mounted) return;
+      setState(() {
+        _puntos.add(PuntoRuta(lat: posicion.latitude, lng: posicion.longitude));
+      });
+      await _redibujar();
+    });
+  }
+
+  Future<void> _detenerGrabacion() async {
+    await _suscripcionGps?.cancel();
+    _suscripcionGps = null;
+    if (!mounted) return;
+    setState(() => _grabando = false);
   }
 
   Future<void> _redibujar() async {
@@ -129,7 +219,10 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
       );
       if (!mounted) return;
       notificarExito('Ruta guardada como privada. Podes publicarla desde "Mis rutas".');
-      setState(() => _puntos.clear());
+      setState(() {
+        _puntos.clear();
+        _inicioGrabacion = null;
+      });
       await _redibujar();
     } catch (_) {
       if (mounted) notificarError('No se pudo guardar la ruta');
@@ -261,6 +354,14 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           child: Column(
             children: <Widget>[
               Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                child: _SelectorModo(
+                  modo: _modo,
+                  habilitado: !_grabando && !_guardando,
+                  onCambiar: _cambiarModo,
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.all(10),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -269,9 +370,13 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: FqColors.softShadow,
                   ),
-                  child: const Text(
-                    'Toca el mapa para trazar tu ruta, punto por punto.',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                  child: Text(
+                    _modo == _ModoRuta.dibujar
+                        ? 'Toca el mapa para trazar tu ruta, punto por punto.'
+                        : (_grabando
+                            ? 'Grabando... camina para trazar la ruta.'
+                            : 'Toca "Iniciar grabacion" y empeza a caminar.'),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -292,39 +397,73 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       Text(
                         _puntos.isEmpty
                             ? 'Sin puntos todavia'
-                            : '${_puntos.length} puntos · ${_distanciaKm.toStringAsFixed(1)} km aprox.',
+                            : '${_puntos.length} puntos · ${_distanciaKm.toStringAsFixed(1)} km aprox.'
+                                '${_grabando ? _tiempoTranscurrido() : ''}',
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: FqButton.secondary(
-                              label: 'Deshacer',
-                              dense: true,
-                              onPressed: _puntos.isEmpty || _guardando ? null : _deshacer,
+                      _modo == _ModoRuta.dibujar
+                          ? Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: FqButton.secondary(
+                                    label: 'Deshacer',
+                                    dense: true,
+                                    onPressed:
+                                        _puntos.isEmpty || _guardando ? null : _deshacer,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: FqButton.secondary(
+                                    label: 'Limpiar',
+                                    dense: true,
+                                    onPressed:
+                                        _puntos.isEmpty || _guardando ? null : _limpiar,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: FqButton.primary(
+                                    label: _guardando ? 'Guardando...' : 'Guardar',
+                                    dense: true,
+                                    onPressed: (_puntos.length < 2 || _guardando)
+                                        ? null
+                                        : _guardar,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: _grabando
+                                      ? FqButton.danger(
+                                          label: 'Detener',
+                                          dense: true,
+                                          onPressed: _detenerGrabacion,
+                                        )
+                                      : FqButton.secondary(
+                                          label: 'Iniciar grabacion',
+                                          dense: true,
+                                          onPressed:
+                                              _guardando ? null : _iniciarGrabacion,
+                                        ),
+                                ),
+                                if (!_grabando) ...<Widget>[
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: FqButton.primary(
+                                      label: _guardando ? 'Guardando...' : 'Guardar',
+                                      dense: true,
+                                      onPressed: (_puntos.length < 2 || _guardando)
+                                          ? null
+                                          : _guardar,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: FqButton.secondary(
-                              label: 'Limpiar',
-                              dense: true,
-                              onPressed: _puntos.isEmpty || _guardando ? null : _limpiar,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: FqButton.primary(
-                              label: _guardando ? 'Guardando...' : 'Guardar',
-                              dense: true,
-                              onPressed: (_puntos.length < 2 || _guardando)
-                                  ? null
-                                  : _guardar,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -333,6 +472,96 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  String _tiempoTranscurrido() {
+    if (_inicioGrabacion == null) return '';
+    final Duration transcurrido = DateTime.now().difference(_inicioGrabacion!);
+    final String mm = transcurrido.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final String ss = transcurrido.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return ' · $mm:$ss';
+  }
+}
+
+class _SelectorModo extends StatelessWidget {
+  const _SelectorModo({
+    required this.modo,
+    required this.habilitado,
+    required this.onCambiar,
+  });
+
+  final _ModoRuta modo;
+  final bool habilitado;
+  final ValueChanged<_ModoRuta> onCambiar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: FqColors.white.withValues(alpha: .97),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: FqColors.softShadow,
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: _Opcion(
+              label: 'Dibujar',
+              seleccionado: modo == _ModoRuta.dibujar,
+              habilitado: habilitado,
+              onTap: () => onCambiar(_ModoRuta.dibujar),
+            ),
+          ),
+          Expanded(
+            child: _Opcion(
+              label: 'Grabar GPS',
+              seleccionado: modo == _ModoRuta.gps,
+              habilitado: habilitado,
+              onTap: () => onCambiar(_ModoRuta.gps),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Opcion extends StatelessWidget {
+  const _Opcion({
+    required this.label,
+    required this.seleccionado,
+    required this.habilitado,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool seleccionado;
+  final bool habilitado;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: habilitado ? onTap : null,
+      borderRadius: BorderRadius.circular(9),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: seleccionado ? FqColors.voltDark : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: seleccionado ? FqColors.white : FqColors.ink,
+          ),
+        ),
+      ),
     );
   }
 }
