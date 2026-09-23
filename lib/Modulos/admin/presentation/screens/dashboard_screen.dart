@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_panel.dart';
-import 'package:fit_quest_go/core/widgets/fq_map_view.dart';
+import 'package:fit_quest_go/core/widgets/fq_live_map_view.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_kpi.dart';
 
@@ -36,7 +36,7 @@ class DashboardScreen extends StatelessWidget {
               final Widget mapa = FqPanel(
                 title: 'Actividad en vivo',
                 trailing: const FqTag('En linea', tone: FqTagTone.green),
-                child: const FqMapView(height: 260),
+                child: const FqLiveMapView(height: 260),
               );
               final Widget colas = FqPanel(
                 title: 'Colas prioritarias',

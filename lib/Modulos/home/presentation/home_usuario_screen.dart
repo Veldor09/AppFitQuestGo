@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta_api.dart';
@@ -55,6 +56,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   Future<void> _onMapCreated(MapboxMap controller) async {
     _pines = await controller.annotations.createCircleAnnotationManager();
     await _dibujarPines();
+    await centrarEnUbicacionActual(controller);
   }
 
   Future<void> _dibujarPines() async {
