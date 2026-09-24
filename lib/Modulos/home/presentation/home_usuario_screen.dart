@@ -16,7 +16,10 @@ class HomeUsuarioScreen extends StatefulWidget {
 }
 
 class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
-  static const String _accessToken = String.fromEnvironment('ACCESS_TOKEN');
+  static const String _accessToken = String.fromEnvironment(
+    'ACCESS_TOKEN',
+    defaultValue: String.fromEnvironment('MAPBOX_ACCESS_TOKEN'),
+  );
 
   final NodoApi _nodoApi = NodoApi();
   final AlertaApi _alertaApi = AlertaApi();

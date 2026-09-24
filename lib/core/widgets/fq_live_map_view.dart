@@ -13,7 +13,10 @@ class FqLiveMapView extends StatelessWidget {
 
   final double height;
 
-  static const String _accessToken = String.fromEnvironment('ACCESS_TOKEN');
+  static const String _accessToken = String.fromEnvironment(
+    'ACCESS_TOKEN',
+    defaultValue: String.fromEnvironment('MAPBOX_ACCESS_TOKEN'),
+  );
 
   @override
   Widget build(BuildContext context) {

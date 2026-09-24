@@ -6,6 +6,14 @@ class NodoApi {
 
   final ApiClient _client;
 
+  /// Nodos propuestos por el usuario actual (PRF-02).
+  Future<List<Nodo>> misNodos() async {
+    final dynamic data = await _client.get('/nodos/mios');
+    return (data as List<dynamic>)
+        .map((dynamic e) => Nodo.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<Nodo>> listar() async {
     final dynamic data = await _client.get('/nodos');
     return (data as List<dynamic>)

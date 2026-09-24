@@ -39,7 +39,10 @@ class PlanificarRutaScreen extends StatefulWidget {
 }
 
 class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
-  static const String _accessToken = String.fromEnvironment('ACCESS_TOKEN');
+  static const String _accessToken = String.fromEnvironment(
+    'ACCESS_TOKEN',
+    defaultValue: String.fromEnvironment('MAPBOX_ACCESS_TOKEN'),
+  );
   static const double _distanciaMinimaEntrePuntosM = 8;
 
   late final RutaApi _api = widget.api ?? RutaApi();
@@ -223,9 +226,13 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         dificultad: datos.dificultad,
         distanciaKm: _distanciaKm,
         puntos: _puntos,
+        visibilidad: datos.visibilidad,
       );
       if (!mounted) return;
-      notificarExito('Ruta guardada como privada. Podes publicarla desde "Mis rutas".');
+      final String msg = datos.visibilidad == 'publica'
+          ? 'Ruta enviada para revisión comunitaria.'
+          : 'Ruta guardada como ${datos.visibilidad == 'amigos' ? 'solo amigos' : 'privada'}.';
+      notificarExito(msg);
       setState(() {
         _puntos.clear();
         _inicioGrabacion = null;
@@ -242,6 +249,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     final TextEditingController nombre = TextEditingController();
     final TextEditingController actividad = TextEditingController();
     String dificultad = 'moderada';
+    String visibilidad = 'privada';
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     return showModalBottomSheet<_DatosRuta>(
@@ -272,7 +280,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       '${_puntos.length} puntos · ${_distanciaKm.toStringAsFixed(1)} km aprox.',
                       style: const TextStyle(fontSize: 11, color: FqColors.muted),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: nombre,
                       decoration: const InputDecoration(labelText: 'Nombre'),
@@ -294,15 +302,36 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       initialValue: dificultad,
                       decoration: const InputDecoration(labelText: 'Dificultad'),
                       items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem<String>(value: 'facil', child: Text('Facil')),
-                        DropdownMenuItem<String>(
-                          value: 'moderada',
-                          child: Text('Moderada'),
-                        ),
-                        DropdownMenuItem<String>(value: 'dificil', child: Text('Dificil')),
+                        DropdownMenuItem<String>(value: 'facil', child: Text('Fácil')),
+                        DropdownMenuItem<String>(value: 'moderada', child: Text('Moderada')),
+                        DropdownMenuItem<String>(value: 'dificil', child: Text('Difícil')),
                       ],
                       onChanged: (String? v) =>
                           setSheetState(() => dificultad = v ?? dificultad),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: visibilidad,
+                      decoration: const InputDecoration(
+                        labelText: 'Visibilidad de la ruta (RTE-08)',
+                        helperText: 'Pública la envía a revisión comunitaria',
+                      ),
+                      items: const <DropdownMenuItem<String>>[
+                        DropdownMenuItem<String>(
+                          value: 'privada',
+                          child: Text('🔒 Privada (Solo tú)'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'amigos',
+                          child: Text('👥 Solo amigos'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'publica',
+                          child: Text('🌍 Pública (Comunidad)'),
+                        ),
+                      ],
+                      onChanged: (String? v) =>
+                          setSheetState(() => visibilidad = v ?? visibilidad),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
@@ -313,6 +342,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                             nombre: nombre.text.trim(),
                             actividad: actividad.text.trim(),
                             dificultad: dificultad,
+                            visibilidad: visibilidad,
                           ),
                         );
                       },
@@ -579,9 +609,11 @@ class _DatosRuta {
     required this.nombre,
     required this.actividad,
     required this.dificultad,
+    this.visibilidad = 'privada',
   });
 
   final String nombre;
   final String actividad;
   final String dificultad;
+  final String visibilidad;
 }

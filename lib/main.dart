@@ -7,7 +7,10 @@ import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  const String mapboxAccessToken = String.fromEnvironment('ACCESS_TOKEN');
+  const String mapboxAccessToken = String.fromEnvironment(
+    'ACCESS_TOKEN',
+    defaultValue: String.fromEnvironment('MAPBOX_ACCESS_TOKEN'),
+  );
   if (mapboxAccessToken.isNotEmpty) {
     MapboxOptions.setAccessToken(mapboxAccessToken);
   }
