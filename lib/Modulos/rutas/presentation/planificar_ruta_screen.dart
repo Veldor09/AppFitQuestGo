@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
@@ -25,7 +26,12 @@ enum _ModoRuta { dibujar, gps }
 /// `mapbox_maps_flutter` (coordenadas del mapa, reexportada via
 /// `turf`/`geotypes`) — son dos tipos distintos con el mismo nombre.
 class PlanificarRutaScreen extends StatefulWidget {
-  const PlanificarRutaScreen({super.key, this.api, this.posicionStream});
+  const PlanificarRutaScreen({
+    super.key,
+    this.api,
+    this.posicionStream,
+    this.accessToken,
+  });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
@@ -34,15 +40,16 @@ class PlanificarRutaScreen extends StatefulWidget {
   /// usa `Geolocator.getPositionStream`.
   final Stream<geo.Position> Function()? posicionStream;
 
+  /// Token de Mapbox; por defecto el de la app. Las pruebas pasan '' para no
+  /// crear el mapa nativo.
+  final String? accessToken;
+
   @override
   State<PlanificarRutaScreen> createState() => _PlanificarRutaScreenState();
 }
 
 class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
-  static const String _accessToken = String.fromEnvironment(
-    'ACCESS_TOKEN',
-    defaultValue: String.fromEnvironment('MAPBOX_ACCESS_TOKEN'),
-  );
+  String get _accessToken => widget.accessToken ?? kMapboxAccessToken;
   static const double _distanciaMinimaEntrePuntosM = 8;
 
   late final RutaApi _api = widget.api ?? RutaApi();

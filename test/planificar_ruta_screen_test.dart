@@ -13,6 +13,7 @@ Widget _montar({Stream<Position>? streamFalso}) {
     home: Scaffold(
       body: PlanificarRutaScreen(
         api: RutaApi(),
+        accessToken: '',
         posicionStream: streamFalso == null ? null : (() => streamFalso),
       ),
     ),

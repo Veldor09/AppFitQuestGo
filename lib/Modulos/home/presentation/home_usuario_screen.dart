@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta.dart';
@@ -16,10 +17,7 @@ class HomeUsuarioScreen extends StatefulWidget {
 }
 
 class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
-  static const String _accessToken = String.fromEnvironment(
-    'ACCESS_TOKEN',
-    defaultValue: String.fromEnvironment('MAPBOX_ACCESS_TOKEN'),
-  );
+  static const String _accessToken = kMapboxAccessToken;
 
   final NodoApi _nodoApi = NodoApi();
   final AlertaApi _alertaApi = AlertaApi();
