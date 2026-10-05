@@ -4,3 +4,7 @@ const String kMapboxAccessToken = String.fromEnvironment(
   'ACCESS_TOKEN',
   defaultValue: String.fromEnvironment(
     'MAPBOX_ACCESS_TOKEN',
+    defaultValue:
+        'pk.eyJ1Ijoicm9zaGlpaTk2IiwiYSI6ImNtdGdyamd4bTE4b2syeHBucWRjOTg0a24ifQ.uS6GPL3MIykjoU3sip1n9g',
+  ),
+);
