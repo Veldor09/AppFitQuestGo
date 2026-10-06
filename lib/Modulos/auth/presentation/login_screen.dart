@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/olvide_contrasena_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
@@ -35,19 +36,22 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  bool _valido() {
+  bool _valido(AppLocalizations l10n) {
     return todoValido(<(String, List<Validador>)>[
-      (_email.text, <Validador>[requerido('El correo es obligatorio'),
-        formatoCorreo]),
-      (_password.text, <Validador>[requerido('Ingresa tu contrasena')]),
+      (_email.text, <Validador>[
+        requerido(l10n.validacionCorreoObligatorio),
+        formatoCorreo,
+      ]),
+      (_password.text, <Validador>[requerido(l10n.loginValidacionContrasena)]),
     ]);
   }
 
   Future<void> _iniciar() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
-    if (!_valido()) {
+    if (!_valido(l10n)) {
       setState(() => _forzarError = true);
-      notificarError('Revisa los campos marcados en rojo');
+      notificarError(l10n.comunRevisaCampos);
       return;
     }
     setState(() => _cargando = true);
@@ -57,16 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
         contrasena: _password.text,
       );
       if (!mounted) return;
-      notificarExito('Inicio de sesion exitoso');
+      notificarExito(l10n.loginExito);
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       _fallar(
-        e.statusCode == 401
-            ? 'Correo o contrasena incorrectos'
-            : e.message,
+        e.statusCode == 401 ? l10n.loginCredencialesIncorrectas : e.message,
       );
     } catch (_) {
-      _fallar('No se pudo conectar con el servidor. Intenta de nuevo.');
+      _fallar(l10n.loginErrorConexion);
     }
   }
 
@@ -78,14 +80,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: FqColors.paper,
       body: SafeArea(
         child: Column(
           children: <Widget>[
             FqAppHeader(
-              title: 'Bienvenido de vuelta',
-              subtitle: 'Continua tu recorrido',
+              title: l10n.loginTitulo,
+              subtitle: l10n.loginSubtitulo,
               onLeading: () => Navigator.of(context).maybePop(),
             ),
             Expanded(
@@ -105,21 +108,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         CampoTexto(
-                          label: 'Correo',
+                          label: l10n.comunCorreo,
                           controller: _email,
-                          hintText: 'tucorreo@dominio.com',
+                          hintText: l10n.comunCorreoHint,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           autofillHints: const <String>[AutofillHints.email],
                           forzarError: _forzarError,
                           reglas: <Validador>[
-                            requerido('El correo es obligatorio'),
+                            requerido(l10n.validacionCorreoObligatorio),
                             formatoCorreo,
                           ],
                         ),
                         const SizedBox(height: FqGap.sm),
                         CampoTexto(
-                          label: 'Contrasena',
+                          label: l10n.comunContrasena,
                           controller: _password,
                           obscureText: true,
                           textInputAction: TextInputAction.done,
@@ -129,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           forzarError: _forzarError,
                           onSubmitted: (_) => _iniciar(),
                           reglas: <Validador>[
-                            requerido('Ingresa tu contrasena'),
+                            requerido(l10n.loginValidacionContrasena),
                           ],
                         ),
                         Align(
@@ -147,9 +150,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   MaterialTapTargetSize.shrinkWrap,
                               foregroundColor: FqColors.river,
                             ),
-                            child: const Text(
-                              'Olvidaste tu contrasena?',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.loginOlvidasteContrasena,
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -158,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: FqGap.xl),
                         FqButton.primary(
-                          label: 'Iniciar sesion',
+                          label: l10n.comunIniciarSesion,
                           loading: _cargando,
                           onPressed: _cargando ? null : _iniciar,
                         ),

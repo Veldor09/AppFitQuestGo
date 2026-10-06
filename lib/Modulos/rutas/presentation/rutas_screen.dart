@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
-import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
-import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
-import 'package:fit_quest_go/core/widgets/fq_tag.dart';
+import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
+import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 
 /// RTE-01/02/03 · Rutas (vista de usuario).
 /// - "Explorar" (RTE-01): rutas publicadas comunitarias (`/rutas/explorar`).
@@ -74,23 +76,24 @@ class _RutasScreenState extends State<RutasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return ColoredBox(
       color: FqColors.paper,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
-                'Rutas',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                l10n.rutasTitulo,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _Segmentado(
-                opciones: const <String>['Explorar', 'Mis rutas', 'Guardadas'],
+                opciones: <String>[l10n.rutasExplorar, l10n.rutasMisRutas, 'Guardadas'],
                 seleccion: _tab,
                 onSeleccion: (int i) => setState(() => _tab = i),
               ),
@@ -224,6 +227,7 @@ class _ListaRutas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Ruta>>(
       future: futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Ruta>> snap) {
@@ -233,11 +237,11 @@ class _ListaRutas extends StatelessWidget {
         if (snap.hasError) {
           return FqEmptyState(
             icon: Icons.wifi_off_rounded,
-            title: 'No se pudo cargar',
-            message: _mensajeError(snap.error!),
+            title: l10n.rutasNoSePudoCargar,
+            message: _mensajeError(l10n, snap.error!),
             action: TextButton(
               onPressed: onReintentar,
-              child: const Text('Reintentar'),
+              child: Text(l10n.rutasReintentar),
             ),
           );
         }
@@ -266,9 +270,9 @@ class _ListaRutas extends StatelessWidget {
     );
   }
 
-  String _mensajeError(Object error) {
+  String _mensajeError(AppLocalizations l10n, Object error) {
     if (error is ApiException) return error.message;
-    return 'No se pudo conectar con el servidor.';
+    return l10n.rutasErrorConexionGenerico;
   }
 }
 
@@ -291,9 +295,10 @@ class _TarjetaRuta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => _mostrarDetalle(context, ruta),
+      onTap: () => _abrirDetalle(context),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -327,7 +332,8 @@ class _TarjetaRuta extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${ruta.actividad} · ${ruta.distanciaKm.toStringAsFixed(1)} km · ${ruta.dificultad}',
+                    '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km · '
+                    '${dificultadLabel(l10n, ruta.dificultad)}',
                     style: const TextStyle(fontSize: 10, color: FqColors.muted),
                   ),
                 ],
@@ -344,8 +350,8 @@ class _TarjetaRuta extends StatelessWidget {
               onPressed: onToggleFavorita,
             ),
             if (mostrarEstado) ...<Widget>[
-              const SizedBox(width: 4),
-              FqTag(ruta.estado, tone: _tonoEstado(ruta.estado)),
+              const SizedBox(width: 8),
+              EtiquetaEstadoRuta(ruta.estado),
             ],
           ],
         ),
@@ -353,88 +359,17 @@ class _TarjetaRuta extends StatelessWidget {
     );
   }
 
-  FqTagTone _tonoEstado(String estado) {
-    switch (estado) {
-      case 'Publicada':
-        return FqTagTone.green;
-      case 'Pendiente':
-        return FqTagTone.amber;
-      case 'Rechazada':
-        return FqTagTone.red;
-      default:
-        return FqTagTone.neutral;
-    }
-  }
-
-  void _mostrarDetalle(BuildContext context, Ruta ruta) {
-    final bool puedePublicar = mostrarEstado && ruta.estado == 'Privada';
-    bool enviando = false;
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (BuildContext ctx) => StatefulBuilder(
-        builder: (BuildContext ctx, StateSetter setSheetState) {
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(
-                  ruta.nombre,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                FqTag(ruta.estado, tone: _tonoEstado(ruta.estado)),
-                const SizedBox(height: 14),
-                _fila('Actividad', ruta.actividad),
-                _fila('Dificultad', ruta.dificultad),
-                _fila('Distancia', '${ruta.distanciaKm.toStringAsFixed(1)} km'),
-                _fila('Puntos del trazo', '${ruta.puntos.length}'),
-                if (ruta.creadoPorNombre != null)
-                  _fila('Propuesta por', ruta.creadoPorNombre!),
-                if (puedePublicar) ...<Widget>[
-                  const SizedBox(height: 16),
-                  FqButton.primary(
-                    label: enviando ? 'Enviando...' : 'Enviar a revision',
-                    dense: true,
-                    onPressed: enviando
-                        ? null
-                        : () async {
-                            setSheetState(() => enviando = true);
-                            try {
-                              await api.solicitarPublicacion(ruta.id);
-                              if (ctx.mounted) Navigator.of(ctx).pop();
-                              onCambio();
-                              notificarExito('Ruta enviada a revision');
-                            } catch (_) {
-                              setSheetState(() => enviando = false);
-                              if (ctx.mounted) {
-                                notificarError('No se pudo enviar la ruta');
-                              }
-                            }
-                          },
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _fila(String label, String valor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text(label, style: const TextStyle(fontSize: 11, color: FqColors.muted)),
-          Text(
-            valor,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-          ),
-        ],
+  /// Detalle a pantalla completa (mapa con el trazo + datos). Solo en "Mis
+  /// rutas" se ofrece enviar a revision, y solo si la ruta sigue Privada.
+  void _abrirDetalle(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext _) => RutaDetalleScreen(
+          ruta: ruta,
+          api: api,
+          puedeEnviarARevision: mostrarEstado,
+          onCambio: onCambio,
+        ),
       ),
     );
   }

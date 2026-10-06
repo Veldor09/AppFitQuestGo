@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
 
@@ -31,20 +32,20 @@ class AdminListaMaqueta extends StatefulWidget {
 }
 
 class _AdminListaMaquetaState extends State<AdminListaMaqueta> {
-  static const List<String> _tabs = <String>[
-    'Pendientes',
-    'Publicados',
-    'Rechazados',
-    'Archivados',
-  ];
-
   int _tab = 0;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final List<String> tabs = <String>[
+      l10n.admTabPendientes,
+      l10n.admTabPublicados,
+      l10n.admTabRechazados,
+      l10n.admTabArchivados,
+    ];
     return AdminListScaffold(
       searchHint: widget.searchHint,
-      tabs: _tabs,
+      tabs: tabs,
       tabIndex: _tab,
       onTab: (int i) => setState(() => _tab = i),
       toolbarTrailing: widget.nuevoLabel == null
@@ -55,9 +56,7 @@ class _AdminListaMaquetaState extends State<AdminListaMaqueta> {
               expand: false,
               dense: true,
               onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Alta de registro: pendiente de backend.'),
-                ),
+                SnackBar(content: Text(l10n.admAltaPendienteBackend)),
               ),
             ),
       child: AdminDataTable(

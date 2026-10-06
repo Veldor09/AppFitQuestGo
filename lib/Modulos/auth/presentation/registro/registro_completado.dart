@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_brand_mark.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// APP-08 · Registro completado (`.fq-center-state`).
 /// Se muestra tras crear la cuenta; el CTA cierra el asistente y deja ver la
@@ -15,6 +16,7 @@ class RegistroCompletadoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(
@@ -34,9 +36,9 @@ class RegistroCompletadoScreen extends StatelessWidget {
                 children: <Widget>[
                   const FqBrandMark(size: 66, iconData: Icons.check),
                   const SizedBox(height: 17),
-                  const Text(
-                    'Todo listo!',
-                    style: TextStyle(
+                  Text(
+                    l10n.registroCompletadoTitulo,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.8,
@@ -44,10 +46,10 @@ class RegistroCompletadoScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 7),
-                  const Text(
-                    'Tu perfil esta preparado. Ya puedes explorar FitQuest Go.',
+                  Text(
+                    l10n.registroCompletadoSubtitulo,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
                       height: 1.55,
                       color: FqColors.muted,
@@ -57,7 +59,7 @@ class RegistroCompletadoScreen extends StatelessWidget {
                   ConstrainedBox(
                     constraints: const BoxConstraints(minWidth: 200),
                     child: FqButton.primary(
-                      label: 'Explorar el mapa',
+                      label: l10n.registroCompletadoCta,
                       expand: false,
                       onPressed: onContinuar,
                     ),

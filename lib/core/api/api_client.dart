@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -101,6 +102,65 @@ class ApiClient {
       default:
         throw ArgumentError('Metodo no soportado: $metodo');
     }
+  }
+
+  /// Sube un archivo (multipart/form-data, un solo campo). Como cualquier POST
+  /// no se reintenta ante un fallo de red; si el token vencio (401) se renueva
+  /// y se repite una vez.
+  Future<dynamic> subirArchivo(
+    String path, {
+    required String campo,
+    required List<int> bytes,
+    required String nombreArchivo,
+  }) async {
+    Future<http.Response> intento() async {
+      final String? access = await _tokens.leerAccess();
+      final http.MultipartRequest req =
+          http.MultipartRequest('POST', Uri.parse('$_baseUrl$path'))
+            ..headers.addAll(<String, String>{
+              'X-Cliente-Movil': '1',
+              if (access != null) 'Authorization': 'Bearer $access',
+            })
+            ..files.add(
+              http.MultipartFile.fromBytes(campo, bytes, filename: nombreArchivo),
+            );
+      return http.Response.fromStream(await _client.send(req));
+    }
+
+    return _procesar(await _conRenovacion(intento));
+  }
+
+  /// GET de un recurso binario (p. ej. una foto), con el mismo manejo de
+  /// sesion y de errores que el resto de las llamadas.
+  Future<Uint8List> getBytes(String path) async {
+    Future<http.Response> intento() async {
+      final String? access = await _tokens.leerAccess();
+      return _client.get(
+        Uri.parse('$_baseUrl$path'),
+        headers: <String, String>{
+          'X-Cliente-Movil': '1',
+          if (access != null) 'Authorization': 'Bearer $access',
+        },
+      );
+    }
+
+    final http.Response res = await _conRenovacion(intento);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      _procesar(res); // lanza ApiException con el mensaje del servidor
+    }
+    return res.bodyBytes;
+  }
+
+  Future<http.Response> _conRenovacion(
+    Future<http.Response> Function() intento,
+  ) async {
+    final http.Response res = await intento();
+    if (res.statusCode != 401) return res;
+    if (!await _renovarToken()) {
+      await _tokens.limpiar();
+      return res;
+    }
+    return intento();
   }
 
   Future<bool> _renovarToken() async {

@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// APP-07 · Registro · Permisos. Explica y "solicita" los permisos criticos.
 ///
 /// En web no hay permisos nativos que pedir; los interruptores quedan como
 /// preferencia inicial del usuario. La creacion de la cuenta se dispara con el
 /// boton del flujo, no aqui.
+///
+/// `valores`/`onToggle` viajan por clave estable (ver `_RegistroFlujoScreenState._permisos`),
+/// no por el texto visible: mismo criterio que `PasoActividades`/`PasoIntereses`.
 class PasoPermisos extends StatelessWidget {
   const PasoPermisos({
     super.key,
@@ -18,32 +22,49 @@ class PasoPermisos extends StatelessWidget {
   final Map<String, bool> valores;
   final void Function(String clave, bool valor) onToggle;
 
-  static const List<(String, String, IconData)> _items =
-      <(String, String, IconData)>[
-    ('Ubicacion', 'Mapa vivo y tracking de rutas', Icons.my_location),
-    ('Notificaciones', 'Estados, eventos y alertas cercanas',
-        Icons.notifications_none),
-    ('Actividad fisica', 'Metricas durante el recorrido',
-        Icons.favorite_border),
+  static const List<(String, IconData)> _claves = <(String, IconData)>[
+    ('ubicacion', Icons.my_location),
+    ('notificaciones', Icons.notifications_none),
+    ('actividadFisica', Icons.favorite_border),
   ];
+
+  static (String, String) _textos(AppLocalizations l10n, String clave) {
+    switch (clave) {
+      case 'ubicacion':
+        return (l10n.permisoUbicacionTitulo, l10n.permisoUbicacionDetalle);
+      case 'notificaciones':
+        return (
+          l10n.permisoNotificacionesTitulo,
+          l10n.permisoNotificacionesDetalle,
+        );
+      default:
+        return (
+          l10n.permisoActividadFisicaTitulo,
+          l10n.permisoActividadFisicaDetalle,
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        for (final (String titulo, String detalle, IconData icon) in _items)
-          Padding(
-            padding: const EdgeInsets.only(bottom: FqGap.md),
-            child: _PermisoTile(
-              icon: icon,
-              titulo: titulo,
-              detalle: detalle,
-              valor: valores[titulo] ?? false,
-              onChanged: (bool v) => onToggle(titulo, v),
-            ),
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final List<Widget> tiles = <Widget>[];
+    for (final (String clave, IconData icon) in _claves) {
+      final (String titulo, String detalle) = _textos(l10n, clave);
+      tiles.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: FqGap.md),
+          child: _PermisoTile(
+            icon: icon,
+            titulo: titulo,
+            detalle: detalle,
+            valor: valores[clave] ?? false,
+            onChanged: (bool v) => onToggle(clave, v),
           ),
-      ],
-    );
+        ),
+      );
+    }
+    return Column(children: tiles);
   }
 }
 

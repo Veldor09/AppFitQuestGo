@@ -56,7 +56,7 @@ class RutaApi {
 
   Future<Ruta> crear({
     required String nombre,
-    required String actividad,
+    required List<String> actividades,
     String? dificultad,
     required double distanciaKm,
     required List<PuntoRuta> puntos,
@@ -64,7 +64,7 @@ class RutaApi {
   }) async {
     final dynamic data = await _client.post('/rutas', {
       'nombre': nombre,
-      'actividad': actividad,
+      'actividades': actividades,
       'dificultad': ?dificultad,
       'distanciaKm': distanciaKm,
       'visibilidad': ?visibilidad,

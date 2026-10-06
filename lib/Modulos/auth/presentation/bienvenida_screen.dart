@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_brand_mark.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/login_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro/registro_flujo.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/auth_layout.dart';
@@ -14,24 +15,24 @@ class BienvenidaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return AuthLayout(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.only(top: 26),
+          Padding(
+            padding: const EdgeInsets.only(top: 26),
             child: AuthHero(
-              leading: FqBrandMark(),
-              tagLabel: 'Muevete con tu ciudad',
-              title: 'Tu proxima aventura comienza cerca.',
-              subtitle:
-                  'Descubre rutas, comparte alertas y activa a tu comunidad.',
+              leading: const FqBrandMark(),
+              tagLabel: l10n.bienvenidaTagline,
+              title: l10n.bienvenidaTitulo,
+              subtitle: l10n.bienvenidaSubtitulo,
             ),
           ),
           const SizedBox(height: 40),
           const Spacer(),
           FqButton.primary(
-            label: 'Crear cuenta',
+            label: l10n.comunCrearCuenta,
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute<void>(
                 builder: (_) => const RegistroFlujoScreen(),
@@ -40,17 +41,17 @@ class BienvenidaScreen extends StatelessWidget {
           ),
           const SizedBox(height: FqGap.md),
           FqButton.secondary(
-            label: 'Iniciar sesion',
+            label: l10n.comunIniciarSesion,
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
             ),
           ),
           const SizedBox(height: FqGap.md),
-          const Center(
+          Center(
             child: Text(
-              'Al continuar aceptas los Terminos y la Politica de privacidad.',
+              l10n.bienvenidaAvisoLegal,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 9, color: Color(0xFF67726D)),
+              style: const TextStyle(fontSize: 9, color: Color(0xFF67726D)),
             ),
           ),
         ],

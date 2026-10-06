@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Generado por `flutter gen-l10n` a partir de lib/l10n/*.arb (ver l10n.yaml).
+# Se regenera solo; no versionar codigo derivado.
+/lib/l10n/gen/
+
 # Symbolication related
 app.*.symbols
 

@@ -4,19 +4,22 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Modal de Terminos y condiciones que se muestra desde el registro.
 ///
 /// El texto es un contenido base: debe ser revisado y reemplazado por el
-/// equipo legal antes de publicar la app.
+/// equipo legal antes de publicar la app. Esto aplica por igual a las 3
+/// traducciones (es/en/pt_BR): ninguna es definitiva.
 class TerminosModal {
   const TerminosModal._();
 
   static Future<void> mostrar(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar',
+      barrierLabel: l10n.comunCerrar,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 190),
       pageBuilder: (_, _, _) => const _TerminosDialog(),
@@ -40,48 +43,19 @@ class TerminosModal {
 class _TerminosDialog extends StatelessWidget {
   const _TerminosDialog();
 
-  static const List<(String, String)> _secciones = <(String, String)>[
-    (
-      '1. Aceptacion de los terminos',
-      'Al crear una cuenta en FitQuest Go confirmas que has leido, entendido '
-          'y aceptas estos terminos y condiciones, asi como la politica de '
-          'privacidad de la aplicacion. Si no estas de acuerdo, no debes '
-          'registrarte ni usar la app.',
-    ),
-    (
-      '2. Uso de la cuenta',
-      'Eres responsable de la informacion que registras y de mantener la '
-          'confidencialidad de tu contrasena. FitQuest Go puede suspender o '
-          'desactivar cuentas que incumplan estos terminos o que se usen de '
-          'forma fraudulenta.',
-    ),
-    (
-      '3. Ubicacion y datos de actividad',
-      'Algunas funciones (rutas, alertas cercanas, mapa en vivo) requieren '
-          'acceso a tu ubicacion y datos de actividad fisica. Estos datos se '
-          'usan unicamente para ofrecer esas funciones y para mejorar la '
-          'seguridad de la comunidad.',
-    ),
-    (
-      '4. Contenido generado por usuarios',
-      'Al publicar rutas, alertas, reportes o comentarios, garantizas que '
-          'tienes derecho a compartir ese contenido y aceptas que pueda ser '
-          'revisado o moderado por el equipo de FitQuest Go.',
-    ),
-    (
-      '5. Cambios en los terminos',
-      'Estos terminos pueden actualizarse. Si el cambio es sustancial, se '
-          'notificara dentro de la app antes de que entre en vigor.',
-    ),
-    (
-      '6. Contacto',
-      'Para preguntas sobre estos terminos o sobre tus datos, puedes '
-          'escribir al equipo de soporte de FitQuest Go.',
-    ),
-  ];
+  static List<(String, String)> _secciones(AppLocalizations l10n) =>
+      <(String, String)>[
+        (l10n.terminosSeccion1Titulo, l10n.terminosSeccion1Texto),
+        (l10n.terminosSeccion2Titulo, l10n.terminosSeccion2Texto),
+        (l10n.terminosSeccion3Titulo, l10n.terminosSeccion3Texto),
+        (l10n.terminosSeccion4Titulo, l10n.terminosSeccion4Texto),
+        (l10n.terminosSeccion5Titulo, l10n.terminosSeccion5Texto),
+        (l10n.terminosSeccion6Titulo, l10n.terminosSeccion6Texto),
+      ];
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -98,10 +72,10 @@ class _TerminosDialog extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 20, 12, 12),
                   child: Row(
                     children: <Widget>[
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Terminos y condiciones',
-                          style: TextStyle(
+                          l10n.terminosTitulo,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: FqColors.ink,
@@ -128,7 +102,7 @@ class _TerminosDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         for (final (String titulo, String texto)
-                            in _secciones)
+                            in _secciones(l10n))
                           Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: Column(
@@ -162,7 +136,7 @@ class _TerminosDialog extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: FqButton.primary(
-                    label: 'Entendido',
+                    label: l10n.terminosEntendido,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),

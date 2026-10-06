@@ -5,6 +5,7 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/insignias_screen.dart';
@@ -14,6 +15,7 @@ import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/editar_perfil_m
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/intereses_modal.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
 
 
 class PerfilScreen extends StatefulWidget {
@@ -72,6 +74,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return ColoredBox(
       color: FqColors.paper,
       child: FutureBuilder<Usuario>(
@@ -84,7 +87,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
             return _PerfilError(
               mensaje: snap.error is ApiException
                   ? (snap.error! as ApiException).message
-                  : 'No se pudo cargar tu perfil.',
+                  : l10n.perfilErrorGenerico,
               onReintentar: _recargar,
             );
           }
@@ -139,6 +142,7 @@ class _PerfilContenido extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -164,7 +168,7 @@ class _PerfilContenido extends StatelessWidget {
                 const SizedBox(height: 10),
                 _MenuFila(
                   icono: Icons.route_outlined,
-                  texto: 'Mis rutas',
+                  texto: l10n.rutasMisRutas,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -177,21 +181,21 @@ class _PerfilContenido extends StatelessWidget {
                 ),
                 _MenuFila(
                   icono: Icons.send_outlined,
-                  texto: 'Mis aportes',
+                  texto: l10n.perfilMisAportes,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(builder: (_) => const AportesScreen()),
                   ),
                 ),
                 _MenuFila(
                   icono: Icons.military_tech_outlined,
-                  texto: 'Insignias',
+                  texto: l10n.perfilInsignias,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(builder: (_) => const InsigniasScreen()),
                   ),
                 ),
                 _MenuFila(
                   icono: Icons.notifications_none_rounded,
-                  texto: 'Notificaciones',
+                  texto: l10n.permisoNotificacionesTitulo,
                   onTap: () async {
                     final bool? ok = await Navigator.of(context).push<bool>(
                       MaterialPageRoute<bool>(builder: (_) => PreferenciasScreen(usuario: usuario)),
@@ -201,7 +205,7 @@ class _PerfilContenido extends StatelessWidget {
                 ),
                 _MenuFila(
                   icono: Icons.download_outlined,
-                  texto: 'Mapas offline',
+                  texto: l10n.perfilMapasOffline,
                   onTap: () async {
                     final bool? ok = await Navigator.of(context).push<bool>(
                       MaterialPageRoute<bool>(builder: (_) => PreferenciasScreen(usuario: usuario)),
@@ -211,7 +215,7 @@ class _PerfilContenido extends StatelessWidget {
                 ),
                 _MenuFila(
                   icono: Icons.tune_rounded,
-                  texto: 'Preferencias y privacidad',
+                  texto: l10n.perfilPreferencias,
                   onTap: () async {
                     final bool? ok = await Navigator.of(context).push<bool>(
                       MaterialPageRoute<bool>(builder: (_) => PreferenciasScreen(usuario: usuario)),
@@ -243,6 +247,7 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double topInset = MediaQuery.of(context).padding.top;
 
     return Container(
@@ -295,7 +300,7 @@ class _Hero extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${usuario.etiquetaRol} · ${usuario.estado}',
+                  '${rolLabel(l10n, usuario.idrol)} · ${estadoUsuarioLabel(l10n, usuario.estado)}',
                   style: const TextStyle(
                     color: Color(0xFFB7C3D1),
                     fontSize: 10,
@@ -325,7 +330,7 @@ class _Hero extends StatelessWidget {
               onPressed: onAjustes,
               icon: const Icon(Icons.tune_rounded, size: 18),
               color: FqColors.white,
-              tooltip: 'Ajustes de la cuenta',
+              tooltip: l10n.perfilAjustesCuenta,
               splashRadius: 18,
             ),
           ),
@@ -421,6 +426,7 @@ class _MetricasEjemploState extends State<_MetricasEjemplo> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<Map<String, dynamic>>(
       future: _stats,
       builder: (BuildContext ctx, AsyncSnapshot<Map<String, dynamic>> snap) {
@@ -443,11 +449,11 @@ class _MetricasEjemploState extends State<_MetricasEjemplo> {
           child: IntrinsicHeight(
             child: Row(
               children: <Widget>[
-                Expanded(child: _Metrica(valor: km, etiqueta: 'KM')),
+                Expanded(child: _Metrica(valor: km, etiqueta: l10n.perfilKm)),
                 Container(width: 1, color: FqColors.border),
-                Expanded(child: _Metrica(valor: rutas, etiqueta: 'RUTAS')),
+                Expanded(child: _Metrica(valor: rutas, etiqueta: l10n.perfilMetricaRutas)),
                 Container(width: 1, color: FqColors.border),
-                Expanded(child: _Metrica(valor: insignias, etiqueta: 'INSIGNIAS')),
+                Expanded(child: _Metrica(valor: insignias, etiqueta: l10n.perfilMetricaInsignias)),
               ],
             ),
           ),
@@ -508,8 +514,9 @@ class _MenuFila extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return InkWell(
-      onTap: onTap ?? () => notificarInfo('$texto: disponible pronto'),
+      onTap: onTap ?? () => notificarInfo(l10n.perfilDisponiblePronto(texto)),
       child: Container(
         constraints: const BoxConstraints(minHeight: 50),
         decoration: const BoxDecoration(
@@ -607,13 +614,14 @@ class _PerfilError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FqEmptyState(
       icon: Icons.person_off_outlined,
-      title: 'No se pudo cargar tu perfil',
+      title: l10n.perfilNoSePudoCargar,
       message: mensaje,
       action: TextButton(
         onPressed: onReintentar,
-        child: const Text('Reintentar'),
+        child: Text(l10n.rutasReintentar),
       ),
     );
   }
@@ -640,6 +648,7 @@ class _HojaAjustes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -659,9 +668,9 @@ class _HojaAjustes extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Ajustes de la cuenta',
-              style: TextStyle(
+            Text(
+              l10n.perfilAjustesCuenta,
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: FqColors.ink,
@@ -669,15 +678,19 @@ class _HojaAjustes extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Información personal y estado de tu cuenta.',
-              style: TextStyle(fontSize: 10, color: FqColors.muted),
+            Text(
+              l10n.perfilDatosDeLaBd,
+              style: const TextStyle(fontSize: 10, color: FqColors.muted),
             ),
             const SizedBox(height: 14),
-            _Dato(label: 'Nombre', valor: usuario.nombreUser),
-            _Dato(label: 'Correo', valor: usuario.emailUser),
-            _Dato(label: 'Rol', valor: usuario.etiquetaRol),
-            _Dato(label: 'Estado', valor: usuario.estado, ultimo: true),
+            _Dato(label: l10n.comunNombre, valor: usuario.nombreUser),
+            _Dato(label: l10n.comunCorreo, valor: usuario.emailUser),
+            _Dato(label: l10n.perfilRol, valor: rolLabel(l10n, usuario.idrol)),
+            _Dato(
+              label: l10n.perfilEstado,
+              valor: estadoUsuarioLabel(l10n, usuario.estado),
+              ultimo: true,
+            ),
             const SizedBox(height: 16),
             FqButton.primary(
               label: 'Editar perfil',
@@ -708,7 +721,7 @@ class _HojaAjustes extends StatelessWidget {
             if (onCerrarSesion != null) ...<Widget>[
               const SizedBox(height: 10),
               FqButton.danger(
-                label: 'Cerrar sesión',
+                label: l10n.perfilCerrarSesion,
                 icon: Icons.logout_rounded,
                 onPressed: () async {
                   Navigator.of(context).pop();

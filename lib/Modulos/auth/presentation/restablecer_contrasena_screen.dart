@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
 
@@ -42,24 +43,26 @@ class _RestablecerContrasenaScreenState
     super.dispose();
   }
 
-  bool _valido() {
+  bool _valido(AppLocalizations l10n) {
     return todoValido(<(String, List<Validador>)>[
       (_codigo.text, <Validador>[
-        requerido('Ingresa el codigo'),
-        (String v) => v.trim().length == 6 ? null : 'El codigo tiene 6 digitos',
+        requerido(l10n.restablecerTitulo),
+        (String v) =>
+            v.trim().length == 6 ? null : l10n.restablecerCodigoLongitud,
       ]),
       (_password.text, <Validador>[
-        requerido('Ingresa la nueva contrasena'),
+        requerido(l10n.restablecerValidacionContrasena),
         minCaracteres(8),
       ]),
     ]);
   }
 
   Future<void> _confirmar() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
-    if (!_valido()) {
+    if (!_valido(l10n)) {
       setState(() => _forzarError = true);
-      notificarError('Revisa los campos marcados en rojo');
+      notificarError(l10n.comunRevisaCampos);
       return;
     }
     setState(() => _cargando = true);
@@ -70,16 +73,16 @@ class _RestablecerContrasenaScreenState
         nuevaContrasena: _password.text,
       );
       if (!mounted) return;
-      notificarExito('Contrasena actualizada. Inicia sesion con la nueva.');
+      notificarExito(l10n.restablecerExito);
       Navigator.of(context)
         ..pop() // cierra RestablecerContrasenaScreen
         ..pop(); // cierra OlvideContrasenaScreen, vuelve a LoginScreen
     } on ApiException catch (e) {
       _fallar(
-        e.statusCode == 401 ? 'Codigo invalido o expirado' : e.message,
+        e.statusCode == 401 ? l10n.restablecerCodigoInvalido : e.message,
       );
     } catch (_) {
-      _fallar('No se pudo conectar con el servidor. Intenta de nuevo.');
+      _fallar(l10n.loginErrorConexion);
     }
   }
 
@@ -91,14 +94,15 @@ class _RestablecerContrasenaScreenState
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: FqColors.paper,
       body: SafeArea(
         child: Column(
           children: <Widget>[
             FqAppHeader(
-              title: 'Ingresa el codigo',
-              subtitle: 'Lo enviamos a ${widget.email}',
+              title: l10n.restablecerTitulo,
+              subtitle: l10n.restablecerSubtitulo(widget.email),
               onLeading: () => Navigator.of(context).maybePop(),
             ),
             Expanded(
@@ -118,20 +122,22 @@ class _RestablecerContrasenaScreenState
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         CampoTexto(
-                          label: 'Codigo de 6 digitos',
+                          label: l10n.restablecerCodigoLabel,
                           controller: _codigo,
                           keyboardType: TextInputType.number,
                           maxCaracteres: 6,
                           reglas: <Validador>[
-                            requerido('Ingresa el codigo'),
-                            (String v) => v.trim().length == 6 ? null : 'El codigo tiene 6 digitos',
+                            requerido(l10n.restablecerTitulo),
+                            (String v) => v.trim().length == 6
+                                ? null
+                                : l10n.restablecerCodigoLongitud,
                           ],
                           forzarError: _forzarError,
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: FqGap.sm),
                         CampoTexto(
-                          label: 'Contrasena nueva',
+                          label: l10n.restablecerContrasenaNuevaLabel,
                           controller: _password,
                           obscureText: true,
                           textInputAction: TextInputAction.done,
@@ -141,13 +147,13 @@ class _RestablecerContrasenaScreenState
                           forzarError: _forzarError,
                           onSubmitted: (_) => _confirmar(),
                           reglas: <Validador>[
-                            requerido('Ingresa la nueva contrasena'),
+                            requerido(l10n.restablecerValidacionContrasena),
                             minCaracteres(8),
                           ],
                         ),
                         const SizedBox(height: FqGap.xl),
                         FqButton.primary(
-                          label: 'Actualizar contrasena',
+                          label: l10n.restablecerActualizarContrasena,
                           loading: _cargando,
                           onPressed: _cargando ? null : _confirmar,
                         ),

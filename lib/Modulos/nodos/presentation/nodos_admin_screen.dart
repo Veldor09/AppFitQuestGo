@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
+import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
 
 /// ADM-07 · Gestion de nodos / POIs. Pantalla **funcional**: consume
 /// `GET /nodos/pendientes` y aprueba/rechaza via `PATCH /nodos/:id/estado`
@@ -40,19 +43,21 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
     });
   }
 
-  Future<void> _decidir(Nodo nodo, String estado) async {
+  Future<void> _decidir(AppLocalizations l10n, Nodo nodo, String estado) async {
     setState(() => _procesando.add(nodo.id));
     try {
       await _api.cambiarEstado(nodo.id, estado);
       if (!mounted) return;
       notificarExito(
-        estado == 'Aprobado' ? '${nodo.nombre} aprobado' : '${nodo.nombre} rechazado',
+        estado == 'Aprobado'
+            ? l10n.nodosAprobadoExito(nodo.nombre)
+            : l10n.nodosRechazadoExito(nodo.nombre),
       );
       _recargar();
     } on ApiException catch (e) {
       notificarError(e.message);
     } catch (_) {
-      notificarError('No se pudo completar la accion');
+      notificarError(l10n.usuariosAccionFallida);
     } finally {
       if (mounted) setState(() => _procesando.remove(nodo.id));
     }
@@ -60,30 +65,44 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Nodo>>(
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Nodo>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error = snap.hasError ? _mensajeError(snap.error!) : null;
+        final String? error =
+            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
         final List<Nodo> nodos = snap.data ?? const <Nodo>[];
 
         return AdminListScaffold(
-          searchHint: 'Buscar en nodos / pois',
+          searchHint: l10n.nodosSearchHint,
           child: AdminDataTable(
             loading: cargando,
             error: error,
             onRetry: _recargar,
-            emptyTitle: 'Sin puntos propuestos',
-            emptyMessage:
-                'Los puntos de interes propuestos por la comunidad llegaran aqui.',
+            emptyTitle: l10n.nodosSinPropuestos,
+            emptyMessage: l10n.nodosSinPropuestosMensaje,
             rows: <AdminRow>[
               for (final Nodo nodo in nodos)
                 AdminRow(
                   icon: Icons.location_on_outlined,
                   title: nodo.nombre,
                   subtitle: nodo.creadoPorNombre == null
-                      ? nodo.categoria
-                      : '${nodo.categoria} · propuesto por ${nodo.creadoPorNombre}',
+                      ? categoriaNodoLabel(
+                          l10n,
+                          nodo.categoria,
+                          otro: nodo.categoriaOtro,
+                        )
+                      : l10n.nodosPropuestoPor(
+                          categoriaNodoLabel(
+                            l10n,
+                            nodo.categoria,
+                            otro: nodo.categoriaOtro,
+                          ),
+                          nodo.creadoPorNombre!,
+                        ),
+                  // La ficha muestra la foto: lo que el admin necesita para decidir.
+                  onTap: () => mostrarFichaNodo(context, nodo, _api),
                   trailing: _procesando.contains(nodo.id)
                       ? const SizedBox(
                           width: 18,
@@ -96,14 +115,16 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
                             _accionIcono(
                               icon: Icons.close_rounded,
                               color: FqColors.risk,
-                              tooltip: 'Rechazar',
-                              onPressed: () => _decidir(nodo, 'Rechazado'),
+                              tooltip: l10n.comunRechazar,
+                              onPressed: () =>
+                                  _decidir(l10n, nodo, 'Rechazado'),
                             ),
                             _accionIcono(
                               icon: Icons.check_rounded,
                               color: FqColors.trail,
-                              tooltip: 'Aprobar',
-                              onPressed: () => _decidir(nodo, 'Aprobado'),
+                              tooltip: l10n.comunAprobar,
+                              onPressed: () =>
+                                  _decidir(l10n, nodo, 'Aprobado'),
                             ),
                           ],
                         ),
@@ -130,13 +151,13 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
     );
   }
 
-  String _mensajeError(Object error) {
+  String _mensajeError(AppLocalizations l10n, Object error) {
     if (error is ApiException) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        return 'Tu sesion no tiene permiso para ver esta seccion.';
+        return l10n.admSinPermisoSeccion;
       }
       return error.message;
     }
-    return 'No se pudo conectar con el servidor.';
+    return l10n.rutasErrorConexionGenerico;
   }
 }

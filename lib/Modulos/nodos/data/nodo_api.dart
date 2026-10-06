@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 
@@ -21,9 +23,12 @@ class NodoApi {
         .toList();
   }
 
+  /// `categoria` es una clave de la lista cerrada; `categoriaOtro` solo viaja
+  /// (y solo cuenta) cuando la clave es `otro`.
   Future<Nodo> proponer({
     required String nombre,
     required String categoria,
+    String? categoriaOtro,
     required double lat,
     required double lng,
     String? descripcion,
@@ -31,10 +36,48 @@ class NodoApi {
     final dynamic data = await _client.post('/nodos', {
       'nombre': nombre,
       'categoria': categoria,
+      if (categoria == 'otro' &&
+          categoriaOtro != null &&
+          categoriaOtro.trim().isNotEmpty)
+        'categoriaOtro': categoriaOtro.trim(),
       'lat': lat,
       'lng': lng,
       if (descripcion != null && descripcion.trim().isNotEmpty)
         'descripcion': descripcion.trim(),
+    });
+    return Nodo.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Adjunta la foto (JPEG, PNG o WebP, hasta 3 MB) a un nodo propio.
+  Future<Nodo> subirFoto(int id, Uint8List bytes) async {
+    final dynamic data = await _client.subirArchivo(
+      '/nodos/$id/foto',
+      campo: 'foto',
+      bytes: bytes,
+      nombreArchivo: 'foto.jpg',
+    );
+    return Nodo.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Bytes de la foto del nodo; 404 (`ApiException`) si no tiene o no te toca verla.
+  Future<Uint8List> foto(int id) => _client.getBytes('/nodos/$id/foto');
+
+  /// NOD-04 · "Sigue ahi": confirma que el punto existe. El servidor exige estar
+  /// a menos de 150 m con la posicion enviada, no haberlo votado ni haberlo
+  /// propuesto.
+  Future<Nodo> confirmar(int id, {required double lat, required double lng}) {
+    return _votar(id, 'confirmar', lat, lng);
+  }
+
+  /// NOD-04 · "Ya no existe": con suficientes votos el punto sale del mapa.
+  Future<Nodo> marcarObsoleto(int id, {required double lat, required double lng}) {
+    return _votar(id, 'obsoleto', lat, lng);
+  }
+
+  Future<Nodo> _votar(int id, String voto, double lat, double lng) async {
+    final dynamic data = await _client.patch('/nodos/$id/$voto', <String, dynamic>{
+      'lat': lat,
+      'lng': lng,
     });
     return Nodo.fromJson(data as Map<String, dynamic>);
   }

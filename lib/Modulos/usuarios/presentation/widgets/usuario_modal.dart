@@ -10,8 +10,10 @@ import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
 
 enum ModoUsuarioModal { ver, editar, crear }
 
@@ -38,10 +40,11 @@ class UsuarioModal extends StatefulWidget {
     UsuariosApi? api,
     int? miId,
   }) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar',
+      barrierLabel: l10n.comunCerrar,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 190),
       pageBuilder: (_, _, _) =>
@@ -90,9 +93,15 @@ class _UsuarioModalState extends State<UsuarioModal> {
   bool get _rolBloqueado =>
       !_esCrear && widget.usuario != null && widget.usuario!.id == widget.miId;
 
-  List<Validador> get _reglasPassword => _esCrear
-      ? <Validador>[requerido('La contrasena es obligatoria'), minCaracteres(8)]
-      : <Validador>[minCaracteresSiPresente(8)];
+  List<Validador> get _reglasPassword {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return _esCrear
+        ? <Validador>[
+            requerido(l10n.registroValidacionContrasena),
+            minCaracteres(8),
+          ]
+        : <Validador>[minCaracteresSiPresente(8)];
+  }
 
   @override
   void dispose() {
@@ -103,13 +112,14 @@ class _UsuarioModalState extends State<UsuarioModal> {
   }
 
   String get _titulo {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     switch (_modo) {
       case ModoUsuarioModal.ver:
-        return widget.usuario?.nombreUser ?? 'Usuario';
+        return widget.usuario?.nombreUser ?? l10n.rolUsuario;
       case ModoUsuarioModal.editar:
-        return 'Editar usuario';
+        return l10n.usuariosEditarTitulo;
       case ModoUsuarioModal.crear:
-        return 'Nuevo usuario';
+        return l10n.usuariosNuevoUsuario;
     }
   }
 
@@ -139,9 +149,10 @@ class _UsuarioModalState extends State<UsuarioModal> {
   }
 
   Future<void> _guardar() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     if (!_camposValidos()) {
       setState(() => _forzarError = true);
-      notificarError('Revisa los campos marcados en rojo');
+      notificarError(l10n.comunRevisaCampos);
       return;
     }
     setState(() => _guardando = true);
@@ -169,7 +180,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
     } on ApiException catch (e) {
       _fallar(e.message);
     } catch (_) {
-      _fallar('No se pudo guardar. Revisa tu conexion.');
+      _fallar(l10n.usuariosGuardarError);
     }
   }
 
@@ -181,6 +192,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -196,13 +208,13 @@ class _UsuarioModalState extends State<UsuarioModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  _encabezado(),
+                  _encabezado(l10n),
                   const SizedBox(height: 14),
                   const Divider(height: 1, color: FqColors.border),
                   const SizedBox(height: 16),
-                  _cuerpo(),
+                  _cuerpo(l10n),
                   const SizedBox(height: 18),
-                  _acciones(),
+                  _acciones(l10n),
                 ],
               ),
             ),
@@ -212,7 +224,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
     );
   }
 
-  Widget _encabezado() {
+  Widget _encabezado(AppLocalizations l10n) {
     final Usuario? u = widget.usuario;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +263,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
                 ),
               ),
               const SizedBox(height: 3),
-              FqTag(rolesDisponibles[_idrol] ?? 'Usuario', tone: _tono(_idrol)),
+              FqTag(rolLabel(l10n, _idrol), tone: _tono(_idrol)),
             ],
           ),
         ),
@@ -267,16 +279,20 @@ class _UsuarioModalState extends State<UsuarioModal> {
     );
   }
 
-  Widget _cuerpo() {
+  Widget _cuerpo(AppLocalizations l10n) {
     if (_esVer) {
       final Usuario u = widget.usuario!;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _DatoLinea(label: 'Nombre', value: u.nombreUser),
-          _DatoLinea(label: 'Correo', value: u.emailUser),
-          _DatoLinea(label: 'Rol', value: u.etiquetaRol),
-          _DatoLinea(label: 'Estado', value: u.estado, ultimo: true),
+          _DatoLinea(label: l10n.comunNombre, value: u.nombreUser),
+          _DatoLinea(label: l10n.comunCorreo, value: u.emailUser),
+          _DatoLinea(label: l10n.perfilRol, value: rolLabel(l10n, u.idrol)),
+          _DatoLinea(
+            label: l10n.perfilEstado,
+            value: estadoUsuarioLabel(l10n, u.estado),
+            ultimo: true,
+          ),
         ],
       );
     }
@@ -285,7 +301,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         CampoTexto(
-          label: 'Nombre',
+          label: l10n.comunNombre,
           controller: _nombre,
           reglas: reglasNombre(),
           maxCaracteres: kMaxNombreUsuario,
@@ -294,7 +310,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
         ),
         const SizedBox(height: FqGap.sm),
         CampoTexto(
-          label: 'Correo',
+          label: l10n.comunCorreo,
           controller: _email,
           reglas: reglasCorreo(),
           maxCaracteres: kMaxCorreoUsuario,
@@ -311,7 +327,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
         if (_esCrear) ...<Widget>[
           const SizedBox(height: FqGap.sm),
           CampoTexto(
-            label: 'Contraseña',
+            label: l10n.comunContrasena,
             controller: _password,
             reglas: _reglasPassword,
             obscureText: true,
@@ -322,13 +338,13 @@ class _UsuarioModalState extends State<UsuarioModal> {
     );
   }
 
-  Widget _acciones() {
+  Widget _acciones(AppLocalizations l10n) {
     if (_esVer) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
           FqButton.ghost(
-            label: 'Cerrar',
+            label: l10n.comunCerrar,
             expand: false,
             onPressed: () => _cerrar(),
           ),
@@ -339,13 +355,13 @@ class _UsuarioModalState extends State<UsuarioModal> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
         FqButton.ghost(
-          label: 'Cancelar',
+          label: l10n.comunCancelar,
           expand: false,
           onPressed: _guardando ? null : _cancelarEdicion,
         ),
         const SizedBox(width: 8),
         FqButton.primary(
-          label: _esCrear ? 'Crear' : 'Guardar',
+          label: _esCrear ? l10n.usuariosCrearBoton : l10n.comunGuardar,
           expand: false,
           loading: _guardando,
           onPressed: _guardando ? null : _guardar,
@@ -427,6 +443,7 @@ class _SelectorRol extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -442,9 +459,9 @@ class _SelectorRol extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Text(
-                'ROL',
-                style: TextStyle(
+              Text(
+                l10n.usuariosColRol,
+                style: const TextStyle(
                   fontSize: 8,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.6,
@@ -461,11 +478,11 @@ class _SelectorRol extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: FqColors.ink,
                   ),
-                  items: rolesDisponibles.entries
+                  items: rolesDisponibles.keys
                       .map(
-                        (MapEntry<int, String> e) => DropdownMenuItem<int>(
-                          value: e.key,
-                          child: Text(e.value),
+                        (int idrol) => DropdownMenuItem<int>(
+                          value: idrol,
+                          child: Text(rolLabel(l10n, idrol)),
                         ),
                       )
                       .toList(),
@@ -483,9 +500,9 @@ class _SelectorRol extends StatelessWidget {
         SizedBox(
           height: 14,
           child: bloqueado
-              ? const Text(
-                  'No puedes cambiar tu propio rol',
-                  style: TextStyle(
+              ? Text(
+                  l10n.usuariosNoPuedesCambiarRol,
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: FqColors.muted,

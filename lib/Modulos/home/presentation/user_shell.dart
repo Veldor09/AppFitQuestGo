@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/user_nav_bar.dart';
@@ -24,11 +25,15 @@ class _UserShellState extends State<UserShell> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final List<Widget> pestanas = <Widget>[
       const HomeUsuarioScreen(),
       const RutasScreen(),
       const PlanificarRutaScreen(),
-      const _Pendiente(titulo: 'Eventos', icono: Icons.auto_awesome_outlined),
+      _Pendiente(
+        titulo: l10n.comunEventos,
+        icono: Icons.auto_awesome_outlined,
+      ),
       PerfilScreen(onCerrarSesion: _cerrarSesion),
     ];
 
@@ -57,7 +62,7 @@ class _Pendiente extends StatelessWidget {
       child: FqEmptyState(
         icon: icono,
         title: titulo,
-        message: 'Esta seccion estara disponible pronto.',
+        message: AppLocalizations.of(context)!.comunSeccionPronto,
       ),
     );
   }
