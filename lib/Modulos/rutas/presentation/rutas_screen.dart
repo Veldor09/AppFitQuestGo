@@ -11,15 +11,18 @@ import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 
-/// RTE-01/02 · Rutas (vista de usuario). "Explorar" trae `/rutas/explorar`
-/// (publicadas, de toda la comunidad); "Mis rutas" trae `/rutas/mias`
-/// (propias, en cualquier estado). "Guardadas" (RTE-03) es POST-MVP: no esta
-/// en esta pantalla.
+/// RTE-01/02/03 · Rutas (vista de usuario).
+/// - "Explorar" (RTE-01): rutas publicadas comunitarias (`/rutas/explorar`).
+/// - "Mis rutas" (RTE-02): rutas propias (`/rutas/mias`).
+/// - "Guardadas" (RTE-03): rutas favoritas / guardadas (`/rutas/favoritas`).
 class RutasScreen extends StatefulWidget {
-  const RutasScreen({super.key, this.api});
+  const RutasScreen({super.key, this.api, this.initialTab = 0});
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
+
+  /// Pestaña inicial (0: Explorar, 1: Mis rutas, 2: Guardadas).
+  final int initialTab;
 
   @override
   State<RutasScreen> createState() => _RutasScreenState();
@@ -29,20 +32,46 @@ class _RutasScreenState extends State<RutasScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   late Future<List<Ruta>> _explorarFuturo;
   late Future<List<Ruta>> _misRutasFuturo;
-  int _tab = 0;
+  late Future<List<Ruta>> _favoritasFuturo;
+  Set<int> _favoritasIds = <int>{};
+  late int _tab;
 
   @override
   void initState() {
     super.initState();
+    _tab = widget.initialTab.clamp(0, 2);
+    _cargar();
+  }
+
+  void _cargar() {
     _explorarFuturo = _api.explorar();
     _misRutasFuturo = _api.misRutas();
+    _favoritasFuturo = _api.favoritas();
+    _api.favoritasIds().then((Set<int> ids) {
+      if (mounted) setState(() => _favoritasIds = ids);
+    }).catchError((_) {});
   }
 
   void _recargar() {
     setState(() {
-      _explorarFuturo = _api.explorar();
-      _misRutasFuturo = _api.misRutas();
+      _cargar();
     });
+  }
+
+  Future<void> _toggleFavorita(int rutaId) async {
+    final bool agregada = await _api.toggleFavorita(rutaId);
+    if (!mounted) return;
+    setState(() {
+      if (agregada) {
+        _favoritasIds.add(rutaId);
+      } else {
+        _favoritasIds.remove(rutaId);
+      }
+      _favoritasFuturo = _api.favoritas();
+    });
+    notificarExito(
+      agregada ? 'Ruta guardada en tus favoritas' : 'Ruta eliminada de tus guardadas',
+    );
   }
 
   @override
@@ -64,37 +93,59 @@ class _RutasScreenState extends State<RutasScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _Segmentado(
-                opciones: <String>[l10n.rutasExplorar, l10n.rutasMisRutas],
+                opciones: <String>[l10n.rutasExplorar, l10n.rutasMisRutas, 'Guardadas'],
                 seleccion: _tab,
                 onSeleccion: (int i) => setState(() => _tab = i),
               ),
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: _tab == 0
-                  ? _ListaRutas(
-                      key: const ValueKey<String>('explorar'),
-                      api: _api,
-                      futuro: _explorarFuturo,
-                      onReintentar: _recargar,
-                      onCambio: _recargar,
-                      vacioTitulo: l10n.rutasSinPublicadas,
-                      vacioMensaje: l10n.rutasSinPublicadasMensaje,
-                    )
-                  : _ListaRutas(
-                      key: const ValueKey<String>('mias'),
-                      api: _api,
-                      futuro: _misRutasFuturo,
-                      onReintentar: _recargar,
-                      onCambio: _recargar,
-                      mostrarEstado: true,
-                      vacioTitulo: l10n.rutasSinPropias,
-                      vacioMensaje: l10n.rutasSinPropiasMensaje,
-                    ),
+              child: _buildCuerpoTab(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCuerpoTab() {
+    if (_tab == 0) {
+      return _ListaRutas(
+        key: const ValueKey<String>('explorar'),
+        api: _api,
+        futuro: _explorarFuturo,
+        favoritasIds: _favoritasIds,
+        onToggleFavorita: _toggleFavorita,
+        onReintentar: _recargar,
+        onCambio: _recargar,
+        vacioTitulo: 'Sin rutas publicadas',
+        vacioMensaje: 'Cuando la comunidad publique rutas, apareceran aqui.',
+      );
+    }
+    if (_tab == 1) {
+      return _ListaRutas(
+        key: const ValueKey<String>('mias'),
+        api: _api,
+        futuro: _misRutasFuturo,
+        favoritasIds: _favoritasIds,
+        onToggleFavorita: _toggleFavorita,
+        onReintentar: _recargar,
+        onCambio: _recargar,
+        mostrarEstado: true,
+        vacioTitulo: 'Todavia no tenes rutas',
+        vacioMensaje: 'Las rutas que registres o planifiques apareceran aqui.',
+      );
+    }
+    return _ListaRutas(
+      key: const ValueKey<String>('guardadas'),
+      api: _api,
+      futuro: _favoritasFuturo,
+      favoritasIds: _favoritasIds,
+      onToggleFavorita: _toggleFavorita,
+      onReintentar: _recargar,
+      onCambio: _recargar,
+      vacioTitulo: 'Sin rutas guardadas',
+      vacioMensaje: 'Guarda tus rutas favoritas desde el catalogo para verlas aqui.',
     );
   }
 }
@@ -155,6 +206,8 @@ class _ListaRutas extends StatelessWidget {
     super.key,
     required this.api,
     required this.futuro,
+    required this.favoritasIds,
+    required this.onToggleFavorita,
     required this.onReintentar,
     required this.onCambio,
     required this.vacioTitulo,
@@ -164,6 +217,8 @@ class _ListaRutas extends StatelessWidget {
 
   final RutaApi api;
   final Future<List<Ruta>> futuro;
+  final Set<int> favoritasIds;
+  final ValueChanged<int> onToggleFavorita;
   final VoidCallback onReintentar;
   final VoidCallback onCambio;
   final bool mostrarEstado;
@@ -205,6 +260,8 @@ class _ListaRutas extends StatelessWidget {
           itemBuilder: (BuildContext context, int i) => _TarjetaRuta(
             api: api,
             ruta: rutas[i],
+            esFavorita: favoritasIds.contains(rutas[i].id),
+            onToggleFavorita: () => onToggleFavorita(rutas[i].id),
             mostrarEstado: mostrarEstado,
             onCambio: onCambio,
           ),
@@ -223,12 +280,16 @@ class _TarjetaRuta extends StatelessWidget {
   const _TarjetaRuta({
     required this.api,
     required this.ruta,
+    required this.esFavorita,
+    required this.onToggleFavorita,
     required this.mostrarEstado,
     required this.onCambio,
   });
 
   final RutaApi api;
   final Ruta ruta;
+  final bool esFavorita;
+  final VoidCallback onToggleFavorita;
   final bool mostrarEstado;
   final VoidCallback onCambio;
 
@@ -277,6 +338,16 @@ class _TarjetaRuta extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              icon: Icon(
+                esFavorita ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                color: esFavorita ? const Color(0xFF0F766E) : FqColors.muted,
+                size: 22,
+              ),
+              tooltip: esFavorita ? 'Quitar de guardadas' : 'Guardar ruta',
+              splashRadius: 18,
+              onPressed: onToggleFavorita,
             ),
             if (mostrarEstado) ...<Widget>[
               const SizedBox(width: 8),

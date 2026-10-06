@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
+import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -52,7 +53,7 @@ class HomeUsuarioScreen extends StatefulWidget {
 }
 
 class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
-  static const String _accessToken = String.fromEnvironment('ACCESS_TOKEN');
+  static const String _accessToken = kMapboxAccessToken;
 
   /// Cada cuanto se vuelven a pedir las alertas vigentes y los puntos de
   /// interes: una alerta que reporta otra persona mientras caminas tiene que

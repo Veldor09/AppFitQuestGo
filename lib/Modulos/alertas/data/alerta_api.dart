@@ -8,6 +8,14 @@ class AlertaApi {
 
   /// Alertas vigentes: sirve tanto para el mapa como para la supervision
   /// del admin (no hay cola de moderacion separada, ver AlertaController).
+  /// Alertas reportadas por el usuario actual (PRF-02).
+  Future<List<Alerta>> misAlertas() async {
+    final dynamic data = await _client.get('/alertas/mias');
+    return (data as List<dynamic>)
+        .map((dynamic e) => Alerta.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<Alerta>> listar() async {
     final dynamic data = await _client.get('/alertas');
     return (data as List<dynamic>)

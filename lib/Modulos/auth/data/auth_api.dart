@@ -11,15 +11,25 @@ class AuthApi {
     required String email,
     required String contrasena,
     required bool aceptaTerminos,
+    List<String>? intereses,
+    List<String>? actividades,
   }) async {
-    final dynamic data = await _client.post('/auth/registro', {
+    final Map<String, dynamic> body = <String, dynamic>{
       'nombre': nombre,
       'email': email,
       'contrasena': contrasena,
       'aceptaTerminos': aceptaTerminos,
-    });
+    };
+    if (intereses != null && intereses.isNotEmpty) {
+      body['intereses'] = intereses;
+    }
+    if (actividades != null && actividades.isNotEmpty) {
+      body['actividades'] = actividades;
+    }
+    final dynamic data = await _client.post('/auth/registro', body);
     return Sesion.fromJson(data as Map<String, dynamic>);
   }
+
 
   Future<Sesion> iniciarSesion({
     required String email,
@@ -38,7 +48,9 @@ class AuthApi {
   }
 
   Future<void> cerrarSesion(String? refreshToken) async {
-    await _client.post('/auth/cerrar-sesion', {'refreshToken': ?refreshToken});
+    await _client.post('/auth/cerrar-sesion', <String, dynamic>{
+      'refreshToken': refreshToken,
+    });
   }
 
   Future<void> olvideContrasena({required String email}) async {

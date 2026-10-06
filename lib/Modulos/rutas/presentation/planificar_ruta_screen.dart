@@ -6,6 +6,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
+import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
@@ -40,6 +41,7 @@ class PlanificarRutaScreen extends StatefulWidget {
     this.api,
     this.posicionStream,
     this.ahora,
+    this.accessToken,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -52,12 +54,16 @@ class PlanificarRutaScreen extends StatefulWidget {
   /// Reloj del cronometro, inyectable para pruebas. En produccion, `DateTime.now`.
   final DateTime Function()? ahora;
 
+  /// Token de Mapbox; por defecto el de la app. Las pruebas pasan '' para no
+  /// crear el mapa nativo.
+  final String? accessToken;
+
   @override
   State<PlanificarRutaScreen> createState() => _PlanificarRutaScreenState();
 }
 
 class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
-  static const String _accessToken = String.fromEnvironment('ACCESS_TOKEN');
+  String get _accessToken => widget.accessToken ?? kMapboxAccessToken;
   static const double _distanciaMinimaEntrePuntosM = 8;
 
   late final RutaApi _api = widget.api ?? RutaApi();
@@ -296,9 +302,13 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         dificultad: datos.dificultad,
         distanciaKm: _distanciaKm,
         puntos: _puntos,
+        visibilidad: datos.visibilidad,
       );
       if (!mounted) return;
-      notificarExito(l10n.planificarRutaGuardadaExito(l10n.rutasMisRutas));
+      final String msg = datos.visibilidad == 'publica'
+          ? 'Ruta enviada para revisión comunitaria.'
+          : 'Ruta guardada como ${datos.visibilidad == 'amigos' ? 'solo amigos' : 'privada'}.';
+      notificarExito(msg);
       setState(() {
         _puntos.clear();
         _cronometro.reiniciar();
@@ -317,6 +327,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     final Set<String> actividades = <String>{};
     String? errorActividades;
     String dificultad = 'moderada';
+    String visibilidad = 'privada';
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     return showModalBottomSheet<_DatosRuta>(
@@ -351,7 +362,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       ),
                       style: const TextStyle(fontSize: 11, color: FqColors.muted),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: nombre,
                       decoration: InputDecoration(labelText: l10n.comunNombre),
@@ -395,9 +406,10 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                           value: 'dificil',
                           child: Text(dificultadLabel(l10n, 'dificil')),
                         ),
+                        ),
                       ],
                       onChanged: (String? v) =>
-                          setSheetState(() => dificultad = v ?? dificultad),
+                          setSheetState(() => visibilidad = v ?? visibilidad),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
@@ -420,6 +432,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                 if (actividades.contains(o.clave)) o.clave,
                             ],
                             dificultad: dificultad,
+                            visibilidad: visibilidad,
                           ),
                         );
                       },
@@ -745,9 +758,11 @@ class _DatosRuta {
     required this.nombre,
     required this.actividades,
     required this.dificultad,
+    this.visibilidad = 'privada',
   });
 
   final String nombre;
   final List<String> actividades;
   final String dificultad;
+  final String visibilidad;
 }

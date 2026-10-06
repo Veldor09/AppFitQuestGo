@@ -55,6 +55,7 @@ Widget _montar({
     home: Scaffold(
       body: PlanificarRutaScreen(
         api: api ?? RutaApi(),
+        accessToken: '',
         posicionStream: streamFalso == null ? null : (() => streamFalso),
         ahora: ahora,
       ),

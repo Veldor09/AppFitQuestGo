@@ -17,6 +17,8 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
+  static const Duration _tiempoMaximo = Duration(seconds: 12);
+
   ApiClient({http.Client? client, String? baseUrl, AlmacenTokens? tokens})
     : _client = client ?? http.Client(),
       _baseUrl = baseUrl ?? apiBaseUrl,
@@ -65,11 +67,11 @@ class ApiClient {
     Object? body,
   ) async {
     try {
-      return await _peticion(metodo, path, body);
+      return await _peticion(metodo, path, body).timeout(_tiempoMaximo);
     } on Exception {
       if (metodo == 'POST') rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 400));
-      return _peticion(metodo, path, body);
+      return _peticion(metodo, path, body).timeout(_tiempoMaximo);
     }
   }
 
@@ -172,7 +174,7 @@ class ApiClient {
           'X-Cliente-Movil': '1',
         },
         body: jsonEncode({'refreshToken': refresh}),
-      );
+      ).timeout(_tiempoMaximo);
       if (res.statusCode < 200 || res.statusCode >= 300) return false;
       final Map<String, dynamic> data =
           jsonDecode(res.body) as Map<String, dynamic>;

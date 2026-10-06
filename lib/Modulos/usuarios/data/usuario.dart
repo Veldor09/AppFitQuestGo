@@ -27,6 +27,11 @@ class Usuario {
     required this.idrol,
     this.estado = EstadoUsuario.activado,
     this.rol,
+    this.intereses = const <String>[],
+    this.actividades = const <String>[],
+    this.unidad = 'km',
+    this.notificaciones = true,
+    this.visibilidad = 'publico',
   });
 
   factory Usuario.fromJson(Map<String, dynamic> json) {
@@ -39,7 +44,37 @@ class Usuario {
       rol: json['rol'] == null
           ? null
           : Rol.fromJson(json['rol'] as Map<String, dynamic>),
+      intereses: _parseListString(json['intereses']),
+      actividades: _parseListString(json['actividades']),
+      unidad: (json['unidad'] as String?) ?? 'km',
+      notificaciones: (json['notificaciones'] as bool?) ?? true,
+      visibilidad: (json['visibilidad'] as String?) ?? 'publico',
     );
+  }
+
+  static List<String> _parseListString(dynamic val) {
+    if (val == null) return const <String>[];
+    if (val is List) {
+      return val
+          .where((dynamic e) => e != null)
+          .map((dynamic e) => e.toString().trim())
+          .where((String s) => s.isNotEmpty)
+          .toList();
+    }
+    if (val is String) {
+      final String trimmed = val.trim();
+      if (trimmed.isEmpty || trimmed == '{}' || trimmed == '[]') {
+        return const <String>[];
+      }
+      final String clean = trimmed.replaceAll(RegExp(r'^[\{\[]|[\}\]]$'), '');
+      if (clean.isEmpty) return const <String>[];
+      return clean
+          .split(',')
+          .map((String s) => s.trim().replaceAll(RegExp(r'^"|"$'), ''))
+          .where((String s) => s.isNotEmpty)
+          .toList();
+    }
+    return const <String>[];
   }
 
   final int id;
@@ -48,6 +83,12 @@ class Usuario {
   final int idrol;
   final String estado;
   final Rol? rol;
+  final List<String> intereses;
+  final List<String> actividades;
+  final String unidad;
+  final bool notificaciones;
+  final String visibilidad;
+
 
   bool get activo => estado == EstadoUsuario.activado;
 
