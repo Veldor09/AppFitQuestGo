@@ -16,7 +16,7 @@ class Ruta {
   const Ruta({
     required this.id,
     required this.nombre,
-    required this.actividad,
+    required this.actividades,
     required this.dificultad,
     required this.distanciaKm,
     required this.puntos,
@@ -33,7 +33,7 @@ class Ruta {
     return Ruta(
       id: json['id'] as int,
       nombre: json['nombre'] as String,
-      actividad: json['actividad'] as String,
+      actividades: _actividadesDe(json),
       dificultad: json['dificultad'] as String,
       distanciaKm: distancia is String
           ? double.parse(distancia)
@@ -46,9 +46,22 @@ class Ruta {
     );
   }
 
+  /// La lista cerrada (`actividades`); si el backend todavia no esta migrado
+  /// llega el campo viejo `actividad` (texto) y se toma como una sola.
+  static List<String> _actividadesDe(Map<String, dynamic> json) {
+    final dynamic lista = json['actividades'];
+    if (lista is List<dynamic>) {
+      return lista.map((dynamic e) => e.toString()).toList();
+    }
+    final dynamic vieja = json['actividad'];
+    return vieja is String && vieja.isNotEmpty ? <String>[vieja] : <String>[];
+  }
+
   final int id;
   final String nombre;
-  final String actividad;
+
+  /// Claves de la lista cerrada de actividades (`running`, `ciclismo`, ...).
+  final List<String> actividades;
   final String dificultad;
   final double distanciaKm;
   final List<PuntoRuta> puntos;

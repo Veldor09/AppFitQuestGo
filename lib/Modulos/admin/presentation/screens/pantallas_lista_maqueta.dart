@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_lista_maqueta.dart';
 
 /// Pantallas de lista del panel de administracion que todavia no tienen backend.
@@ -13,12 +14,14 @@ class EventosScreen extends StatelessWidget {
   const EventosScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en eventos',
-        emptyTitle: 'Sin eventos por aprobar',
-        emptyMessage:
-            'Eventos y retos patrocinados pendientes de aprobacion se veran aqui.',
-      );
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return AdminListaMaqueta(
+      searchHint: l10n.admEventosSearchHint,
+      emptyTitle: l10n.admEventosVacioTitulo,
+      emptyMessage: l10n.admEventosVacioMensaje,
+    );
+  }
 }
 
 /// ADM-09 · Gestion de patrocinadores.
@@ -26,12 +29,14 @@ class PatrocinadoresScreen extends StatelessWidget {
   const PatrocinadoresScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en patrocinadores',
-        emptyTitle: 'Sin cuentas comerciales',
-        emptyMessage:
-            'Las cuentas de patrocinador para verificar o supervisar iran aqui.',
-      );
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return AdminListaMaqueta(
+      searchHint: l10n.admPatrocinadoresSearchHint,
+      emptyTitle: l10n.admPatrocinadoresVacioTitulo,
+      emptyMessage: l10n.admPatrocinadoresVacioMensaje,
+    );
+  }
 }
 
 /// ADM-10 · Gestion de insignias.
@@ -39,13 +44,15 @@ class InsigniasScreen extends StatelessWidget {
   const InsigniasScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en insignias',
-        emptyTitle: 'Sin insignias configuradas',
-        emptyMessage:
-            'Crea reglas de gamificacion para que aparezcan en este listado.',
-        nuevoLabel: 'Nuevo',
-      );
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return AdminListaMaqueta(
+      searchHint: l10n.admInsigniasSearchHint,
+      emptyTitle: l10n.admInsigniasVacioTitulo,
+      emptyMessage: l10n.admInsigniasVacioMensaje,
+      nuevoLabel: l10n.comunNuevo,
+    );
+  }
 }
 
 /// ADM-11 · Catalogos.
@@ -53,13 +60,15 @@ class CatalogosScreen extends StatelessWidget {
   const CatalogosScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en catalogos',
-        emptyTitle: 'Sin catalogos',
-        emptyMessage:
-            'Tipos de alerta, categorias de nodo y actividades se administran aqui.',
-        nuevoLabel: 'Nuevo',
-      );
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return AdminListaMaqueta(
+      searchHint: l10n.admCatalogosSearchHint,
+      emptyTitle: l10n.admCatalogosVacioTitulo,
+      emptyMessage: l10n.admCatalogosVacioMensaje,
+      nuevoLabel: l10n.comunNuevo,
+    );
+  }
 }
 
 /// ADM-12 · Reportes de contenido.
@@ -67,12 +76,14 @@ class ReportesContenidoScreen extends StatelessWidget {
   const ReportesContenidoScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en reportes de contenido',
-        emptyTitle: 'Sin denuncias',
-        emptyMessage:
-            'Las denuncias sobre rutas, nodos, alertas o eventos se moderan aqui.',
-      );
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return AdminListaMaqueta(
+      searchHint: l10n.admReportesSearchHint,
+      emptyTitle: l10n.admReportesVacioTitulo,
+      emptyMessage: l10n.admReportesVacioMensaje,
+    );
+  }
 }
 
 /// ADM-13 · Auditoria.
@@ -80,10 +91,12 @@ class AuditoriaScreen extends StatelessWidget {
   const AuditoriaScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const AdminListaMaqueta(
-        searchHint: 'Buscar en auditoria',
-        emptyTitle: 'Sin registros de auditoria',
-        emptyMessage:
-            'Cada decision administrativa quedara trazada en esta bitacora.',
-      );
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return AdminListaMaqueta(
+      searchHint: l10n.admAuditoriaSearchHint,
+      emptyTitle: l10n.admAuditoriaVacioTitulo,
+      emptyMessage: l10n.admAuditoriaVacioMensaje,
+    );
+  }
 }

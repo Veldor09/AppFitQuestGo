@@ -15,8 +15,11 @@ class AlertaApi {
         .toList();
   }
 
+  /// `tipo` es una clave de la lista cerrada; `tipoOtro` solo viaja (y solo
+  /// cuenta) cuando la clave es `otro`.
   Future<Alerta> reportar({
     required String tipo,
+    String? tipoOtro,
     required String gravedad,
     required double lat,
     required double lng,
@@ -24,6 +27,8 @@ class AlertaApi {
   }) async {
     final dynamic data = await _client.post('/alertas', {
       'tipo': tipo,
+      if (tipo == 'otro' && tipoOtro != null && tipoOtro.trim().isNotEmpty)
+        'tipoOtro': tipoOtro.trim(),
       'gravedad': gravedad,
       'lat': lat,
       'lng': lng,
@@ -33,13 +38,30 @@ class AlertaApi {
     return Alerta.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<Alerta> confirmar(int id) async {
-    final dynamic data = await _client.patch('/alertas/$id/confirmar', null);
+  /// ALR-04 "Sigue ahi". El servidor valida con la posicion enviada que quien
+  /// vota esta a menos de 150 m (400 si no) y que no haya votado antes (409).
+  Future<Alerta> confirmar(
+    int id, {
+    required double lat,
+    required double lng,
+  }) async {
+    final dynamic data = await _client.patch('/alertas/$id/confirmar', {
+      'lat': lat,
+      'lng': lng,
+    });
     return Alerta.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<Alerta> desmentir(int id) async {
-    final dynamic data = await _client.patch('/alertas/$id/desmentir', null);
+  /// ALR-04/05 "Ya no esta". Mismas reglas de cercania y voto unico.
+  Future<Alerta> desmentir(
+    int id, {
+    required double lat,
+    required double lng,
+  }) async {
+    final dynamic data = await _client.patch('/alertas/$id/desmentir', {
+      'lat': lat,
+      'lng': lng,
+    });
     return Alerta.fromJson(data as Map<String, dynamic>);
   }
 

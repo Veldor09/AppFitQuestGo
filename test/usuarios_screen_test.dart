@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
 
@@ -46,6 +47,9 @@ void main() {
   }
 
   Widget montar(UsuariosApi api) => MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SizedBox(
             width: 1100,
@@ -55,7 +59,20 @@ void main() {
         ),
       );
 
-  setUp(() => FlutterSecureStorage.setMockInitialValues(<String, String>{}));
+  setUp(() {
+    FlutterSecureStorage.setMockInitialValues(<String, String>{});
+    final TestPlatformDispatcher dispatcher =
+        TestWidgetsFlutterBinding.instance.platformDispatcher;
+    dispatcher.localesTestValue = const <Locale>[Locale('es')];
+    dispatcher.localeTestValue = const Locale('es');
+  });
+
+  tearDown(() {
+    final TestPlatformDispatcher dispatcher =
+        TestWidgetsFlutterBinding.instance.platformDispatcher;
+    dispatcher.clearLocalesTestValue();
+    dispatcher.clearLocaleTestValue();
+  });
 
   testWidgets('renderiza la tabla con columnas y filas del backend', (
     WidgetTester tester,

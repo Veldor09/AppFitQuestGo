@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/restablecer_contrasena_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
@@ -39,17 +40,18 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
   }
 
   Future<void> _enviar() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
     if (!todoValido(<(String, List<Validador>)>[(_email.text, reglasCorreo())])) {
       setState(() => _forzarError = true);
-      notificarError('Ingresa un correo valido');
+      notificarError(l10n.olvideCorreoInvalido);
       return;
     }
     setState(() => _cargando = true);
     try {
       await _api.olvideContrasena(email: _email.text.trim());
       if (!mounted) return;
-      notificarInfo('Si el correo existe, te enviamos un codigo');
+      notificarInfo(l10n.olvideCodigoEnviado);
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (_) => RestablecerContrasenaScreen(
@@ -63,7 +65,7 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
       notificarError(e.message);
     } catch (_) {
       if (!mounted) return;
-      notificarError('No se pudo conectar con el servidor. Intenta de nuevo.');
+      notificarError(l10n.loginErrorConexion);
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -71,14 +73,15 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: FqColors.paper,
       body: SafeArea(
         child: Column(
           children: <Widget>[
             FqAppHeader(
-              title: 'Recuperar acceso',
-              subtitle: 'Te enviamos un codigo a tu correo',
+              title: l10n.olvideTitulo,
+              subtitle: l10n.olvideSubtitulo,
               onLeading: () => Navigator.of(context).maybePop(),
             ),
             Expanded(
@@ -98,9 +101,9 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         CampoTexto(
-                          label: 'Correo',
+                          label: l10n.comunCorreo,
                           controller: _email,
-                          hintText: 'tucorreo@dominio.com',
+                          hintText: l10n.comunCorreoHint,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.done,
                           autofillHints: const <String>[AutofillHints.email],
@@ -110,7 +113,7 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
                         ),
                         const SizedBox(height: FqGap.xl),
                         FqButton.primary(
-                          label: 'Enviar codigo',
+                          label: l10n.olvideEnviarCodigo,
                           loading: _cargando,
                           onPressed: _cargando ? null : _enviar,
                         ),

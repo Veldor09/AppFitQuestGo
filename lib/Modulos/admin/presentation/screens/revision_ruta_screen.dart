@@ -8,9 +8,12 @@ import 'package:fit_quest_go/core/widgets/fq_field_display.dart';
 import 'package:fit_quest_go/core/widgets/fq_map_view.dart';
 import 'package:fit_quest_go/core/widgets/fq_panel.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
+import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_note.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
+import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 
 /// ADM-05 · Revision de ruta. Mapa + ficha de decision (aprobar / rechazar).
 ///
@@ -32,7 +35,7 @@ class _RevisionRutaScreenState extends State<RevisionRutaScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   bool _procesando = false;
 
-  Future<void> _decidir(String estado) async {
+  Future<void> _decidir(AppLocalizations l10n, String estado) async {
     final Ruta? ruta = widget.ruta;
     if (ruta == null) return;
     setState(() => _procesando = true);
@@ -40,17 +43,20 @@ class _RevisionRutaScreenState extends State<RevisionRutaScreen> {
       await _api.cambiarEstado(ruta.id, estado);
       if (!mounted) return;
       notificarExito(
-        estado == 'Publicada' ? '${ruta.nombre} publicada' : '${ruta.nombre} rechazada',
+        estado == 'Publicada'
+            ? l10n.revisionPublicadaExito(ruta.nombre)
+            : l10n.revisionRechazadaExito(ruta.nombre),
       );
       Navigator.of(context).pop(true);
     } catch (_) {
       setState(() => _procesando = false);
-      if (mounted) notificarError('No se pudo completar la accion');
+      if (mounted) notificarError(l10n.usuariosAccionFallida);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final Ruta? ruta = widget.ruta;
     // Sin Scaffold propio: este widget se embebe dentro del Scaffold de
     // AdminShell cuando se accede via sidebar (ADM-05). Cuando se llega
@@ -69,10 +75,7 @@ class _RevisionRutaScreenState extends State<RevisionRutaScreen> {
                       left: 10,
                       right: 10,
                       bottom: 10,
-                      child: _ReviewWarning(
-                        'Aqui se marcaria una advertencia de trazado (p. ej. cruce '
-                        'por zona privada).',
-                      ),
+                      child: _ReviewWarning(l10n.revisionAdvertenciaTrazado),
                     ),
                 ],
               ),
@@ -87,13 +90,13 @@ class _RevisionRutaScreenState extends State<RevisionRutaScreen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: FqTag(
-                      ruta?.estado ?? 'Pendiente',
+                      estadoRutaLabel(l10n, ruta?.estado ?? 'Pendiente'),
                       tone: FqTagTone.amber,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    ruta?.nombre ?? 'Sin ruta seleccionada',
+                    ruta?.nombre ?? l10n.revisionSinRutaTitulo,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -103,33 +106,40 @@ class _RevisionRutaScreenState extends State<RevisionRutaScreen> {
                   const SizedBox(height: 2),
                   Text(
                     ruta == null
-                        ? 'Elige una ruta en "Gestion de rutas" para revisarla.'
-                        : '${ruta.actividad}'
-                            '${ruta.creadoPorNombre != null ? " · propuesta por ${ruta.creadoPorNombre}" : ""}',
+                        ? l10n.revisionEligeRuta(l10n.admNavGestionRutas)
+                        : (ruta.creadoPorNombre != null
+                            ? l10n.revisionPropuestaPor(
+                                actividadesLabel(l10n, ruta.actividades),
+                                ruta.creadoPorNombre!,
+                              )
+                            : actividadesLabel(l10n, ruta.actividades)),
                     style: const TextStyle(fontSize: 9, color: FqColors.muted),
                   ),
                   const SizedBox(height: FqGap.lg),
                   _MetricGrid(
                     items: <(String, String)>[
                       ('km', ruta?.distanciaKm.toStringAsFixed(1) ?? '—'),
-                      ('dificultad', ruta?.dificultad ?? '—'),
-                      ('puntos', ruta?.puntos.length.toString() ?? '—'),
+                      (
+                        l10n.rutasDificultadLabel,
+                        ruta == null ? '—' : dificultadLabel(l10n, ruta.dificultad),
+                      ),
+                      (l10n.revisionPuntosLabel, ruta?.puntos.length.toString() ?? '—'),
                     ],
                   ),
                   const SizedBox(height: FqGap.lg),
-                  const AdminNote(
-                    title: 'Verificacion de GPS',
-                    detail: 'Aqui se resumiria el analisis del trazado.',
+                  AdminNote(
+                    title: l10n.revisionVerificacionGps,
+                    detail: l10n.revisionAnalisisTrazado,
                     icon: Icons.gps_fixed,
                   ),
                   const SizedBox(height: FqGap.lg),
-                  const FqFieldDisplay(label: 'Nota interna', multiline: true),
+                  FqFieldDisplay(label: l10n.revisionNotaInterna, multiline: true),
                   const SizedBox(height: FqGap.lg),
                   Row(
                     children: <Widget>[
                       Expanded(
                         child: FqButton.secondary(
-                          label: 'Pedir correccion',
+                          label: l10n.revisionPedirCorreccion,
                           dense: true,
                           onPressed: null,
                         ),
@@ -137,21 +147,21 @@ class _RevisionRutaScreenState extends State<RevisionRutaScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: FqButton.danger(
-                          label: 'Rechazar',
+                          label: l10n.comunRechazar,
                           dense: true,
                           onPressed: (ruta == null || _procesando)
                               ? null
-                              : () => _decidir('Rechazada'),
+                              : () => _decidir(l10n, 'Rechazada'),
                         ),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: FqButton.primary(
-                          label: 'Aprobar',
+                          label: l10n.comunAprobar,
                           dense: true,
                           onPressed: (ruta == null || _procesando)
                               ? null
-                              : () => _decidir('Publicada'),
+                              : () => _decidir(l10n, 'Publicada'),
                         ),
                       ),
                     ],

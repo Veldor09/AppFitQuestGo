@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
 
 /// Tabla de usuarios: Nombre / Correo / Rol / Estado / Acciones.
 ///
@@ -37,6 +39,7 @@ class UsuariosTabla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     if (loading) {
       return const Padding(
         padding: EdgeInsets.all(40),
@@ -46,22 +49,22 @@ class UsuariosTabla extends StatelessWidget {
     if (error != null) {
       return FqEmptyState(
         icon: Icons.wifi_off_rounded,
-        title: 'No se pudo cargar',
+        title: l10n.rutasNoSePudoCargar,
         message: error,
         action: onReintentar == null
             ? null
             : TextButton(
                 onPressed: onReintentar,
-                child: const Text('Reintentar'),
+                child: Text(l10n.rutasReintentar),
               ),
       );
     }
     if (usuarios.isEmpty) {
       return FqEmptyState(
         icon: Icons.group_outlined,
-        title: 'Sin usuarios',
+        title: l10n.usuariosSinUsuarios,
         message: mensajeVacio ??
-            'Crea el primer usuario con el boton "Nuevo usuario".',
+            l10n.usuariosCrearPrimero(l10n.usuariosNuevoUsuario),
       );
     }
 
@@ -119,6 +122,7 @@ class _EncabezadoFila extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     const TextStyle estilo = TextStyle(
       fontSize: 8,
       fontWeight: FontWeight.w700,
@@ -131,14 +135,27 @@ class _EncabezadoFila extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
-        children: const <Widget>[
-          Expanded(flex: _flexNombre, child: Text('NOMBRE', style: estilo)),
-          Expanded(flex: _flexCorreo, child: Text('CORREO', style: estilo)),
-          Expanded(flex: _flexRol, child: Text('ROL', style: estilo)),
-          Expanded(flex: _flexEstado, child: Text('ESTADO', style: estilo)),
+        children: <Widget>[
+          Expanded(
+            flex: _flexNombre,
+            child: Text(l10n.usuariosColNombre, style: estilo),
+          ),
+          Expanded(
+            flex: _flexCorreo,
+            child: Text(l10n.usuariosColCorreo, style: estilo),
+          ),
+          Expanded(flex: _flexRol, child: Text(l10n.usuariosColRol, style: estilo)),
+          Expanded(
+            flex: _flexEstado,
+            child: Text(l10n.usuariosColEstado, style: estilo),
+          ),
           SizedBox(
             width: _anchoAcciones,
-            child: Text('ACCIONES', style: estilo, textAlign: TextAlign.right),
+            child: Text(
+              l10n.usuariosColAcciones,
+              style: estilo,
+              textAlign: TextAlign.right,
+            ),
           ),
         ],
       ),
@@ -170,6 +187,7 @@ class _FilaState extends State<_Fila> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final Usuario u = widget.usuario;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
@@ -209,7 +227,7 @@ class _FilaState extends State<_Fila> {
               flex: _flexRol,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: FqTag(u.etiquetaRol, tone: _tonoRol(u.idrol)),
+                child: FqTag(rolLabel(l10n, u.idrol), tone: _tonoRol(u.idrol)),
               ),
             ),
             Expanded(
@@ -217,7 +235,7 @@ class _FilaState extends State<_Fila> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FqTag(
-                  u.estado,
+                  estadoUsuarioLabel(l10n, u.estado),
                   tone: u.activo ? FqTagTone.green : FqTagTone.neutral,
                 ),
               ),
@@ -230,27 +248,29 @@ class _FilaState extends State<_Fila> {
                 spacing: 2,
                 children: <Widget>[
                   _AccionBtn(
-                    label: 'Ver',
+                    label: l10n.comunVer,
                     color: FqColors.river,
                     onTap: widget.onVer,
                   ),
                   _AccionBtn(
-                    label: 'Editar',
+                    label: l10n.usuariosEditar,
                     color: FqColors.ink,
                     onTap: widget.onEditar,
                   ),
                   if (widget.esYo)
-                    const Tooltip(
-                      message: 'No puedes desactivar tu propia cuenta',
+                    Tooltip(
+                      message: l10n.usuariosNoPuedesDesactivarPropia,
                       child: _AccionBtn(
-                        label: 'Desactivar',
+                        label: l10n.usuariosDesactivarBoton,
                         color: FqColors.stone,
                         onTap: null,
                       ),
                     )
                   else
                     _AccionBtn(
-                      label: u.activo ? 'Desactivar' : 'Activar',
+                      label: u.activo
+                          ? l10n.usuariosDesactivarBoton
+                          : l10n.usuariosActivarBoton,
                       color: u.activo ? FqColors.risk : FqColors.trail,
                       onTap: widget.onCambiarEstado,
                     ),

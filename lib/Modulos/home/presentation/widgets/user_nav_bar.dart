@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 class UserNavBar extends StatelessWidget {
   const UserNavBar({
@@ -12,17 +13,17 @@ class UserNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelect;
 
-  static const List<({IconData icon, String label})> _items =
-      <({IconData icon, String label})>[
-    (icon: Icons.map_outlined, label: 'Mapa'),
-    (icon: Icons.route_outlined, label: 'Rutas'),
-    (icon: Icons.add_rounded, label: 'Crear'),
-    (icon: Icons.auto_awesome_outlined, label: 'Eventos'),
-    (icon: Icons.person_outline_rounded, label: 'Perfil'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final List<({IconData icon, String label})> items =
+        <({IconData icon, String label})>[
+      (icon: Icons.map_outlined, label: l10n.navMapa),
+      (icon: Icons.route_outlined, label: l10n.rutasTitulo),
+      (icon: Icons.add_rounded, label: l10n.navCrear),
+      (icon: Icons.auto_awesome_outlined, label: l10n.comunEventos),
+      (icon: Icons.person_outline_rounded, label: l10n.navPerfil),
+    ];
     return Container(
       height: 62 + MediaQuery.of(context).padding.bottom,
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
@@ -33,10 +34,10 @@ class UserNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
-          for (int i = 0; i < _items.length; i++)
+          for (int i = 0; i < items.length; i++)
             _NavItem(
-              icon: _items[i].icon,
-              label: _items[i].label,
+              icon: items[i].icon,
+              label: items[i].label,
               selected: i == currentIndex,
               onTap: () => onSelect(i),
             ),

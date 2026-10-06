@@ -5,8 +5,10 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key, this.api, this.onCerrarSesion});
@@ -33,6 +35,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return ColoredBox(
       color: FqColors.paper,
       child: FutureBuilder<Usuario>(
@@ -45,7 +48,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
             return _PerfilError(
               mensaje: snap.error is ApiException
                   ? (snap.error! as ApiException).message
-                  : 'No se pudo cargar tu perfil.',
+                  : l10n.perfilErrorGenerico,
               onReintentar: _recargar,
             );
           }
@@ -81,6 +84,7 @@ class _PerfilContenido extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -89,24 +93,24 @@ class _PerfilContenido extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             child: Column(
-              children: const <Widget>[
-                _MenuFila(icono: Icons.route_outlined, texto: 'Mis rutas'),
-                _MenuFila(icono: Icons.send_outlined, texto: 'Mis aportes'),
+              children: <Widget>[
+                _MenuFila(icono: Icons.route_outlined, texto: l10n.rutasMisRutas),
+                _MenuFila(icono: Icons.send_outlined, texto: l10n.perfilMisAportes),
                 _MenuFila(
                   icono: Icons.military_tech_outlined,
-                  texto: 'Insignias',
+                  texto: l10n.perfilInsignias,
                 ),
                 _MenuFila(
                   icono: Icons.notifications_none_rounded,
-                  texto: 'Notificaciones',
+                  texto: l10n.permisoNotificacionesTitulo,
                 ),
                 _MenuFila(
                   icono: Icons.download_outlined,
-                  texto: 'Mapas offline',
+                  texto: l10n.perfilMapasOffline,
                 ),
                 _MenuFila(
                   icono: Icons.tune_rounded,
-                  texto: 'Preferencias y privacidad',
+                  texto: l10n.perfilPreferencias,
                 ),
               ],
             ),
@@ -126,6 +130,7 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double topInset = MediaQuery.of(context).padding.top;
 
     return Container(
@@ -150,7 +155,7 @@ class _Hero extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${usuario.etiquetaRol} · ${usuario.estado}',
+                  '${rolLabel(l10n, usuario.idrol)} · ${estadoUsuarioLabel(l10n, usuario.estado)}',
                   style: const TextStyle(
                     color: Color(0xFFB7C3D1),
                     fontSize: 10,
@@ -169,7 +174,7 @@ class _Hero extends StatelessWidget {
               onPressed: onAjustes,
               icon: const Icon(Icons.tune_rounded, size: 18),
               color: FqColors.white,
-              tooltip: 'Ajustes de la cuenta',
+              tooltip: l10n.perfilAjustesCuenta,
               splashRadius: 18,
             ),
           ),
@@ -235,6 +240,7 @@ class _MetricasEjemplo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: FqColors.white,
@@ -245,11 +251,13 @@ class _MetricasEjemplo extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           children: <Widget>[
-            const Expanded(child: _Metrica(valor: '312', etiqueta: 'KM')),
+            Expanded(child: _Metrica(valor: '312', etiqueta: l10n.perfilKm)),
             _sep(),
-            const Expanded(child: _Metrica(valor: '41', etiqueta: 'RUTAS')),
+            Expanded(child: _Metrica(valor: '41', etiqueta: l10n.perfilMetricaRutas)),
             _sep(),
-            const Expanded(child: _Metrica(valor: '6', etiqueta: 'INSIGNIAS')),
+            Expanded(
+              child: _Metrica(valor: '6', etiqueta: l10n.perfilMetricaInsignias),
+            ),
           ],
         ),
       ),
@@ -305,8 +313,9 @@ class _MenuFila extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return InkWell(
-      onTap: () => notificarInfo('$texto: disponible pronto'),
+      onTap: () => notificarInfo(l10n.perfilDisponiblePronto(texto)),
       child: Container(
         constraints: const BoxConstraints(minHeight: 50),
         decoration: const BoxDecoration(
@@ -404,13 +413,14 @@ class _PerfilError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FqEmptyState(
       icon: Icons.person_off_outlined,
-      title: 'No se pudo cargar tu perfil',
+      title: l10n.perfilNoSePudoCargar,
       message: mensaje,
       action: TextButton(
         onPressed: onReintentar,
-        child: const Text('Reintentar'),
+        child: Text(l10n.rutasReintentar),
       ),
     );
   }
@@ -428,6 +438,7 @@ class _HojaAjustes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return SafeArea(
       top: false,
       child: Padding(
@@ -447,9 +458,9 @@ class _HojaAjustes extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Ajustes de la cuenta',
-              style: TextStyle(
+            Text(
+              l10n.perfilAjustesCuenta,
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: FqColors.ink,
@@ -457,19 +468,23 @@ class _HojaAjustes extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Datos leidos de la base de datos.',
-              style: TextStyle(fontSize: 10, color: FqColors.muted),
+            Text(
+              l10n.perfilDatosDeLaBd,
+              style: const TextStyle(fontSize: 10, color: FqColors.muted),
             ),
             const SizedBox(height: 14),
-            _Dato(label: 'Nombre', valor: usuario.nombreUser),
-            _Dato(label: 'Correo', valor: usuario.emailUser),
-            _Dato(label: 'Rol', valor: usuario.etiquetaRol),
-            _Dato(label: 'Estado', valor: usuario.estado, ultimo: true),
+            _Dato(label: l10n.comunNombre, valor: usuario.nombreUser),
+            _Dato(label: l10n.comunCorreo, valor: usuario.emailUser),
+            _Dato(label: l10n.perfilRol, valor: rolLabel(l10n, usuario.idrol)),
+            _Dato(
+              label: l10n.perfilEstado,
+              valor: estadoUsuarioLabel(l10n, usuario.estado),
+              ultimo: true,
+            ),
             if (onCerrarSesion != null) ...<Widget>[
               const SizedBox(height: 18),
               FqButton.danger(
-                label: 'Cerrar sesion',
+                label: l10n.perfilCerrarSesion,
                 icon: Icons.logout_rounded,
                 onPressed: () async {
                   Navigator.of(context).pop();

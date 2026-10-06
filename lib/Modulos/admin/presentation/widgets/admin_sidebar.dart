@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_brand_mark.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 
 /// Sidebar del panel de administracion.
@@ -174,6 +175,7 @@ class _SidebarBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -195,7 +197,7 @@ class _SidebarBody extends StatelessWidget {
         const _HairLine(),
         _SidebarItem(
           icon: Icons.logout,
-          label: 'Cerrar sesion',
+          label: l10n.perfilCerrarSesion,
           selected: false,
           showLabel: showLabels,
           danger: true,

@@ -5,6 +5,7 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_panel.dart';
 import 'package:fit_quest_go/core/widgets/fq_live_map_view.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_kpi.dart';
 
 /// ADM-01 · Dashboard. Estado general del sistema y colas prioritarias.
@@ -15,48 +16,54 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_kpi.dart';
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  static const List<AdminKpi> _kpis = <AdminKpi>[
-    AdminKpi(label: 'usuarios', icon: Icons.people_alt_outlined),
-    AdminKpi(label: 'rutas', icon: Icons.route_outlined),
-    AdminKpi(label: 'alertas activas', icon: Icons.warning_amber_rounded),
-    AdminKpi(label: 'pendientes', icon: Icons.pending_actions_outlined),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final List<AdminKpi> kpis = <AdminKpi>[
+      AdminKpi(label: l10n.admKpiUsuarios, icon: Icons.people_alt_outlined),
+      AdminKpi(label: l10n.admKpiRutas, icon: Icons.route_outlined),
+      AdminKpi(
+        label: l10n.admKpiAlertasActivas,
+        icon: Icons.warning_amber_rounded,
+      ),
+      AdminKpi(
+        label: l10n.admKpiPendientes,
+        icon: Icons.pending_actions_outlined,
+      ),
+    ];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const AdminKpiRow(items: _kpis),
+          AdminKpiRow(items: kpis),
           const SizedBox(height: FqGap.lg),
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints c) {
               final Widget mapa = FqPanel(
-                title: 'Actividad en vivo',
-                trailing: const FqTag('En linea', tone: FqTagTone.green),
+                title: l10n.admActividadEnVivo,
+                trailing: FqTag(l10n.admEnLinea, tone: FqTagTone.green),
                 child: const FqLiveMapView(height: 260),
               );
               final Widget colas = FqPanel(
-                title: 'Colas prioritarias',
-                trailing: const _VerTodas(),
+                title: l10n.admColasPrioritarias,
+                trailing: _VerTodas(texto: l10n.admVerTodas),
                 padding: const EdgeInsets.fromLTRB(9, 9, 9, 9),
                 child: Column(
-                  children: const <Widget>[
+                  children: <Widget>[
                     _QueueRow(
                       icon: Icons.route_outlined,
-                      label: 'Rutas por revisar',
+                      label: l10n.admRutasPorRevisar,
                     ),
-                    SizedBox(height: 7),
+                    const SizedBox(height: 7),
                     _QueueRow(
                       icon: Icons.location_on_outlined,
-                      label: 'Nodos pendientes',
+                      label: l10n.admNodosPendientes,
                     ),
-                    SizedBox(height: 7),
+                    const SizedBox(height: 7),
                     _QueueRow(
                       icon: Icons.flag_outlined,
-                      label: 'Reportes nuevos',
+                      label: l10n.admReportesNuevos,
                     ),
                   ],
                 ),
@@ -89,12 +96,14 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _VerTodas extends StatelessWidget {
-  const _VerTodas();
+  const _VerTodas({required this.texto});
+
+  final String texto;
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Ver todas',
+      texto,
       style: const TextStyle(
         fontSize: 9,
         fontWeight: FontWeight.w700,

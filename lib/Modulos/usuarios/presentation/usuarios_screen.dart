@@ -9,9 +9,11 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_panel.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/paginacion_bar.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/usuario_modal.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/usuarios_tabla.dart';
@@ -47,12 +49,14 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   int _filasPorPagina = 5;
   static const List<int> _opcionesFilas = <int>[5, 10, 15, 20];
 
-  static const List<String> _etiquetasRol = <String>[
-    'Todos',
-    'Usuario',
-    'Empresa',
-    'Admin',
-  ];
+  /// Indice 0 = "todos los roles" (no es un `idrol` real); 1/2/3 son los
+  /// `idrol` de verdad, traducidos con el mismo helper que el resto de la app.
+  List<String> _etiquetasRol(AppLocalizations l10n) => <String>[
+        l10n.usuariosFiltroTodos,
+        rolLabel(l10n, 1),
+        rolLabel(l10n, 2),
+        rolLabel(l10n, 3),
+      ];
 
   @override
   void initState() {
@@ -94,6 +98,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   int? get _miId => AuthScope.maybeOf(context)?.usuario?.id;
 
   Future<void> _abrirModal(ModoUsuarioModal modo, [Usuario? usuario]) async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final bool? cambio = await UsuarioModal.abrir(
       context,
       modo: modo,
@@ -106,19 +111,20 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       _recargar();
       notificarExito(
         modo == ModoUsuarioModal.crear
-            ? 'Usuario creado correctamente'
-            : 'Cambios guardados',
+            ? l10n.usuariosCreadoExito
+            : l10n.usuariosCambiosGuardados,
       );
     }
   }
 
   Future<void> _cambiarEstado(Usuario u) async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final bool desactivando = u.activo;
     final String destino =
         desactivando ? EstadoUsuario.desactivado : EstadoUsuario.activado;
 
     if (desactivando) {
-      final bool? ok = await _confirmarDesactivar(u);
+      final bool? ok = await _confirmarDesactivar(l10n, u);
       if (ok != true || !mounted) return;
     }
     try {
@@ -127,21 +133,21 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       _recargar();
       notificarExito(
         desactivando
-            ? '${u.nombreUser} fue desactivado'
-            : '${u.nombreUser} fue activado',
+            ? l10n.usuariosDesactivadoExito(u.nombreUser)
+            : l10n.usuariosActivadoExito(u.nombreUser),
       );
     } on ApiException catch (e) {
       notificarError(e.message);
     } catch (_) {
-      notificarError('No se pudo completar la accion');
+      notificarError(l10n.usuariosAccionFallida);
     }
   }
 
-  Future<bool?> _confirmarDesactivar(Usuario u) {
+  Future<bool?> _confirmarDesactivar(AppLocalizations l10n, Usuario u) {
     return showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar',
+      barrierLabel: l10n.comunCerrar,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 170),
       pageBuilder: (_, _, _) => Center(
@@ -156,9 +162,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  const Text(
-                    'Desactivar usuario',
-                    style: TextStyle(
+                  Text(
+                    l10n.usuariosDesactivarTitulo,
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: FqColors.ink,
@@ -166,8 +172,10 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'La cuenta de ${u.nombreUser} pasara a "Desactivado" y no '
-                    'podra iniciar sesion. Puedes reactivarla despues.',
+                    l10n.usuariosDesactivarMensaje(
+                      u.nombreUser,
+                      estadoUsuarioLabel(l10n, 'Desactivado'),
+                    ),
                     style: const TextStyle(
                       fontSize: 11,
                       height: 1.5,
@@ -179,13 +187,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: <Widget>[
                       FqButton.ghost(
-                        label: 'Cancelar',
+                        label: l10n.comunCancelar,
                         expand: false,
                         onPressed: () => Navigator.of(context).pop(false),
                       ),
                       const SizedBox(width: 8),
                       FqButton.danger(
-                        label: 'Desactivar',
+                        label: l10n.usuariosDesactivarBoton,
                         expand: false,
                         onPressed: () => Navigator.of(context).pop(true),
                       ),
@@ -214,6 +222,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   }
 
   Future<void> _abrirMenuFiltros() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final List<String> etiquetas = _etiquetasRol(l10n);
     final RenderBox boton =
         _filtrosKey.currentContext!.findRenderObject()! as RenderBox;
     final RenderBox overlay =
@@ -232,12 +242,12 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       context: context,
       position: pos,
       items: <PopupMenuEntry<int>>[
-        const PopupMenuItem<int>(
+        PopupMenuItem<int>(
           enabled: false,
           height: 30,
           child: Text(
-            'FILTRAR POR ROL',
-            style: TextStyle(
+            l10n.usuariosFiltrarPorRol,
+            style: const TextStyle(
               fontSize: 8,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.7,
@@ -245,11 +255,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
             ),
           ),
         ),
-        for (int i = 0; i < _etiquetasRol.length; i++)
+        for (int i = 0; i < etiquetas.length; i++)
           CheckedPopupMenuItem<int>(
             value: i,
             checked: _rolFiltro == i,
-            child: Text(_etiquetasRol[i]),
+            child: Text(etiquetas[i]),
           ),
       ],
     );
@@ -263,11 +273,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Usuario>>(
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Usuario>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error = snap.hasError ? _mensajeError(snap.error!) : null;
+        final String? error =
+            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
 
         final List<Usuario> filtrados =
             snap.hasData ? _filtrar(snap.data!) : const <Usuario>[];
@@ -283,14 +295,14 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _barraAcciones(),
+              _barraAcciones(l10n),
               const SizedBox(height: FqGap.lg),
               FqPanel(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    if (_rolFiltro != 0) _chipFiltroActivo(),
+                    if (_rolFiltro != 0) _chipFiltroActivo(l10n),
                     UsuariosTabla(
                       usuarios: _paginar(filtrados),
                       miId: _miId,
@@ -298,7 +310,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       error: error,
                       onReintentar: _recargar,
                       mensajeVacio: (snap.hasData && snap.data!.isNotEmpty)
-                          ? 'Ningun usuario coincide con el filtro.'
+                          ? l10n.usuariosNingunoCoincide
                           : null,
                       onVer: (Usuario u) =>
                           _abrirModal(ModoUsuarioModal.ver, u),
@@ -328,7 +340,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     );
   }
 
-  Widget _barraAcciones() {
+  Widget _barraAcciones(AppLocalizations l10n) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -337,26 +349,26 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
         FqButton.primary(
           key: _filtrosKey,
           label: _rolFiltro == 0
-              ? 'Filtros'
-              : 'Filtros: ${_etiquetasRol[_rolFiltro]}',
+              ? l10n.usuariosFiltros
+              : l10n.usuariosFiltrosConValor(_etiquetasRol(l10n)[_rolFiltro]),
           icon: Icons.tune,
           expand: false,
           dense: true,
           onPressed: _abrirMenuFiltros,
         ),
         FqButton.primary(
-          label: 'Nuevo usuario',
+          label: l10n.usuariosNuevoUsuario,
           icon: Icons.add,
           expand: false,
           dense: true,
           onPressed: () => _abrirModal(ModoUsuarioModal.crear),
         ),
-        SizedBox(width: 260, child: _campoBusqueda()),
+        SizedBox(width: 260, child: _campoBusqueda(l10n)),
       ],
     );
   }
 
-  Widget _campoBusqueda() {
+  Widget _campoBusqueda(AppLocalizations l10n) {
     return Container(
       height: 38,
       decoration: BoxDecoration(
@@ -383,12 +395,12 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                 });
               },
               style: const TextStyle(fontSize: 11, color: FqColors.ink),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 isDense: true,
                 filled: false,
                 border: InputBorder.none,
-                hintText: 'Buscar en usuarios',
-                hintStyle: TextStyle(fontSize: 11, color: FqColors.muted),
+                hintText: l10n.usuariosBuscarHint,
+                hintStyle: const TextStyle(fontSize: 11, color: FqColors.muted),
               ),
             ),
           ),
@@ -397,7 +409,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     );
   }
 
-  Widget _chipFiltroActivo() {
+  Widget _chipFiltroActivo(AppLocalizations l10n) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: FqColors.border)),
@@ -405,13 +417,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
       child: Row(
         children: <Widget>[
-          const Text(
-            'Filtro:',
-            style: TextStyle(fontSize: 10, color: FqColors.muted),
+          Text(
+            l10n.usuariosFiltroLabel,
+            style: const TextStyle(fontSize: 10, color: FqColors.muted),
           ),
           const SizedBox(width: 8),
           InputChip(
-            label: Text(_etiquetasRol[_rolFiltro]),
+            label: Text(_etiquetasRol(l10n)[_rolFiltro]),
             labelStyle: const TextStyle(fontSize: 10, color: FqColors.ink),
             visualDensity: VisualDensity.compact,
             backgroundColor: FqColors.cloud,
@@ -426,13 +438,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     );
   }
 
-  String _mensajeError(Object error) {
+  String _mensajeError(AppLocalizations l10n, Object error) {
     if (error is ApiException) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        return 'Tu sesion no tiene permiso para ver usuarios.';
+        return l10n.usuariosSinPermiso;
       }
       return error.message;
     }
-    return 'No se pudo conectar con el servidor.';
+    return l10n.rutasErrorConexionGenerico;
   }
 }

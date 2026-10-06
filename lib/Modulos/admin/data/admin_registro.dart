@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
@@ -14,115 +15,122 @@ import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart'
 ///
 /// El sidebar y el shell se construyen a partir de esta lista. Agregar una
 /// pantalla es agregar una entrada: no hay `switch` que mantener (OCP).
-final List<AdminSeccion> adminSecciones = <AdminSeccion>[
-  AdminSeccion(
-    code: 'ADM-01',
-    navLabel: 'Dashboard',
-    headerTitle: 'Dashboard',
-    descripcion: 'Estado general y colas del sistema.',
-    icono: Icons.dashboard_outlined,
-    builder: (_) => const DashboardScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-02',
-    navLabel: 'Usuarios',
-    headerTitle: 'Usuarios',
-    descripcion: 'Buscar y gestionar cuentas.',
-    icono: Icons.people_outline,
-    builder: (_) => const UsuariosScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-03',
-    navLabel: 'Detalle de usuario',
-    headerTitle: 'Detalle de usuario',
-    descripcion: 'Revisar historial, aportes y reportes.',
-    icono: Icons.badge_outlined,
-    builder: (_) => const FqEmptyState(
-      icon: Icons.person_search_outlined,
-      title: 'Elige un usuario',
-      message:
-          'Abre la seccion "Usuarios" y pulsa "Ver" en una cuenta para revisar '
-          'su detalle.',
+///
+/// Es una funcion (no una lista `const`/`final` a nivel de modulo) porque el
+/// texto de cada seccion esta traducido: necesita `AppLocalizations`, que solo
+/// existe con un `BuildContext` a mano, asi que se arma dentro de `build()`.
+List<AdminSeccion> buildAdminSecciones(AppLocalizations l10n) {
+  return <AdminSeccion>[
+    AdminSeccion(
+      code: 'ADM-01',
+      navLabel: l10n.admNavDashboard,
+      headerTitle: l10n.admNavDashboard,
+      descripcion: l10n.admDescDashboard,
+      icono: Icons.dashboard_outlined,
+      builder: (_) => const DashboardScreen(),
     ),
-  ),
-  AdminSeccion(
-    code: 'ADM-04',
-    navLabel: 'Gestion de rutas',
-    headerTitle: 'Rutas',
-    descripcion: 'Administrar la cola de moderacion de rutas.',
-    icono: Icons.route_outlined,
-    builder: (_) => const RutasAdminScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-05',
-    navLabel: 'Revision de ruta',
-    headerTitle: 'Revision de ruta',
-    descripcion: 'Aprobar, pedir correccion o rechazar con motivo.',
-    icono: Icons.fact_check_outlined,
-    builder: (_) => const RevisionRutaScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-06',
-    navLabel: 'Gestion de alertas',
-    headerTitle: 'Alertas activas',
-    descripcion: 'Supervisar reportes comunitarios en vivo.',
-    icono: Icons.warning_amber_outlined,
-    builder: (_) => const AlertasAdminScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-07',
-    navLabel: 'Gestion de nodos',
-    headerTitle: 'Nodos / POIs',
-    descripcion: 'Revisar puntos de interes propuestos.',
-    icono: Icons.location_on_outlined,
-    builder: (_) => const NodosAdminScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-08',
-    navLabel: 'Gestion de eventos',
-    headerTitle: 'Eventos',
-    descripcion: 'Aprobar eventos y retos patrocinados.',
-    icono: Icons.event_outlined,
-    builder: (_) => const EventosScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-09',
-    navLabel: 'Gestion de patrocinadores',
-    headerTitle: 'Patrocinadores',
-    descripcion: 'Verificar y supervisar cuentas comerciales.',
-    icono: Icons.storefront_outlined,
-    builder: (_) => const PatrocinadoresScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-10',
-    navLabel: 'Gestion de insignias',
-    headerTitle: 'Insignias',
-    descripcion: 'Crear y configurar reglas de gamificacion.',
-    icono: Icons.military_tech_outlined,
-    builder: (_) => const InsigniasScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-11',
-    navLabel: 'Catalogos',
-    headerTitle: 'Catalogos',
-    descripcion: 'Mantener tipos de alerta, categorias y actividades.',
-    icono: Icons.category_outlined,
-    builder: (_) => const CatalogosScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-12',
-    navLabel: 'Reportes de contenido',
-    headerTitle: 'Reportes de contenido',
-    descripcion: 'Moderar denuncias sobre cualquier publicacion.',
-    icono: Icons.flag_outlined,
-    builder: (_) => const ReportesContenidoScreen(),
-  ),
-  AdminSeccion(
-    code: 'ADM-13',
-    navLabel: 'Auditoria',
-    headerTitle: 'Auditoria',
-    descripcion: 'Consultar trazabilidad de decisiones.',
-    icono: Icons.history_outlined,
-    builder: (_) => const AuditoriaScreen(),
-  ),
-];
+    AdminSeccion(
+      code: 'ADM-02',
+      navLabel: l10n.admNavUsuarios,
+      headerTitle: l10n.admNavUsuarios,
+      descripcion: l10n.admDescUsuarios,
+      icono: Icons.people_outline,
+      builder: (_) => const UsuariosScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-03',
+      navLabel: l10n.admDetalleUsuarioNav,
+      headerTitle: l10n.admDetalleUsuarioNav,
+      descripcion: l10n.admDetalleUsuarioDesc,
+      icono: Icons.badge_outlined,
+      builder: (_) => FqEmptyState(
+        icon: Icons.person_search_outlined,
+        title: l10n.admDetalleUsuarioVacioTitulo,
+        message: l10n.admDetalleUsuarioVacioMensaje(
+          l10n.admNavUsuarios,
+          l10n.comunVer,
+        ),
+      ),
+    ),
+    AdminSeccion(
+      code: 'ADM-04',
+      navLabel: l10n.admNavGestionRutas,
+      headerTitle: l10n.rutasTitulo,
+      descripcion: l10n.admDescGestionRutas,
+      icono: Icons.route_outlined,
+      builder: (_) => const RutasAdminScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-05',
+      navLabel: l10n.admNavRevisionRuta,
+      headerTitle: l10n.admNavRevisionRuta,
+      descripcion: l10n.admDescRevisionRuta,
+      icono: Icons.fact_check_outlined,
+      builder: (_) => const RevisionRutaScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-06',
+      navLabel: l10n.admNavGestionAlertas,
+      headerTitle: l10n.admHeaderAlertasActivas,
+      descripcion: l10n.admDescGestionAlertas,
+      icono: Icons.warning_amber_outlined,
+      builder: (_) => const AlertasAdminScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-07',
+      navLabel: l10n.admNavGestionNodos,
+      headerTitle: l10n.admHeaderNodosPois,
+      descripcion: l10n.admDescGestionNodos,
+      icono: Icons.location_on_outlined,
+      builder: (_) => const NodosAdminScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-08',
+      navLabel: l10n.admNavGestionEventos,
+      headerTitle: l10n.comunEventos,
+      descripcion: l10n.admDescGestionEventos,
+      icono: Icons.event_outlined,
+      builder: (_) => const EventosScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-09',
+      navLabel: l10n.admNavGestionPatrocinadores,
+      headerTitle: l10n.admHeaderPatrocinadores,
+      descripcion: l10n.admDescGestionPatrocinadores,
+      icono: Icons.storefront_outlined,
+      builder: (_) => const PatrocinadoresScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-10',
+      navLabel: l10n.admNavGestionInsignias,
+      headerTitle: l10n.perfilInsignias,
+      descripcion: l10n.admDescGestionInsignias,
+      icono: Icons.military_tech_outlined,
+      builder: (_) => const InsigniasScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-11',
+      navLabel: l10n.admNavCatalogos,
+      headerTitle: l10n.admNavCatalogos,
+      descripcion: l10n.admDescCatalogos,
+      icono: Icons.category_outlined,
+      builder: (_) => const CatalogosScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-12',
+      navLabel: l10n.admNavReportesContenido,
+      headerTitle: l10n.admNavReportesContenido,
+      descripcion: l10n.admDescReportesContenido,
+      icono: Icons.flag_outlined,
+      builder: (_) => const ReportesContenidoScreen(),
+    ),
+    AdminSeccion(
+      code: 'ADM-13',
+      navLabel: l10n.admNavAuditoria,
+      headerTitle: l10n.admNavAuditoria,
+      descripcion: l10n.admDescAuditoria,
+      icono: Icons.history_outlined,
+      builder: (_) => const AuditoriaScreen(),
+    ),
+  ];
+}

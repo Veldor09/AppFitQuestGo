@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_theme.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/admin_shell.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
@@ -23,6 +24,15 @@ class FitQuestGoApp extends StatelessWidget {
         title: 'FitQuest Go',
         debugShowCheckedModeBanner: false,
         theme: buildFqTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        // `es` primero: si el idioma del dispositivo no esta en esta lista,
+        // la app cae en espanol (el idioma con el que se construyo y probo
+        // el resto de la UI), no en ingles.
+        supportedLocales: const <Locale>[
+          Locale('es'),
+          Locale('en'),
+          Locale('pt', 'BR'),
+        ],
         home: const _RootGate(),
         builder: (BuildContext context, Widget? child) =>
             NotificacionesHost(child: child ?? const SizedBox.shrink()),

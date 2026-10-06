@@ -8,6 +8,7 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro/pasos/paso_actividades.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro/pasos/paso_intereses.dart';
@@ -40,10 +41,13 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
 
   final Set<String> _actividades = <String>{};
   final Set<String> _intereses = <String>{};
+  // Claves estables (no se traducen): paso_permisos.dart las mapea a texto
+  // localizado para mostrar, pero el valor que viaja por el estado es esta
+  // clave, no la etiqueta visible.
   final Map<String, bool> _permisos = <String, bool>{
-    'Ubicacion': true,
-    'Notificaciones': true,
-    'Actividad fisica': false,
+    'ubicacion': true,
+    'notificaciones': true,
+    'actividadFisica': false,
   };
 
   int _paso = 0;
@@ -61,12 +65,12 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
     super.dispose();
   }
 
-  bool _datosValidos() {
+  bool _datosValidos(AppLocalizations l10n) {
     return todoValido(<(String, List<Validador>)>[
       (_nombre.text, reglasNombre()),
       (_email.text, reglasCorreo()),
       (_password.text, <Validador>[
-        requerido('La contrasena es obligatoria'),
+        requerido(l10n.registroValidacionContrasena),
         minCaracteres(8),
       ]),
     ]);
@@ -82,8 +86,9 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
   }
 
   void _avanzarDesdeDatos() {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
-    final bool datosValidos = _datosValidos();
+    final bool datosValidos = _datosValidos(l10n);
     if (!datosValidos || !_aceptaTerminos) {
       setState(() {
         _forzarError = !datosValidos;
@@ -91,8 +96,8 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
       });
       notificarError(
         !_aceptaTerminos
-            ? 'Debes aceptar los terminos y condiciones para continuar'
-            : 'Revisa los campos marcados en rojo',
+            ? l10n.registroAceptaTerminosError
+            : l10n.comunRevisaCampos,
       );
       return;
     }
@@ -100,6 +105,7 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
   }
 
   Future<void> _crearCuenta() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     setState(() => _enviando = true);
     try {
       await AuthScope.read(context).registrar(
@@ -109,19 +115,17 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
         aceptaTerminos: _aceptaTerminos,
       );
       if (!mounted) return;
-      notificarExito('Cuenta creada. Bienvenido a FitQuest Go');
+      notificarExito(l10n.registroExito);
       setState(() {
         _enviando = false;
         _paso = 4; // Paso de confirmacion.
       });
     } on ApiException catch (e) {
       _fallar(
-        e.statusCode == 409
-            ? 'Ese correo ya tiene una cuenta. Inicia sesion.'
-            : e.message,
+        e.statusCode == 409 ? l10n.registroCorreoYaRegistrado : e.message,
       );
     } catch (_) {
-      _fallar('No se pudo crear la cuenta. Revisa tu conexion.');
+      _fallar(l10n.registroErrorConexion);
     }
   }
 
@@ -143,7 +147,8 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
       );
     }
 
-    final _PasoConfig cfg = _configPaso(_paso);
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final _PasoConfig cfg = _configPaso(_paso, l10n);
 
     return Scaffold(
       backgroundColor: FqColors.paper,
@@ -152,7 +157,7 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
           children: <Widget>[
             FqAppHeader(
               title: cfg.titulo,
-              subtitle: 'Paso ${_paso + 1} de $_totalPasos',
+              subtitle: l10n.registroPasoDeTotal(_paso + 1, _totalPasos),
               onLeading: _atras,
             ),
             FqProgressSteps(total: _totalPasos, completados: _paso + 1),
@@ -191,12 +196,12 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
     );
   }
 
-  _PasoConfig _configPaso(int paso) {
+  _PasoConfig _configPaso(int paso, AppLocalizations l10n) {
     switch (paso) {
       case 0:
         return _PasoConfig(
-          titulo: 'Datos',
-          cta: 'Continuar',
+          titulo: l10n.registroPasoDatosTitulo,
+          cta: l10n.comunContinuar,
           onCta: _avanzarDesdeDatos,
           contenido: _PasoDatos(
             nombre: _nombre,
@@ -214,8 +219,8 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
         );
       case 1:
         return _PasoConfig(
-          titulo: 'Actividades',
-          cta: 'Continuar',
+          titulo: l10n.registroPasoActividadesTitulo,
+          cta: l10n.comunContinuar,
           onCta: () => setState(() => _paso = 2),
           contenido: PasoActividades(
             seleccion: _actividades,
@@ -224,8 +229,8 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
         );
       case 2:
         return _PasoConfig(
-          titulo: 'Intereses',
-          cta: 'Continuar',
+          titulo: l10n.registroPasoInteresesTitulo,
+          cta: l10n.comunContinuar,
           onCta: () => setState(() => _paso = 3),
           contenido: PasoIntereses(
             seleccion: _intereses,
@@ -234,8 +239,8 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
         );
       default:
         return _PasoConfig(
-          titulo: 'Permisos',
-          cta: 'Permitir y continuar',
+          titulo: l10n.registroPasoPermisosTitulo,
+          cta: l10n.registroPermitirYContinuar,
           onCta: _crearCuenta,
           contenido: PasoPermisos(
             valores: _permisos,
@@ -289,11 +294,12 @@ class _PasoDatos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         CampoTexto(
-          label: 'Nombre',
+          label: l10n.comunNombre,
           controller: nombre,
           reglas: reglasNombre(),
           maxCaracteres: kMaxNombreUsuario,
@@ -303,22 +309,22 @@ class _PasoDatos extends StatelessWidget {
         ),
         const SizedBox(height: FqGap.sm),
         CampoTexto(
-          label: 'Correo',
+          label: l10n.comunCorreo,
           controller: email,
           reglas: reglasCorreo(),
           maxCaracteres: kMaxCorreoUsuario,
           forzarError: forzarError,
-          hintText: 'tucorreo@dominio.com',
+          hintText: l10n.comunCorreoHint,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const <String>[AutofillHints.email],
           textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: FqGap.sm),
         CampoTexto(
-          label: 'Contrasena',
+          label: l10n.comunContrasena,
           controller: password,
           reglas: <Validador>[
-            requerido('La contrasena es obligatoria'),
+            requerido(l10n.registroValidacionContrasena),
             minCaracteres(8),
           ],
           obscureText: true,
@@ -328,7 +334,7 @@ class _PasoDatos extends StatelessWidget {
         ),
         const SizedBox(height: FqGap.sm),
         CampoTexto(
-          label: 'Ciudad',
+          label: l10n.comunCiudad,
           controller: ciudad,
           reglas: <Validador>[maxCaracteres(40)],
           maxCaracteres: 40,
@@ -359,6 +365,7 @@ class _TerminosCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final bool mostrarError = forzarError && !valor;
     // El toggle y el enlace usan recognizers de texto independientes (no un
     // InkWell envolvente) para que tocar "terminos y condiciones" solo abra
@@ -397,11 +404,11 @@ class _TerminosCheckbox extends StatelessWidget {
                     ),
                     children: <InlineSpan>[
                       TextSpan(
-                        text: 'Acepto los ',
+                        text: l10n.registroAceptoPrefijo,
                         recognizer: toggleRecognizer,
                       ),
                       TextSpan(
-                        text: 'terminos y condiciones',
+                        text: l10n.registroTerminosYCondiciones,
                         style: const TextStyle(
                           color: FqColors.river,
                           fontWeight: FontWeight.w700,
@@ -411,7 +418,7 @@ class _TerminosCheckbox extends StatelessWidget {
                           ..onTap = () => TerminosModal.mostrar(context),
                       ),
                       TextSpan(
-                        text: ' de FitQuest Go.',
+                        text: l10n.registroAceptoSufijo,
                         recognizer: toggleRecognizer,
                       ),
                     ],
@@ -422,11 +429,11 @@ class _TerminosCheckbox extends StatelessWidget {
           ],
         ),
         if (mostrarError)
-          const Padding(
-            padding: EdgeInsets.only(left: 30, top: 2),
+          Padding(
+            padding: const EdgeInsets.only(left: 30, top: 2),
             child: Text(
-              'Debes aceptar los terminos para crear tu cuenta',
-              style: TextStyle(fontSize: 10, color: FqColors.risk),
+              l10n.registroTerminosErrorInline,
+              style: const TextStyle(fontSize: 10, color: FqColors.risk),
             ),
           ),
       ],

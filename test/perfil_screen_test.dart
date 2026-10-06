@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/perfil_screen.dart';
 
@@ -35,6 +36,9 @@ void main() {
   }
 
   Widget montar(Size size) => MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(
             child: SizedBox.fromSize(
@@ -45,7 +49,23 @@ void main() {
         ),
       );
 
-  setUp(() => FlutterSecureStorage.setMockInitialValues(<String, String>{}));
+  setUp(() {
+    FlutterSecureStorage.setMockInitialValues(<String, String>{});
+    // El entorno de test cae en en_US por defecto; se fuerza espanol para
+    // que coincida con `locale: Locale('es')` de montar() (ver nota igual
+    // en widget_test.dart / planificar_ruta_screen_test.dart).
+    final TestPlatformDispatcher dispatcher =
+        TestWidgetsFlutterBinding.instance.platformDispatcher;
+    dispatcher.localesTestValue = const <Locale>[Locale('es')];
+    dispatcher.localeTestValue = const Locale('es');
+  });
+
+  tearDown(() {
+    final TestPlatformDispatcher dispatcher =
+        TestWidgetsFlutterBinding.instance.platformDispatcher;
+    dispatcher.clearLocalesTestValue();
+    dispatcher.clearLocaleTestValue();
+  });
 
   testWidgets('muestra datos reales de la cuenta y el menu', (
     WidgetTester tester,

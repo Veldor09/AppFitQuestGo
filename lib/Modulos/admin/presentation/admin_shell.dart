@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_registro.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_sidebar.dart';
@@ -25,8 +26,6 @@ class _AdminShellState extends State<AdminShell> {
   int _seleccion = 0;
   bool _sidebarFijo = false;
 
-  final List<AdminSeccion> _secciones = adminSecciones;
-
   Future<void> _cerrarSesion() async {
     await AuthScope.read(context).cerrarSesion();
   }
@@ -39,7 +38,9 @@ class _AdminShellState extends State<AdminShell> {
       return _AccesoDenegado(onSalir: _cerrarSesion);
     }
 
-    final AdminSeccion actual = _secciones[_seleccion];
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final List<AdminSeccion> secciones = buildAdminSecciones(l10n);
+    final AdminSeccion actual = secciones[_seleccion];
 
     return Scaffold(
       backgroundColor: FqColors.adminBg,
@@ -64,11 +65,11 @@ class _AdminShellState extends State<AdminShell> {
                       color: FqColors.adminBg,
                       child: _LazyIndexedStack(
                         index: _seleccion,
-                        itemCount: _secciones.length,
+                        itemCount: secciones.length,
                         itemBuilder: (BuildContext context, int i) =>
                             KeyedSubtree(
-                          key: ValueKey<String>(_secciones[i].code),
-                          child: Builder(builder: _secciones[i].builder),
+                          key: ValueKey<String>(secciones[i].code),
+                          child: Builder(builder: secciones[i].builder),
                         ),
                       ),
                     ),
@@ -79,7 +80,7 @@ class _AdminShellState extends State<AdminShell> {
                   left: 0,
                   bottom: 0,
                   child: AdminSidebar(
-                    secciones: _secciones,
+                    secciones: secciones,
                     selectedIndex: _seleccion,
                     pinned: _sidebarFijo,
                     onSelect: (int i) => setState(() => _seleccion = i),
@@ -148,15 +149,16 @@ class _AccesoDenegado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: FqColors.adminBg,
       body: FqEmptyState(
         icon: Icons.lock_outline,
-        title: 'Acceso restringido',
-        message: 'Esta seccion es solo para cuentas con rol Admin.',
+        title: l10n.admAccesoRestringidoTitulo,
+        message: l10n.admAccesoRestringidoMensaje,
         action: TextButton(
           onPressed: onSalir,
-          child: const Text('Cerrar sesion'),
+          child: Text(l10n.perfilCerrarSesion),
         ),
       ),
     );

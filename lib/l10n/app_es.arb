@@ -1,0 +1,1510 @@
+{
+  "@@locale": "es",
+
+  "comunCorreo": "Correo",
+  "@comunCorreo": {
+    "description": "Label for the email text field, used across Auth screens."
+  },
+  "comunCorreoHint": "tucorreo@dominio.com",
+  "@comunCorreoHint": {
+    "description": "Placeholder/hint text shown inside the empty email field."
+  },
+  "comunContrasena": "Contrasena",
+  "@comunContrasena": {
+    "description": "Label for the password text field, used across Auth screens."
+  },
+  "comunIniciarSesion": "Iniciar sesion",
+  "@comunIniciarSesion": {
+    "description": "Button label to log in; also used as the welcome screen's secondary CTA."
+  },
+  "comunCrearCuenta": "Crear cuenta",
+  "@comunCrearCuenta": {
+    "description": "Button label to start account creation, on the welcome screen."
+  },
+  "comunRevisaCampos": "Revisa los campos marcados en rojo",
+  "@comunRevisaCampos": {
+    "description": "Generic form-validation error toast shown when submit is blocked by invalid fields."
+  },
+  "validacionCorreoObligatorio": "El correo es obligatorio",
+  "@validacionCorreoObligatorio": {
+    "description": "Inline validation message when the email field is left empty."
+  },
+
+  "bienvenidaTagline": "Muevete con tu ciudad",
+  "@bienvenidaTagline": {
+    "description": "Short tagline above the welcome screen's hero title."
+  },
+  "bienvenidaTitulo": "Tu proxima aventura comienza cerca.",
+  "@bienvenidaTitulo": {
+    "description": "Hero title on the welcome (no session) screen."
+  },
+  "bienvenidaSubtitulo": "Descubre rutas, comparte alertas y activa a tu comunidad.",
+  "@bienvenidaSubtitulo": {
+    "description": "Hero subtitle on the welcome screen, under the title."
+  },
+  "bienvenidaAvisoLegal": "Al continuar aceptas los Terminos y la Politica de privacidad.",
+  "@bienvenidaAvisoLegal": {
+    "description": "Fine-print legal notice at the bottom of the welcome screen."
+  },
+
+  "loginTitulo": "Bienvenido de vuelta",
+  "@loginTitulo": {
+    "description": "Header title on the login screen."
+  },
+  "loginSubtitulo": "Continua tu recorrido",
+  "@loginSubtitulo": {
+    "description": "Header subtitle on the login screen."
+  },
+  "loginValidacionContrasena": "Ingresa tu contrasena",
+  "@loginValidacionContrasena": {
+    "description": "Inline validation message when the password field is left empty, on login."
+  },
+  "loginOlvidasteContrasena": "Olvidaste tu contrasena?",
+  "@loginOlvidasteContrasena": {
+    "description": "Tappable link on the login screen that opens password recovery."
+  },
+  "loginCredencialesIncorrectas": "Correo o contrasena incorrectos",
+  "@loginCredencialesIncorrectas": {
+    "description": "Error toast when the backend rejects login with HTTP 401."
+  },
+  "loginErrorConexion": "No se pudo conectar con el servidor. Intenta de nuevo.",
+  "@loginErrorConexion": {
+    "description": "Error toast when the login request fails for a reason other than bad credentials (e.g. no network)."
+  },
+  "loginExito": "Inicio de sesion exitoso",
+  "@loginExito": {
+    "description": "Success toast shown right after a successful login."
+  },
+
+  "comunNombre": "Nombre",
+  "@comunNombre": {
+    "description": "Label for a person's name text field."
+  },
+  "comunCiudad": "Ciudad",
+  "@comunCiudad": {
+    "description": "Label for the (optional) city text field in registration."
+  },
+  "comunContinuar": "Continuar",
+  "@comunContinuar": {
+    "description": "Generic 'Continue' button label, used on most wizard steps."
+  },
+
+  "registroValidacionContrasena": "La contrasena es obligatoria",
+  "@registroValidacionContrasena": {
+    "description": "Inline validation message when the password field is left empty, on registration."
+  },
+  "registroAceptaTerminosError": "Debes aceptar los terminos y condiciones para continuar",
+  "@registroAceptaTerminosError": {
+    "description": "Toast shown when the user tries to advance past step 1 without checking the terms checkbox."
+  },
+  "registroExito": "Cuenta creada. Bienvenido a FitQuest Go",
+  "@registroExito": {
+    "description": "Success toast shown right after account creation succeeds."
+  },
+  "registroCorreoYaRegistrado": "Ese correo ya tiene una cuenta. Inicia sesion.",
+  "@registroCorreoYaRegistrado": {
+    "description": "Error toast when the backend rejects registration with HTTP 409 (duplicate email)."
+  },
+  "registroErrorConexion": "No se pudo crear la cuenta. Revisa tu conexion.",
+  "@registroErrorConexion": {
+    "description": "Error toast when account creation fails for a reason other than a duplicate email."
+  },
+  "registroPasoDeTotal": "Paso {actual} de {total}",
+  "@registroPasoDeTotal": {
+    "description": "Step counter under the wizard header, e.g. 'Step 2 of 4'.",
+    "placeholders": {
+      "actual": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "registroPasoDatosTitulo": "Datos",
+  "@registroPasoDatosTitulo": {
+    "description": "Wizard step title: basic account data (name, email, password)."
+  },
+  "registroPasoActividadesTitulo": "Actividades",
+  "@registroPasoActividadesTitulo": {
+    "description": "Wizard step title: activities the user practices."
+  },
+  "registroPasoInteresesTitulo": "Intereses",
+  "@registroPasoInteresesTitulo": {
+    "description": "Wizard step title: interests to personalize the map."
+  },
+  "registroPasoPermisosTitulo": "Permisos",
+  "@registroPasoPermisosTitulo": {
+    "description": "Wizard step title: app permissions."
+  },
+  "registroPermitirYContinuar": "Permitir y continuar",
+  "@registroPermitirYContinuar": {
+    "description": "CTA on the last wizard step (permissions), which also submits the registration."
+  },
+  "registroAceptoPrefijo": "Acepto los ",
+  "@registroAceptoPrefijo": {
+    "description": "First part of the terms-acceptance sentence, right before the tappable 'terms and conditions' link. Keep the trailing space."
+  },
+  "registroTerminosYCondiciones": "terminos y condiciones",
+  "@registroTerminosYCondiciones": {
+    "description": "The tappable middle part of the terms-acceptance sentence; opens the legal terms modal."
+  },
+  "registroAceptoSufijo": " de FitQuest Go.",
+  "@registroAceptoSufijo": {
+    "description": "Last part of the terms-acceptance sentence, right after the tappable link. Keep the leading space."
+  },
+  "registroTerminosErrorInline": "Debes aceptar los terminos para crear tu cuenta",
+  "@registroTerminosErrorInline": {
+    "description": "Inline red error text shown under the terms checkbox when left unchecked."
+  },
+
+  "registroActividadesTitulo": "Que actividades practicas?",
+  "@registroActividadesTitulo": {
+    "description": "Heading on the 'Activities' wizard step."
+  },
+  "registroActividadesBajada": "Selecciona todas las que quieras.",
+  "@registroActividadesBajada": {
+    "description": "Subheading on the 'Activities' wizard step."
+  },
+  "actividadRunning": "Running",
+  "actividadCiclismo": "Ciclismo",
+  "actividadMtb": "MTB",
+  "actividadHiking": "Hiking",
+  "actividadCaminata": "Caminata",
+
+  "registroInteresesTitulo": "Personaliza tu mapa",
+  "@registroInteresesTitulo": {
+    "description": "Heading on the 'Interests' wizard step."
+  },
+  "registroInteresesBajada": "Esto mejora tus recomendaciones.",
+  "@registroInteresesBajada": {
+    "description": "Subheading on the 'Interests' wizard step."
+  },
+  "interesRutasNuevas": "Rutas nuevas",
+  "interesEventos": "Eventos",
+  "interesRetos": "Retos",
+  "interesNaturaleza": "Naturaleza",
+  "interesCultura": "Cultura",
+  "interesComunidad": "Comunidad",
+
+  "permisoUbicacionTitulo": "Ubicacion",
+  "permisoUbicacionDetalle": "Mapa vivo y tracking de rutas",
+  "permisoNotificacionesTitulo": "Notificaciones",
+  "permisoNotificacionesDetalle": "Estados, eventos y alertas cercanas",
+  "permisoActividadFisicaTitulo": "Actividad fisica",
+  "permisoActividadFisicaDetalle": "Metricas durante el recorrido",
+
+  "registroCompletadoTitulo": "Todo listo!",
+  "@registroCompletadoTitulo": {
+    "description": "Big headline on the 'registration complete' screen."
+  },
+  "registroCompletadoSubtitulo": "Tu perfil esta preparado. Ya puedes explorar FitQuest Go.",
+  "@registroCompletadoSubtitulo": {
+    "description": "Subtext on the 'registration complete' screen."
+  },
+  "registroCompletadoCta": "Explorar el mapa",
+  "@registroCompletadoCta": {
+    "description": "Button label on the 'registration complete' screen; closes the wizard."
+  },
+
+  "olvideTitulo": "Recuperar acceso",
+  "@olvideTitulo": {
+    "description": "Header title on the 'forgot password' (step 1) screen."
+  },
+  "olvideSubtitulo": "Te enviamos un codigo a tu correo",
+  "@olvideSubtitulo": {
+    "description": "Header subtitle on the 'forgot password' (step 1) screen."
+  },
+  "olvideCorreoInvalido": "Ingresa un correo valido",
+  "@olvideCorreoInvalido": {
+    "description": "Inline validation message when the email field fails format validation."
+  },
+  "olvideCodigoEnviado": "Si el correo existe, te enviamos un codigo",
+  "@olvideCodigoEnviado": {
+    "description": "Info toast after requesting a reset code; deliberately vague so it doesn't reveal whether the email is registered."
+  },
+  "olvideEnviarCodigo": "Enviar codigo",
+  "@olvideEnviarCodigo": {
+    "description": "Submit button on the 'forgot password' (step 1) screen."
+  },
+
+  "restablecerTitulo": "Ingresa el codigo",
+  "@restablecerTitulo": {
+    "description": "Header title on the 'reset password' (step 2) screen; also reused as the inline 'enter the code' validation message, since both read identically."
+  },
+  "restablecerSubtitulo": "Lo enviamos a {email}",
+  "@restablecerSubtitulo": {
+    "description": "Header subtitle on the 'reset password' (step 2) screen, naming the email the code was sent to.",
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "restablecerCodigoLongitud": "El codigo tiene 6 digitos",
+  "@restablecerCodigoLongitud": {
+    "description": "Inline validation message when the entered code isn't exactly 6 digits long."
+  },
+  "restablecerValidacionContrasena": "Ingresa la nueva contrasena",
+  "@restablecerValidacionContrasena": {
+    "description": "Inline validation message when the new-password field is left empty."
+  },
+  "restablecerExito": "Contrasena actualizada. Inicia sesion con la nueva.",
+  "@restablecerExito": {
+    "description": "Success toast after the password is reset; user is returned to the login screen."
+  },
+  "restablecerCodigoInvalido": "Codigo invalido o expirado",
+  "@restablecerCodigoInvalido": {
+    "description": "Error toast when the backend rejects the reset code (HTTP 401: wrong or expired)."
+  },
+  "restablecerCodigoLabel": "Codigo de 6 digitos",
+  "@restablecerCodigoLabel": {
+    "description": "Label for the 6-digit reset-code text field."
+  },
+  "restablecerContrasenaNuevaLabel": "Contrasena nueva",
+  "@restablecerContrasenaNuevaLabel": {
+    "description": "Label for the new-password text field."
+  },
+  "restablecerActualizarContrasena": "Actualizar contrasena",
+  "@restablecerActualizarContrasena": {
+    "description": "Submit button on the 'reset password' (step 2) screen."
+  },
+
+  "comunObligatorio": "Obligatorio",
+  "@comunObligatorio": {
+    "description": "Short inline validation message for a required field left empty (Flutter Form validators, used in the Nodo/Alerta/Ruta creation sheets)."
+  },
+  "comunEnviando": "Enviando...",
+  "@comunEnviando": {
+    "description": "Submit button label while a form request is in flight."
+  },
+  "comunEnviar": "Enviar",
+  "@comunEnviar": {
+    "description": "Generic 'Send/Submit' button label, used on the Nodo creation form."
+  },
+  "comunGuardando": "Guardando...",
+  "@comunGuardando": {
+    "description": "Save button label while a save request is in flight."
+  },
+  "comunGuardar": "Guardar",
+  "@comunGuardar": {
+    "description": "Generic 'Save' button label."
+  },
+  "comunNoSePudoEnviar": "No se pudo enviar: {error}",
+  "@comunNoSePudoEnviar": {
+    "description": "Error snackbar when submitting the Nodo/Alerta creation form fails, including the raw exception text.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "comunEventos": "Eventos",
+  "@comunEventos": {
+    "description": "Label for the (not yet built) Events section/tab."
+  },
+  "comunSeccionPronto": "Esta seccion estara disponible pronto.",
+  "@comunSeccionPronto": {
+    "description": "Placeholder message for a bottom-nav tab with no backend yet."
+  },
+  "comunDescripcionOpcional": "Descripcion (opcional)",
+  "@comunDescripcionOpcional": {
+    "description": "Label for an optional free-text description field, used in Nodo/Alerta creation forms."
+  },
+
+  "navMapa": "Mapa",
+  "@navMapa": {
+    "description": "Bottom nav tab label: the map/home tab."
+  },
+  "navCrear": "Crear",
+  "@navCrear": {
+    "description": "Bottom nav tab label: create/plan a route."
+  },
+  "navPerfil": "Perfil",
+  "@navPerfil": {
+    "description": "Bottom nav tab label: the user's own profile."
+  },
+
+  "rutasTitulo": "Rutas",
+  "@rutasTitulo": {
+    "description": "The word 'Routes': used as the bottom-nav tab label, the Rutas screen's page header, and a map filter chip."
+  },
+  "rutasExplorar": "Explorar",
+  "@rutasExplorar": {
+    "description": "Tab label: publicly published routes from the whole community."
+  },
+  "rutasMisRutas": "Mis rutas",
+  "@rutasMisRutas": {
+    "description": "Tab label: the current user's own routes, in any state. Also quoted inside the 'route saved' success message."
+  },
+  "rutasSinPublicadas": "Sin rutas publicadas",
+  "@rutasSinPublicadas": {
+    "description": "Empty-state title on the 'Explorar' tab when no routes have been published yet."
+  },
+  "rutasSinPublicadasMensaje": "Cuando la comunidad publique rutas, apareceran aqui.",
+  "@rutasSinPublicadasMensaje": {
+    "description": "Empty-state message on the 'Explorar' tab."
+  },
+  "rutasSinPropias": "Todavia no tenes rutas",
+  "@rutasSinPropias": {
+    "description": "Empty-state title on the 'Mis rutas' tab when the user has no routes yet."
+  },
+  "rutasSinPropiasMensaje": "Las rutas que registres o planifiques apareceran aqui.",
+  "@rutasSinPropiasMensaje": {
+    "description": "Empty-state message on the 'Mis rutas' tab."
+  },
+  "rutasNoSePudoCargar": "No se pudo cargar",
+  "@rutasNoSePudoCargar": {
+    "description": "Error-state title when fetching the routes list fails."
+  },
+  "rutasErrorConexionGenerico": "No se pudo conectar con el servidor.",
+  "@rutasErrorConexionGenerico": {
+    "description": "Error-state message fallback when fetching routes fails for a reason other than a typed ApiException."
+  },
+  "rutasReintentar": "Reintentar",
+  "@rutasReintentar": {
+    "description": "Retry button on the routes list error state."
+  },
+  "rutasActividad": "Actividad",
+  "@rutasActividad": {
+    "description": "Label for the activity field in the route detail sheet and creation form."
+  },
+  "rutasDificultadLabel": "Dificultad",
+  "@rutasDificultadLabel": {
+    "description": "Label for the difficulty field/dropdown, in the route detail sheet and creation form."
+  },
+  "rutasDistancia": "Distancia",
+  "@rutasDistancia": {
+    "description": "Label for the distance field in the route detail sheet."
+  },
+  "rutasPuntosDelTrazo": "Puntos del trazo",
+  "@rutasPuntosDelTrazo": {
+    "description": "Label for the point-count field in the route detail sheet."
+  },
+  "rutasPropuestaPor": "Propuesta por",
+  "@rutasPropuestaPor": {
+    "description": "Label showing who created the route, in the route detail sheet (only for routes proposed by someone else)."
+  },
+  "rutasEnviarARevision": "Enviar a revision",
+  "@rutasEnviarARevision": {
+    "description": "Button in the route detail sheet: submit a private route for moderation."
+  },
+  "rutasEnviadaARevision": "Ruta enviada a revision",
+  "@rutasEnviadaARevision": {
+    "description": "Success toast after submitting a route for moderation."
+  },
+  "rutasNoSePudoEnviarRuta": "No se pudo enviar la ruta",
+  "@rutasNoSePudoEnviarRuta": {
+    "description": "Error toast when submitting a route for moderation fails."
+  },
+
+  "dificultadFacil": "Facil",
+  "dificultadModerada": "Moderada",
+  "dificultadDificil": "Dificil",
+
+  "estadoRutaPrivada": "Privada",
+  "estadoRutaPendiente": "Pendiente",
+  "estadoRutaPublicada": "Publicada",
+  "estadoRutaRechazada": "Rechazada",
+
+  "planificarModoDibujarInstruccion": "Toca el mapa para trazar tu ruta, punto por punto.",
+  "@planificarModoDibujarInstruccion": {
+    "description": "Instruction banner shown in 'Dibujar' (draw) mode on the plan-a-route screen."
+  },
+  "planificarModoGpsGrabando": "Grabando... camina para trazar la ruta.",
+  "@planificarModoGpsGrabando": {
+    "description": "Instruction banner shown in GPS mode while actively recording."
+  },
+  "planificarModoGpsInstruccion": "Toca \"{boton}\" y empeza a caminar.",
+  "@planificarModoGpsInstruccion": {
+    "description": "Instruction banner shown in GPS mode before recording starts; {boton} is the exact label of the start-recording button, quoted.",
+    "placeholders": {
+      "boton": { "type": "String" }
+    }
+  },
+  "planificarDibujar": "Dibujar",
+  "@planificarDibujar": {
+    "description": "Mode-selector label: tap-to-draw route mode."
+  },
+  "planificarGrabarGps": "Grabar GPS",
+  "@planificarGrabarGps": {
+    "description": "Mode-selector label: live GPS recording mode."
+  },
+  "planificarSinPuntos": "Sin puntos todavia",
+  "@planificarSinPuntos": {
+    "description": "Status line on the plan-a-route screen before any point has been added."
+  },
+  "planificarPuntosYDistancia": "{puntos} puntos · {km} km aprox.",
+  "@planificarPuntosYDistancia": {
+    "description": "Status line showing the point count and approximate distance so far.",
+    "placeholders": {
+      "puntos": { "type": "int" },
+      "km": { "type": "String" }
+    }
+  },
+  "planificarDeshacer": "Deshacer",
+  "@planificarDeshacer": {
+    "description": "Button in Dibujar mode: remove the last added point."
+  },
+  "planificarLimpiar": "Limpiar",
+  "@planificarLimpiar": {
+    "description": "Button in Dibujar mode: clear all added points."
+  },
+  "planificarDetener": "Detener",
+  "@planificarDetener": {
+    "description": "Button in GPS mode while recording: stop the recording."
+  },
+  "planificarIniciarGrabacion": "Iniciar grabacion",
+  "@planificarIniciarGrabacion": {
+    "description": "Button in GPS mode before recording: start the recording."
+  },
+  "planificarGuardarRutaTitulo": "Guardar ruta",
+  "@planificarGuardarRutaTitulo": {
+    "description": "Title of the bottom sheet shown when saving a newly drawn/recorded route."
+  },
+  "planificarActivaUbicacion": "Activa la ubicacion del dispositivo para grabar",
+  "@planificarActivaUbicacion": {
+    "description": "Error toast when the device's location service is turned off."
+  },
+  "planificarPermisoNecesario": "Se necesita permiso de ubicacion para grabar",
+  "@planificarPermisoNecesario": {
+    "description": "Error toast when location permission is denied (but not permanently)."
+  },
+  "planificarPermisoBloqueado": "Permiso de ubicacion bloqueado. Habilitalo desde Ajustes del sistema.",
+  "@planificarPermisoBloqueado": {
+    "description": "Error toast when location permission was permanently denied."
+  },
+  "planificarRutaGuardadaExito": "Ruta guardada como privada. Podes publicarla desde \"{misRutas}\".",
+  "@planificarRutaGuardadaExito": {
+    "description": "Success toast after saving a route; {misRutas} is the exact 'My routes' tab label, quoted.",
+    "placeholders": {
+      "misRutas": { "type": "String" }
+    }
+  },
+  "planificarNoSePudoGuardar": "No se pudo guardar la ruta",
+  "@planificarNoSePudoGuardar": {
+    "description": "Error toast when saving a route fails."
+  },
+
+  "homeQuePublicar": "Que queres reportar?",
+  "@homeQuePublicar": {
+    "description": "Title of the bottom sheet offering a choice between reporting a point of interest or an alert."
+  },
+  "homePuntoDeInteres": "Punto de interes",
+  "@homePuntoDeInteres": {
+    "description": "Option in the report-choice sheet: propose a point of interest."
+  },
+  "homePuntoDeInteresSubtitulo": "Agua, mirador, comercio...",
+  "@homePuntoDeInteresSubtitulo": {
+    "description": "Subtitle/examples under the 'point of interest' report option."
+  },
+  "homeAlertaOpcion": "Alerta",
+  "@homeAlertaOpcion": {
+    "description": "Option in the report-choice sheet: report an alert (singular)."
+  },
+  "homeAlertaOpcionSubtitulo": "Peligro u obstaculo en la via",
+  "@homeAlertaOpcionSubtitulo": {
+    "description": "Subtitle/examples under the 'alert' report option."
+  },
+  "homeProponerPunto": "Proponer punto de interes",
+  "@homeProponerPunto": {
+    "description": "Title of the point-of-interest creation form."
+  },
+  "homeCategoria": "Categoria",
+  "@homeCategoria": {
+    "description": "Label for the point-of-interest category text field."
+  },
+  "homeReportarAlerta": "Reportar alerta",
+  "@homeReportarAlerta": {
+    "description": "Title of the alert creation form."
+  },
+  "homeTipo": "Tipo",
+  "@homeTipo": {
+    "description": "Label for the alert type text field."
+  },
+  "homeGravedad": "Gravedad",
+  "@homeGravedad": {
+    "description": "Label for the alert severity dropdown."
+  },
+  "gravedadBaja": "Baja",
+  "gravedadMedia": "Media",
+  "gravedadAlta": "Alta",
+  "homePublicarAlerta": "Publicar alerta",
+  "@homePublicarAlerta": {
+    "description": "Submit button on the alert creation form."
+  },
+  "homeNodoEnviadoExito": "Punto enviado. Va a aparecer en el mapa cuando se apruebe.",
+  "@homeNodoEnviadoExito": {
+    "description": "Snackbar after successfully proposing a point of interest."
+  },
+  "homeAlertaPublicadaExito": "Alerta publicada en el mapa.",
+  "@homeAlertaPublicadaExito": {
+    "description": "Snackbar after successfully reporting an alert."
+  },
+  "homeBuscarPlaceholder": "Buscar lugar, ruta o evento",
+  "@homeBuscarPlaceholder": {
+    "description": "Placeholder text in the (decorative, not yet wired) search bar on the home map screen."
+  },
+  "homeFiltroTodo": "Todo",
+  "@homeFiltroTodo": {
+    "description": "Map filter chip: show everything."
+  },
+  "homeFiltroAlertas": "Alertas",
+  "@homeFiltroAlertas": {
+    "description": "Map filter chip: alerts only (plural)."
+  },
+  "homeFiltroPois": "POIs",
+  "@homeFiltroPois": {
+    "description": "Map filter chip: points of interest only. Kept as the acronym 'POIs' in every language."
+  },
+  "homeCercaDeTi": "Cerca de ti",
+  "@homeCercaDeTi": {
+    "description": "Title of the bottom 'nearby' panel on the home map screen."
+  },
+  "homeMantenPresionado": "Manten presionado el mapa para reportar",
+  "@homeMantenPresionado": {
+    "description": "Hint text in the 'nearby' panel explaining how to report something."
+  },
+  "homeRutaFake": "Ruta · 1,2 km",
+  "@homeRutaFake": {
+    "description": "Placeholder sample tile in the 'nearby' panel (not real data yet). Keep the decimal separator correct per-locale."
+  },
+  "homeAlertaFake": "Alerta · 300 m",
+  "@homeAlertaFake": {
+    "description": "Placeholder sample tile in the 'nearby' panel (not real data yet)."
+  },
+
+  "rolEmpresa": "Empresa",
+  "@rolEmpresa": {
+    "description": "User role label (idrol 2): a business/sponsor account."
+  },
+  "rolAdmin": "Admin",
+  "@rolAdmin": {
+    "description": "User role label (idrol 3): an administrator account."
+  },
+  "rolUsuario": "Usuario",
+  "@rolUsuario": {
+    "description": "User role label (default/idrol 1): a regular user account."
+  },
+  "estadoUsuarioActivado": "Activado",
+  "@estadoUsuarioActivado": {
+    "description": "Account status label: active."
+  },
+  "estadoUsuarioDesactivado": "Desactivado",
+  "@estadoUsuarioDesactivado": {
+    "description": "Account status label: deactivated."
+  },
+
+  "perfilMisAportes": "Mis aportes",
+  "@perfilMisAportes": {
+    "description": "Profile menu item (not yet built)."
+  },
+  "perfilInsignias": "Insignias",
+  "@perfilInsignias": {
+    "description": "Profile menu item (not yet built): badges/achievements."
+  },
+  "perfilMapasOffline": "Mapas offline",
+  "@perfilMapasOffline": {
+    "description": "Profile menu item (not yet built): offline maps."
+  },
+  "perfilPreferencias": "Preferencias y privacidad",
+  "@perfilPreferencias": {
+    "description": "Profile menu item (not yet built): preferences and privacy."
+  },
+  "perfilDisponiblePronto": "{texto}: disponible pronto",
+  "@perfilDisponiblePronto": {
+    "description": "Info toast when tapping a not-yet-built profile menu item.",
+    "placeholders": {
+      "texto": { "type": "String" }
+    }
+  },
+  "perfilAjustesCuenta": "Ajustes de la cuenta",
+  "@perfilAjustesCuenta": {
+    "description": "Tooltip on the settings icon, and title of the account settings sheet."
+  },
+  "perfilDatosDeLaBd": "Datos leidos de la base de datos.",
+  "@perfilDatosDeLaBd": {
+    "description": "Subtitle in the account settings sheet, noting the data shown is real."
+  },
+  "perfilRol": "Rol",
+  "@perfilRol": {
+    "description": "Label for the role field in the account settings sheet."
+  },
+  "perfilEstado": "Estado",
+  "@perfilEstado": {
+    "description": "Label for the account status field in the account settings sheet."
+  },
+  "perfilCerrarSesion": "Cerrar sesion",
+  "@perfilCerrarSesion": {
+    "description": "Log out button in the account settings sheet."
+  },
+  "perfilNoSePudoCargar": "No se pudo cargar tu perfil",
+  "@perfilNoSePudoCargar": {
+    "description": "Error-state title when loading the user's own profile fails."
+  },
+  "perfilErrorGenerico": "No se pudo cargar tu perfil.",
+  "@perfilErrorGenerico": {
+    "description": "Error-state body message fallback when the failure isn't a typed ApiException with its own message."
+  },
+  "perfilKm": "KM",
+  "@perfilKm": {
+    "description": "Uppercase metric label: kilometers, in the example stats strip (not real data yet)."
+  },
+  "perfilMetricaRutas": "RUTAS",
+  "@perfilMetricaRutas": {
+    "description": "Uppercase metric label: routes count, in the example stats strip (not real data yet)."
+  },
+  "perfilMetricaInsignias": "INSIGNIAS",
+  "@perfilMetricaInsignias": {
+    "description": "Uppercase metric label: badges count, in the example stats strip (not real data yet)."
+  },
+
+  "comunVer": "Ver",
+  "@comunVer": {
+    "description": "Generic 'View' action button/link, used in admin tables (e.g. a row's detail action)."
+  },
+  "comunNuevo": "Nuevo",
+  "@comunNuevo": {
+    "description": "Generic 'New' button label to create a record, on admin mockup screens with a create action."
+  },
+
+  "admNavDashboard": "Dashboard",
+  "admDescDashboard": "Estado general y colas del sistema.",
+  "admNavUsuarios": "Usuarios",
+  "admDescUsuarios": "Buscar y gestionar cuentas.",
+  "admDetalleUsuarioNav": "Detalle de usuario",
+  "admDetalleUsuarioDesc": "Revisar historial, aportes y reportes.",
+  "admDetalleUsuarioVacioTitulo": "Elige un usuario",
+  "admDetalleUsuarioVacioMensaje": "Abre la seccion \"{usuarios}\" y pulsa \"{ver}\" en una cuenta para revisar su detalle.",
+  "@admDetalleUsuarioVacioMensaje": {
+    "description": "Empty-state message on ADM-03, telling the admin how to reach a user's detail; {usuarios} and {ver} are the exact quoted labels of the nav item and the row action.",
+    "placeholders": {
+      "usuarios": { "type": "String" },
+      "ver": { "type": "String" }
+    }
+  },
+  "admNavGestionRutas": "Gestion de rutas",
+  "admDescGestionRutas": "Administrar la cola de moderacion de rutas.",
+  "admNavRevisionRuta": "Revision de ruta",
+  "admDescRevisionRuta": "Aprobar, pedir correccion o rechazar con motivo.",
+  "admNavGestionAlertas": "Gestion de alertas",
+  "admHeaderAlertasActivas": "Alertas activas",
+  "admDescGestionAlertas": "Supervisar reportes comunitarios en vivo.",
+  "admNavGestionNodos": "Gestion de nodos",
+  "admHeaderNodosPois": "Nodos / POIs",
+  "admDescGestionNodos": "Revisar puntos de interes propuestos.",
+  "admNavGestionEventos": "Gestion de eventos",
+  "admDescGestionEventos": "Aprobar eventos y retos patrocinados.",
+  "admNavGestionPatrocinadores": "Gestion de patrocinadores",
+  "admHeaderPatrocinadores": "Patrocinadores",
+  "admDescGestionPatrocinadores": "Verificar y supervisar cuentas comerciales.",
+  "admNavGestionInsignias": "Gestion de insignias",
+  "admDescGestionInsignias": "Crear y configurar reglas de gamificacion.",
+  "admNavCatalogos": "Catalogos",
+  "admDescCatalogos": "Mantener tipos de alerta, categorias y actividades.",
+  "admNavReportesContenido": "Reportes de contenido",
+  "admDescReportesContenido": "Moderar denuncias sobre cualquier publicacion.",
+  "admNavAuditoria": "Auditoria",
+  "admDescAuditoria": "Consultar trazabilidad de decisiones.",
+
+  "admAccesoRestringidoTitulo": "Acceso restringido",
+  "@admAccesoRestringidoTitulo": {
+    "description": "Title shown when a non-admin user somehow reaches the admin shell."
+  },
+  "admAccesoRestringidoMensaje": "Esta seccion es solo para cuentas con rol Admin.",
+  "@admAccesoRestringidoMensaje": {
+    "description": "Message shown alongside admAccesoRestringidoTitulo."
+  },
+
+  "admKpiUsuarios": "usuarios",
+  "@admKpiUsuarios": {
+    "description": "Dashboard KPI label (rendered uppercase by the widget): total users."
+  },
+  "admKpiRutas": "rutas",
+  "@admKpiRutas": {
+    "description": "Dashboard KPI label: total routes."
+  },
+  "admKpiAlertasActivas": "alertas activas",
+  "@admKpiAlertasActivas": {
+    "description": "Dashboard KPI label: active alerts."
+  },
+  "admKpiPendientes": "pendientes",
+  "@admKpiPendientes": {
+    "description": "Dashboard KPI label: items pending review."
+  },
+  "admActividadEnVivo": "Actividad en vivo",
+  "@admActividadEnVivo": {
+    "description": "Dashboard panel title: the live map."
+  },
+  "admEnLinea": "En linea",
+  "@admEnLinea": {
+    "description": "Status tag next to the live-map panel title."
+  },
+  "admColasPrioritarias": "Colas prioritarias",
+  "@admColasPrioritarias": {
+    "description": "Dashboard panel title: the moderation queues summary."
+  },
+  "admVerTodas": "Ver todas",
+  "@admVerTodas": {
+    "description": "Link in the queues panel header."
+  },
+  "admRutasPorRevisar": "Rutas por revisar",
+  "@admRutasPorRevisar": {
+    "description": "Dashboard queue row label: routes awaiting moderation."
+  },
+  "admNodosPendientes": "Nodos pendientes",
+  "@admNodosPendientes": {
+    "description": "Dashboard queue row label: points of interest awaiting moderation."
+  },
+  "admReportesNuevos": "Reportes nuevos",
+  "@admReportesNuevos": {
+    "description": "Dashboard queue row label: new content reports."
+  },
+
+  "admTabPendientes": "Pendientes",
+  "@admTabPendientes": {
+    "description": "Status filter tab shared by every not-yet-built admin list screen."
+  },
+  "admTabPublicados": "Publicados",
+  "admTabRechazados": "Rechazados",
+  "admTabArchivados": "Archivados",
+  "admAltaPendienteBackend": "Alta de registro: pendiente de backend.",
+  "@admAltaPendienteBackend": {
+    "description": "Snackbar shown when tapping 'Nuevo' on a mockup admin screen with no backend yet."
+  },
+
+  "admEventosSearchHint": "Buscar en eventos",
+  "admEventosVacioTitulo": "Sin eventos por aprobar",
+  "admEventosVacioMensaje": "Eventos y retos patrocinados pendientes de aprobacion se veran aqui.",
+  "admPatrocinadoresSearchHint": "Buscar en patrocinadores",
+  "admPatrocinadoresVacioTitulo": "Sin cuentas comerciales",
+  "admPatrocinadoresVacioMensaje": "Las cuentas de patrocinador para verificar o supervisar iran aqui.",
+  "admInsigniasSearchHint": "Buscar en insignias",
+  "admInsigniasVacioTitulo": "Sin insignias configuradas",
+  "admInsigniasVacioMensaje": "Crea reglas de gamificacion para que aparezcan en este listado.",
+  "admCatalogosSearchHint": "Buscar en catalogos",
+  "admCatalogosVacioTitulo": "Sin catalogos",
+  "admCatalogosVacioMensaje": "Tipos de alerta, categorias de nodo y actividades se administran aqui.",
+  "admReportesSearchHint": "Buscar en reportes de contenido",
+  "admReportesVacioTitulo": "Sin denuncias",
+  "admReportesVacioMensaje": "Las denuncias sobre rutas, nodos, alertas o eventos se moderan aqui.",
+  "admAuditoriaSearchHint": "Buscar en auditoria",
+  "admAuditoriaVacioTitulo": "Sin registros de auditoria",
+  "admAuditoriaVacioMensaje": "Cada decision administrativa quedara trazada en esta bitacora.",
+
+  "comunCerrar": "Cerrar",
+  "@comunCerrar": {
+    "description": "Generic accessibility label / button text for closing an overlay (e.g. a dialog's barrierLabel)."
+  },
+  "comunCancelar": "Cancelar",
+  "@comunCancelar": {
+    "description": "Generic 'Cancel' button label."
+  },
+
+  "usuariosFiltroTodos": "Todos",
+  "@usuariosFiltroTodos": {
+    "description": "Role filter option meaning 'no filter, show every role'."
+  },
+  "usuariosCreadoExito": "Usuario creado correctamente",
+  "@usuariosCreadoExito": {
+    "description": "Success toast after creating a user from the admin panel."
+  },
+  "usuariosCambiosGuardados": "Cambios guardados",
+  "@usuariosCambiosGuardados": {
+    "description": "Success toast after editing a user from the admin panel."
+  },
+  "usuariosDesactivadoExito": "{nombre} fue desactivado",
+  "@usuariosDesactivadoExito": {
+    "description": "Success toast after deactivating a user account.",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "usuariosActivadoExito": "{nombre} fue activado",
+  "@usuariosActivadoExito": {
+    "description": "Success toast after reactivating a user account.",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "usuariosAccionFallida": "No se pudo completar la accion",
+  "@usuariosAccionFallida": {
+    "description": "Generic error toast when changing a user's account status fails."
+  },
+  "usuariosDesactivarTitulo": "Desactivar usuario",
+  "@usuariosDesactivarTitulo": {
+    "description": "Title of the confirmation dialog before deactivating a user."
+  },
+  "usuariosDesactivarMensaje": "La cuenta de {nombre} pasara a \"{estado}\" y no podra iniciar sesion. Puedes reactivarla despues.",
+  "@usuariosDesactivarMensaje": {
+    "description": "Body text of the deactivate-user confirmation dialog; {estado} is the exact quoted 'Deactivated' status label.",
+    "placeholders": {
+      "nombre": { "type": "String" },
+      "estado": { "type": "String" }
+    }
+  },
+  "usuariosDesactivarBoton": "Desactivar",
+  "@usuariosDesactivarBoton": {
+    "description": "Confirm button on the deactivate-user dialog."
+  },
+  "usuariosFiltrarPorRol": "FILTRAR POR ROL",
+  "@usuariosFiltrarPorRol": {
+    "description": "Section header (uppercase, non-interactive) inside the role filter popup menu."
+  },
+  "usuariosFiltros": "Filtros",
+  "@usuariosFiltros": {
+    "description": "Filter button label when no role filter is active."
+  },
+  "usuariosFiltrosConValor": "Filtros: {rol}",
+  "@usuariosFiltrosConValor": {
+    "description": "Filter button label when a role filter is active, naming it.",
+    "placeholders": {
+      "rol": { "type": "String" }
+    }
+  },
+  "usuariosNuevoUsuario": "Nuevo usuario",
+  "@usuariosNuevoUsuario": {
+    "description": "Button to open the create-user modal."
+  },
+  "usuariosBuscarHint": "Buscar en usuarios",
+  "@usuariosBuscarHint": {
+    "description": "Hint text in the users search box."
+  },
+  "usuariosFiltroLabel": "Filtro:",
+  "@usuariosFiltroLabel": {
+    "description": "Label before the active-filter chip."
+  },
+  "usuariosSinPermiso": "Tu sesion no tiene permiso para ver usuarios.",
+  "@usuariosSinPermiso": {
+    "description": "Error message when the users list request returns 401/403."
+  },
+  "usuariosNingunoCoincide": "Ningun usuario coincide con el filtro.",
+  "@usuariosNingunoCoincide": {
+    "description": "Empty-state message in the users table when a filter/search matches nothing."
+  },
+
+  "usuariosSinUsuarios": "Sin usuarios",
+  "@usuariosSinUsuarios": {
+    "description": "Empty-state title in the users table when there are no users at all."
+  },
+  "usuariosCrearPrimero": "Crea el primer usuario con el boton \"{boton}\".",
+  "@usuariosCrearPrimero": {
+    "description": "Empty-state message; {boton} is the exact quoted 'New user' button label.",
+    "placeholders": {
+      "boton": { "type": "String" }
+    }
+  },
+  "usuariosColNombre": "NOMBRE",
+  "@usuariosColNombre": {
+    "description": "Uppercase column header in the users table."
+  },
+  "usuariosColCorreo": "CORREO",
+  "usuariosColRol": "ROL",
+  "usuariosColEstado": "ESTADO",
+  "usuariosColAcciones": "ACCIONES",
+  "usuariosEditar": "Editar",
+  "@usuariosEditar": {
+    "description": "Row action: edit a user."
+  },
+  "usuariosActivarBoton": "Activar",
+  "@usuariosActivarBoton": {
+    "description": "Row action: reactivate a deactivated user."
+  },
+  "usuariosNoPuedesDesactivarPropia": "No puedes desactivar tu propia cuenta",
+  "@usuariosNoPuedesDesactivarPropia": {
+    "description": "Tooltip on the disabled deactivate action for the admin's own row."
+  },
+
+  "usuariosGuardarError": "No se pudo guardar. Revisa tu conexion.",
+  "@usuariosGuardarError": {
+    "description": "Error toast when creating/editing a user fails for a reason other than a typed ApiException."
+  },
+  "usuariosCrearBoton": "Crear",
+  "@usuariosCrearBoton": {
+    "description": "Submit button on the create-user modal."
+  },
+  "usuariosNoPuedesCambiarRol": "No puedes cambiar tu propio rol",
+  "@usuariosNoPuedesCambiarRol": {
+    "description": "Hint under the role selector when editing your own account (role field locked)."
+  },
+  "usuariosEditarTitulo": "Editar usuario",
+  "@usuariosEditarTitulo": {
+    "description": "Modal title when editing an existing user (distinct from the plain 'Editar' row action)."
+  },
+
+  "comunRechazar": "Rechazar",
+  "@comunRechazar": {
+    "description": "Generic moderation action: reject a pending item (node, route, event...)."
+  },
+  "comunAprobar": "Aprobar",
+  "@comunAprobar": {
+    "description": "Generic moderation action: approve a pending item."
+  },
+  "admSinPermisoSeccion": "Tu sesion no tiene permiso para ver esta seccion.",
+  "@admSinPermisoSeccion": {
+    "description": "Generic error message across admin list screens when the request returns 401/403."
+  },
+
+  "nodosAprobadoExito": "{nombre} aprobado",
+  "@nodosAprobadoExito": {
+    "description": "Success toast after approving a proposed point of interest.",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "nodosRechazadoExito": "{nombre} rechazado",
+  "@nodosRechazadoExito": {
+    "description": "Success toast after rejecting a proposed point of interest.",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "nodosSearchHint": "Buscar en nodos / pois",
+  "@nodosSearchHint": {
+    "description": "Search box hint on the admin points-of-interest screen."
+  },
+  "nodosSinPropuestos": "Sin puntos propuestos",
+  "@nodosSinPropuestos": {
+    "description": "Empty-state title when there are no proposed points of interest to moderate."
+  },
+  "nodosSinPropuestosMensaje": "Los puntos de interes propuestos por la comunidad llegaran aqui.",
+  "@nodosSinPropuestosMensaje": {
+    "description": "Empty-state message on the admin points-of-interest screen."
+  },
+  "nodosPropuestoPor": "{categoria} · propuesto por {nombre}",
+  "@nodosPropuestoPor": {
+    "description": "Row subtitle naming who proposed a point of interest.",
+    "placeholders": {
+      "categoria": { "type": "String" },
+      "nombre": { "type": "String" }
+    }
+  },
+
+  "rutasAdminSearchHint": "Buscar en rutas",
+  "@rutasAdminSearchHint": {
+    "description": "Search box hint on the admin routes moderation queue."
+  },
+  "rutasAdminSinCola": "Sin rutas en la cola",
+  "@rutasAdminSinCola": {
+    "description": "Empty-state title when there are no routes pending moderation."
+  },
+  "rutasAdminSinColaMensaje": "Las rutas enviadas a moderacion apareceran aqui para revisarlas.",
+  "@rutasAdminSinColaMensaje": {
+    "description": "Empty-state message on the admin routes moderation queue."
+  },
+  "rutasAdminSubtituloPropuesta": "{actividad} · {km} km · propuesta por {nombre}",
+  "@rutasAdminSubtituloPropuesta": {
+    "description": "Row subtitle naming who proposed a route, with its activity and distance.",
+    "placeholders": {
+      "actividad": { "type": "String" },
+      "km": { "type": "String" },
+      "nombre": { "type": "String" }
+    }
+  },
+
+  "revisionPublicadaExito": "{nombre} publicada",
+  "@revisionPublicadaExito": {
+    "description": "Success toast after approving/publishing a route from the review screen.",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "revisionRechazadaExito": "{nombre} rechazada",
+  "@revisionRechazadaExito": {
+    "description": "Success toast after rejecting a route from the review screen.",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "revisionSinRutaTitulo": "Sin ruta seleccionada",
+  "@revisionSinRutaTitulo": {
+    "description": "Placeholder title when the review screen is opened with no route loaded (direct sidebar access)."
+  },
+  "revisionEligeRuta": "Elige una ruta en \"{seccion}\" para revisarla.",
+  "@revisionEligeRuta": {
+    "description": "Placeholder message when no route is loaded; {seccion} is the exact quoted 'Manage routes' nav label.",
+    "placeholders": {
+      "seccion": { "type": "String" }
+    }
+  },
+  "revisionPropuestaPor": "{actividad} · propuesta por {nombre}",
+  "@revisionPropuestaPor": {
+    "description": "Subtitle naming who proposed the route under review, with its activity (no distance).",
+    "placeholders": {
+      "actividad": { "type": "String" },
+      "nombre": { "type": "String" }
+    }
+  },
+  "revisionPuntosLabel": "puntos",
+  "@revisionPuntosLabel": {
+    "description": "Short metric label (rendered uppercase) for the route's point count, in the review screen's metric grid."
+  },
+  "revisionVerificacionGps": "Verificacion de GPS",
+  "@revisionVerificacionGps": {
+    "description": "Title of the (not-yet-built) GPS verification note panel."
+  },
+  "revisionAnalisisTrazado": "Aqui se resumiria el analisis del trazado.",
+  "@revisionAnalisisTrazado": {
+    "description": "Placeholder detail text for the GPS verification note panel."
+  },
+  "revisionNotaInterna": "Nota interna",
+  "@revisionNotaInterna": {
+    "description": "Label for the (not-yet-wired) internal note text field."
+  },
+  "revisionPedirCorreccion": "Pedir correccion",
+  "@revisionPedirCorreccion": {
+    "description": "Button to request changes on a route (not yet wired to a backend action)."
+  },
+  "revisionAdvertenciaTrazado": "Aqui se marcaria una advertencia de trazado (p. ej. cruce por zona privada).",
+  "@revisionAdvertenciaTrazado": {
+    "description": "Placeholder warning overlay on the map when no route is loaded."
+  },
+
+  "alertasResueltaExito": "{tipo} marcada como resuelta",
+  "@alertasResueltaExito": {
+    "description": "Success toast after marking an alert as resolved.",
+    "placeholders": {
+      "tipo": { "type": "String" }
+    }
+  },
+  "alertasEliminadaExito": "{tipo} eliminada",
+  "@alertasEliminadaExito": {
+    "description": "Success toast after deleting an alert.",
+    "placeholders": {
+      "tipo": { "type": "String" }
+    }
+  },
+  "alertasAdminSearchHint": "Buscar en alertas activas",
+  "@alertasAdminSearchHint": {
+    "description": "Search box hint on the admin alerts screen."
+  },
+  "alertasAdminSinActivas": "Sin alertas activas",
+  "@alertasAdminSinActivas": {
+    "description": "Empty-state title when there are no active alerts."
+  },
+  "alertasAdminSinActivasMensaje": "Los reportes comunitarios en vivo se listaran aqui en tiempo real.",
+  "@alertasAdminSinActivasMensaje": {
+    "description": "Empty-state message on the admin alerts screen."
+  },
+  "alertasGravedadConValor": "Gravedad {valor}",
+  "@alertasGravedadConValor": {
+    "description": "Row subtitle: severity label plus its translated value (Low/Medium/High).",
+    "placeholders": {
+      "valor": { "type": "String" }
+    }
+  },
+  "alertasGravedadReportadaPor": "Gravedad {valor} · reportada por {nombre}",
+  "@alertasGravedadReportadaPor": {
+    "description": "Row subtitle: severity plus who reported the alert.",
+    "placeholders": {
+      "valor": { "type": "String" },
+      "nombre": { "type": "String" }
+    }
+  },
+  "alertasAcciones": "Acciones",
+  "@alertasAcciones": {
+    "description": "Tooltip on the per-row actions menu button."
+  },
+  "alertasMarcarResuelta": "Marcar resuelta",
+  "@alertasMarcarResuelta": {
+    "description": "Menu action: mark an alert as resolved."
+  },
+  "comunEliminar": "Eliminar",
+  "@comunEliminar": {
+    "description": "Generic 'Delete' action, used in the alerts admin row menu."
+  },
+
+  "terminosTitulo": "Terminos y condiciones",
+  "@terminosTitulo": {
+    "description": "Title of the legal terms modal, opened from the registration checkbox."
+  },
+  "terminosEntendido": "Entendido",
+  "@terminosEntendido": {
+    "description": "Close button at the bottom of the legal terms modal."
+  },
+  "terminosSeccion1Titulo": "1. Aceptacion de los terminos",
+  "@terminosSeccion1Titulo": {
+    "description": "Legal terms, section 1 heading. DRAFT content pending legal review (see code comment) — translate faithfully, do not paraphrase the legal meaning."
+  },
+  "terminosSeccion1Texto": "Al crear una cuenta en FitQuest Go confirmas que has leido, entendido y aceptas estos terminos y condiciones, asi como la politica de privacidad de la aplicacion. Si no estas de acuerdo, no debes registrarte ni usar la app.",
+  "terminosSeccion2Titulo": "2. Uso de la cuenta",
+  "terminosSeccion2Texto": "Eres responsable de la informacion que registras y de mantener la confidencialidad de tu contrasena. FitQuest Go puede suspender o desactivar cuentas que incumplan estos terminos o que se usen de forma fraudulenta.",
+  "terminosSeccion3Titulo": "3. Ubicacion y datos de actividad",
+  "terminosSeccion3Texto": "Algunas funciones (rutas, alertas cercanas, mapa en vivo) requieren acceso a tu ubicacion y datos de actividad fisica. Estos datos se usan unicamente para ofrecer esas funciones y para mejorar la seguridad de la comunidad.",
+  "terminosSeccion4Titulo": "4. Contenido generado por usuarios",
+  "terminosSeccion4Texto": "Al publicar rutas, alertas, reportes o comentarios, garantizas que tienes derecho a compartir ese contenido y aceptas que pueda ser revisado o moderado por el equipo de FitQuest Go.",
+  "terminosSeccion5Titulo": "5. Cambios en los terminos",
+  "terminosSeccion5Texto": "Estos terminos pueden actualizarse. Si el cambio es sustancial, se notificara dentro de la app antes de que entre en vigor.",
+  "terminosSeccion6Titulo": "6. Contacto",
+  "terminosSeccion6Texto": "Para preguntas sobre estos terminos o sobre tus datos, puedes escribir al equipo de soporte de FitQuest Go.",
+  "alertasCercaTitulo": "Alerta cerca de ti",
+  "@alertasCercaTitulo": {
+    "description": "Title of the banner shown when the user comes within ~100 m of an active community alert."
+  },
+  "alertasCercaDistancia": "A unos {metros} m",
+  "@alertasCercaDistancia": {
+    "description": "Distance line of the nearby-alert banner, updated as the user walks.",
+    "placeholders": {
+      "metros": { "type": "int" }
+    }
+  },
+  "alertasSigueAhi": "Sigue ahi?",
+  "@alertasSigueAhi": {
+    "description": "Question asked in the nearby-alert banner (and by voice): is the hazard still there?"
+  },
+  "alertasBotonSigue": "Si, sigue ahi",
+  "@alertasBotonSigue": {
+    "description": "Banner button: the user confirms the alert is still there."
+  },
+  "alertasBotonNoEsta": "Ya no esta",
+  "@alertasBotonNoEsta": {
+    "description": "Banner button: the user reports the alert is gone."
+  },
+  "alertasAhoraNo": "Ahora no",
+  "@alertasAhoraNo": {
+    "description": "Tooltip of the banner close (X) button: dismiss without voting."
+  },
+  "alertasAvisoVoz": "Atencion: {tipo} a unos {metros} metros. Sigue ahi?",
+  "@alertasAvisoVoz": {
+    "description": "Sentence spoken aloud (text-to-speech, in the app language) when the user comes within ~100 m of an alert. {tipo} is free text typed by the reporter (e.g. \"Arbol caido\").",
+    "placeholders": {
+      "tipo": { "type": "String" },
+      "metros": { "type": "int" }
+    }
+  },
+  "alertasGraciasConfirmar": "Gracias, confirmaste que sigue ahi.",
+  "@alertasGraciasConfirmar": {
+    "description": "Toast after the user confirms an alert is still there."
+  },
+  "alertasGraciasDesmentir": "Gracias, avisaste que ya no esta.",
+  "@alertasGraciasDesmentir": {
+    "description": "Toast after the user reports an alert is gone."
+  },
+  "alertasVotoLejos": "Estas muy lejos de la alerta para votar.",
+  "@alertasVotoLejos": {
+    "description": "Error toast: the server rejected the vote (HTTP 400) because the user is farther than 150 m from the alert."
+  },
+  "alertasVotoNoNecesario": "Esta alerta ya no necesita tu voto.",
+  "@alertasVotoNoNecesario": {
+    "description": "Error toast: the server answered 409 — the user already voted this alert or it is no longer active."
+  },
+  "alertasVotoError": "No se pudo registrar tu voto.",
+  "@alertasVotoError": {
+    "description": "Generic error toast when a vote on an alert fails."
+  },
+  "grabacionTiempo": "Tiempo",
+  "@grabacionTiempo": {
+    "description": "Label of the elapsed (moving) time metric while recording a route and in its summary."
+  },
+  "grabacionRitmo": "Ritmo",
+  "@grabacionRitmo": {
+    "description": "Label of the live pace metric (minutes per km) while recording a route."
+  },
+  "grabacionPausar": "Pausar",
+  "@grabacionPausar": {
+    "description": "Button that pauses the GPS route recording (timer and distance stop counting)."
+  },
+  "grabacionReanudar": "Reanudar",
+  "@grabacionReanudar": {
+    "description": "Button that resumes a paused GPS route recording."
+  },
+  "grabacionEnPausa": "En pausa. Toca \"{boton}\" para seguir.",
+  "@grabacionEnPausa": {
+    "description": "Hint shown while the recording is paused. {boton} is the label of the resume button.",
+    "placeholders": {
+      "boton": { "type": "String" }
+    }
+  },
+  "resumenGrabacionTitulo": "Resumen de la grabacion",
+  "@resumenGrabacionTitulo": {
+    "description": "Title of the screen shown right after stopping a GPS recording."
+  },
+  "resumenGrabacionRitmoMedio": "Ritmo medio",
+  "@resumenGrabacionRitmoMedio": {
+    "description": "Label of the average pace metric in the recording summary."
+  },
+  "resumenGrabacionGuardar": "Guardar ruta",
+  "@resumenGrabacionGuardar": {
+    "description": "Primary button of the recording summary: continue to the save-route form."
+  },
+  "resumenGrabacionDescartar": "Descartar",
+  "@resumenGrabacionDescartar": {
+    "description": "Button of the recording summary: throw the recording away."
+  },
+  "resumenGrabacionPocosPuntos": "Se necesitan al menos 2 puntos para guardar la ruta.",
+  "@resumenGrabacionPocosPuntos": {
+    "description": "Note in the recording summary when fewer than 2 GPS points were captured, so the route cannot be saved."
+  },
+  "detalleRutaSinTrazo": "Esta ruta no tiene un trazo para mostrar.",
+  "@detalleRutaSinTrazo": {
+    "description": "Shown instead of the map in the route detail when the route has fewer than 2 points."
+  },
+  "detalleRutaVisibilidadPublica": "Ruta publica: la ve toda la comunidad.",
+  "@detalleRutaVisibilidadPublica": {
+    "description": "Route detail, status Publicada: who can see the route."
+  },
+  "detalleRutaVisibilidadPrivada": "Ruta privada: solo vos la ves.",
+  "@detalleRutaVisibilidadPrivada": {
+    "description": "Route detail, status Privada: who can see the route."
+  },
+  "detalleRutaVisibilidadPendiente": "En revision: todavia no es publica.",
+  "@detalleRutaVisibilidadPendiente": {
+    "description": "Route detail, status Pendiente: waiting for admin moderation."
+  },
+  "detalleRutaVisibilidadRechazada": "Rechazada: no se publico.",
+  "@detalleRutaVisibilidadRechazada": {
+    "description": "Route detail, status Rechazada: the admin rejected the publication request."
+  },
+  "actividadOtro": "Otro",
+  "@actividadOtro": {
+    "description": "Route activity option: none of the listed sports (no free text)."
+  },
+  "rutasActividades": "Actividades",
+  "@rutasActividades": {
+    "description": "Label of the activities row/field of a route (one or several sports)."
+  },
+  "rutasElegiActividad": "Elegi al menos una actividad",
+  "@rutasElegiActividad": {
+    "description": "Validation message in the save-route form: no activity selected."
+  },
+  "alertaTipoArbolCaido": "Arbol caido",
+  "@alertaTipoArbolCaido": {
+    "description": "Alert type: fallen tree."
+  },
+  "alertaTipoBache": "Bache",
+  "@alertaTipoBache": {
+    "description": "Alert type: pothole."
+  },
+  "alertaTipoDerrumbe": "Derrumbe",
+  "@alertaTipoDerrumbe": {
+    "description": "Alert type: landslide."
+  },
+  "alertaTipoInundacion": "Inundacion",
+  "@alertaTipoInundacion": {
+    "description": "Alert type: flooding."
+  },
+  "alertaTipoPerro": "Perro bravo",
+  "@alertaTipoPerro": {
+    "description": "Alert type: loose or aggressive dog."
+  },
+  "alertaTipoViaCerrada": "Via cerrada u obra",
+  "@alertaTipoViaCerrada": {
+    "description": "Alert type: closed road or roadworks."
+  },
+  "alertaTipoAccidente": "Accidente",
+  "@alertaTipoAccidente": {
+    "description": "Alert type: accident."
+  },
+  "alertaTipoZonaInsegura": "Zona insegura",
+  "@alertaTipoZonaInsegura": {
+    "description": "Alert type: unsafe area (crime risk)."
+  },
+  "alertaTipoCableCaido": "Cable o poste caido",
+  "@alertaTipoCableCaido": {
+    "description": "Alert type: fallen power line or pole."
+  },
+  "alertaTipoOtro": "Otro",
+  "@alertaTipoOtro": {
+    "description": "Alert type: none of the listed ones; the reporter then writes which."
+  },
+  "alertasTipoOtroLabel": "Que tipo de alerta es?",
+  "@alertasTipoOtroLabel": {
+    "description": "Label of the text field shown when the alert type is \"Otro\"."
+  },
+  "alertasTipoOtroHint": "Ej. Poste inclinado",
+  "@alertasTipoOtroHint": {
+    "description": "Example shown in the \"Otro\" alert type field."
+  },
+  "alertasElegiUnTipo": "Elegi un tipo de alerta",
+  "@alertasElegiUnTipo": {
+    "description": "Validation message in the report-alert form: no type selected."
+  },
+  "categoriaNodoAgua": "Agua",
+  "@categoriaNodoAgua": {
+    "description": "Point-of-interest category: drinking water."
+  },
+  "categoriaNodoMirador": "Mirador",
+  "@categoriaNodoMirador": {
+    "description": "Point-of-interest category: viewpoint."
+  },
+  "categoriaNodoTaller": "Taller",
+  "@categoriaNodoTaller": {
+    "description": "Point-of-interest category: bicycle workshop."
+  },
+  "categoriaNodoRestaurante": "Restaurante",
+  "@categoriaNodoRestaurante": {
+    "description": "Point-of-interest category: restaurant or food stop."
+  },
+  "categoriaNodoComercio": "Comercio",
+  "@categoriaNodoComercio": {
+    "description": "Point-of-interest category: shop."
+  },
+  "categoriaNodoBanos": "Banos",
+  "@categoriaNodoBanos": {
+    "description": "Point-of-interest category: restrooms."
+  },
+  "categoriaNodoParqueo": "Parqueo",
+  "@categoriaNodoParqueo": {
+    "description": "Point-of-interest category: parking."
+  },
+  "categoriaNodoPrimerosAuxilios": "Primeros auxilios",
+  "@categoriaNodoPrimerosAuxilios": {
+    "description": "Point-of-interest category: first aid."
+  },
+  "categoriaNodoOtro": "Otro",
+  "@categoriaNodoOtro": {
+    "description": "Point-of-interest category: none of the listed ones; the proposer then writes which."
+  },
+  "nodosCategoriaOtroLabel": "Que categoria es?",
+  "@nodosCategoriaOtroLabel": {
+    "description": "Label of the text field shown when the node category is \"Otro\"."
+  },
+  "nodosCategoriaOtroHint": "Ej. Zona de picnic",
+  "@nodosCategoriaOtroHint": {
+    "description": "Example shown in the \"Otro\" node category field."
+  },
+  "nodosElegiCategoria": "Elegi una categoria",
+  "@nodosElegiCategoria": {
+    "description": "Validation message in the propose-point form: no category selected."
+  },
+  "nodosFotoTitulo": "Foto (opcional)",
+  "@nodosFotoTitulo": {
+    "description": "Section title of the optional photo in the propose-point form."
+  },
+  "nodosFotoCamara": "Camara",
+  "@nodosFotoCamara": {
+    "description": "Button: take the node photo with the camera."
+  },
+  "nodosFotoGaleria": "Galeria",
+  "@nodosFotoGaleria": {
+    "description": "Button: pick the node photo from the gallery."
+  },
+  "nodosFotoQuitar": "Quitar foto",
+  "@nodosFotoQuitar": {
+    "description": "Button: remove the chosen photo before sending."
+  },
+  "nodosFotoNoSubida": "El punto se envio, pero no se pudo subir la foto.",
+  "@nodosFotoNoSubida": {
+    "description": "Toast: the point was proposed but its photo upload failed."
+  },
+  "nodosFotoNoDisponible": "No se pudo cargar la foto",
+  "@nodosFotoNoDisponible": {
+    "description": "Shown instead of the photo when it cannot be loaded."
+  },
+  "nodosVotarTitulo": "Sigue existiendo?",
+  "@nodosVotarTitulo": {
+    "description": "Heading of the vote section in a point-of-interest sheet."
+  },
+  "nodosVotarConfirmar": "Si, sigue ahi",
+  "@nodosVotarConfirmar": {
+    "description": "Button: the user confirms the point of interest is still there."
+  },
+  "nodosVotarObsoleto": "Ya no existe",
+  "@nodosVotarObsoleto": {
+    "description": "Button: the user reports the point of interest no longer exists (obsolete)."
+  },
+  "nodosVotoLejos": "Acercate a menos de {radio} m para votar este punto (estas a {metros} m).",
+  "@nodosVotoLejos": {
+    "description": "Hint in the vote section when the user is farther than the allowed radius from the point.",
+    "placeholders": {
+      "radio": { "type": "int" },
+      "metros": { "type": "int" }
+    }
+  },
+  "nodosVotoSinGps": "Activa tu ubicacion para votar este punto.",
+  "@nodosVotoSinGps": {
+    "description": "Hint in the vote section when the device position is not available."
+  },
+  "nodosVotoPropio": "Propusiste este punto: lo votan otras personas.",
+  "@nodosVotoPropio": {
+    "description": "Note shown to the person who proposed the point instead of the vote buttons."
+  },
+  "nodosYaConfirmaste": "Ya confirmaste este punto.",
+  "@nodosYaConfirmaste": {
+    "description": "Note: the user already confirmed this point."
+  },
+  "nodosYaMarcasteObsoleto": "Ya lo marcaste como obsoleto.",
+  "@nodosYaMarcasteObsoleto": {
+    "description": "Note: the user already reported this point as gone."
+  },
+  "nodosGraciasConfirmar": "Gracias, confirmaste que sigue ahi.",
+  "@nodosGraciasConfirmar": {
+    "description": "Toast after the user confirms a point of interest still exists."
+  },
+  "nodosGraciasObsoleto": "Gracias, avisaste que ya no existe.",
+  "@nodosGraciasObsoleto": {
+    "description": "Toast after the user reports a point of interest as gone."
+  },
+  "nodosVotoMuyLejos": "Estas muy lejos del punto para votar.",
+  "@nodosVotoMuyLejos": {
+    "description": "Error toast: the server rejected the vote (HTTP 400) because the user is too far from the point."
+  },
+  "nodosVotoPropioError": "No podes votar un punto que propusiste vos.",
+  "@nodosVotoPropioError": {
+    "description": "Error toast: the server answered 403 — the user proposed this point and cannot vote on it."
+  },
+  "nodosVotoNoNecesario": "Este punto ya no necesita tu voto.",
+  "@nodosVotoNoNecesario": {
+    "description": "Error toast: the server answered 409 — already voted or the point is no longer on the map."
+  },
+  "nodosVotoError": "No se pudo registrar tu voto.",
+  "@nodosVotoError": {
+    "description": "Generic error toast when a vote on a point of interest fails."
+  },
+  "nodosVotosResumen": "Confirmaciones: {confirmaciones} · Ya no existe: {obsoletos}",
+  "@nodosVotosResumen": {
+    "description": "Vote tally line of a point of interest: how many confirmed it and how many reported it gone.",
+    "placeholders": {
+      "confirmaciones": { "type": "int" },
+      "obsoletos": { "type": "int" }
+    }
+  },
+  "climaLluviaTitulo": "Lluvia fuerte en tu zona",
+  "@climaLluviaTitulo": {
+    "description": "Weather banner title: heavy rain expected in the user area."
+  },
+  "climaTormentaTitulo": "Tormenta electrica en tu zona",
+  "@climaTormentaTitulo": {
+    "description": "Weather banner title: thunderstorm expected in the user area."
+  },
+  "climaCalorTitulo": "Calor extremo en tu zona",
+  "@climaCalorTitulo": {
+    "description": "Weather banner title: extreme heat in the user area."
+  },
+  "climaAhora": "Ahora",
+  "@climaAhora": {
+    "description": "Weather banner: the condition is happening right now."
+  },
+  "climaEnHoras": "{horas, plural, =1{En 1 hora} other{En unas {horas} horas}}",
+  "@climaEnHoras": {
+    "description": "Weather banner: the condition is expected in a few hours (1 to 3).",
+    "placeholders": {
+      "horas": { "type": "int" }
+    }
+  },
+  "climaMedidaCalor": "sensacion termica de {valor} °C",
+  "@climaMedidaCalor": {
+    "description": "Weather banner: measured apparent (feels-like) temperature, in degrees Celsius.",
+    "placeholders": {
+      "valor": { "type": "String" }
+    }
+  },
+  "climaConsejoLluvia": "Evita cruces de rio y senderos con barro.",
+  "@climaConsejoLluvia": {
+    "description": "Weather banner advice for heavy rain."
+  },
+  "climaConsejoTormenta": "Busca refugio y evita cumbres y zonas abiertas.",
+  "@climaConsejoTormenta": {
+    "description": "Weather banner advice for a thunderstorm."
+  },
+  "climaConsejoCalor": "Hidratate y evita entrenar al sol del mediodia.",
+  "@climaConsejoCalor": {
+    "description": "Weather banner advice for extreme heat."
+  },
+  "climaFuente": "Datos: {fuente}",
+  "@climaFuente": {
+    "description": "Credit line naming the weather data provider (required by its license).",
+    "placeholders": {
+      "fuente": { "type": "String" }
+    }
+  },
+  "climaMasAvisos": "+{cantidad} mas",
+  "@climaMasAvisos": {
+    "description": "Weather banner: how many more weather warnings are waiting after this one.",
+    "placeholders": {
+      "cantidad": { "type": "int" }
+    }
+  }
+}

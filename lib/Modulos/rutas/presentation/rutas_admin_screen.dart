@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
@@ -52,31 +54,35 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Ruta>>(
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Ruta>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error = snap.hasError ? _mensajeError(snap.error!) : null;
+        final String? error =
+            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
         final List<Ruta> rutas = snap.data ?? const <Ruta>[];
 
         return AdminListScaffold(
-          searchHint: 'Buscar en rutas',
+          searchHint: l10n.rutasAdminSearchHint,
           child: AdminDataTable(
             loading: cargando,
             error: error,
             onRetry: _recargar,
-            emptyTitle: 'Sin rutas en la cola',
-            emptyMessage:
-                'Las rutas enviadas a moderacion apareceran aqui para revisarlas.',
+            emptyTitle: l10n.rutasAdminSinCola,
+            emptyMessage: l10n.rutasAdminSinColaMensaje,
             rows: <AdminRow>[
               for (final Ruta ruta in rutas)
                 AdminRow(
                   icon: Icons.route_outlined,
                   title: ruta.nombre,
                   subtitle: ruta.creadoPorNombre == null
-                      ? '${ruta.actividad} · ${ruta.distanciaKm.toStringAsFixed(1)} km'
-                      : '${ruta.actividad} · ${ruta.distanciaKm.toStringAsFixed(1)} km · '
-                          'propuesta por ${ruta.creadoPorNombre}',
+                      ? '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km'
+                      : l10n.rutasAdminSubtituloPropuesta(
+                          actividadesLabel(l10n, ruta.actividades),
+                          ruta.distanciaKm.toStringAsFixed(1),
+                          ruta.creadoPorNombre!,
+                        ),
                   onTap: () => _abrirRevision(ruta),
                 ),
             ],
@@ -86,13 +92,13 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
     );
   }
 
-  String _mensajeError(Object error) {
+  String _mensajeError(AppLocalizations l10n, Object error) {
     if (error is ApiException) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        return 'Tu sesion no tiene permiso para ver esta seccion.';
+        return l10n.admSinPermisoSeccion;
       }
       return error.message;
     }
-    return 'No se pudo conectar con el servidor.';
+    return l10n.rutasErrorConexionGenerico;
   }
 }
