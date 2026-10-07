@@ -8,8 +8,14 @@ import 'package:http/testing.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/perfil_screen.dart';
+
+class _FakeNotificacionesApi extends NotificacionesApi {
+  @override
+  Future<int> conteoNoLeidas() async => 0;
+}
 
 void main() {
   const Map<String, dynamic> perfil = <String, dynamic>{
@@ -30,7 +36,18 @@ void main() {
           headers: <String, String>{'content-type': 'application/json'},
         );
       }
-      return http.Response('no', 404);
+      if (req.url.path == '/usuarios/yo/estadisticas') {
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'kmRecorridos': 12,
+            'rutasCompletadas': 3,
+            'insignias': 5,
+          }),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }
+      return http.Response('{"conteo": 0}', 200, headers: <String, String>{'content-type': 'application/json'});
     });
     return PerfilApi(ApiClient(client: client, baseUrl: 'http://test'));
   }
@@ -43,7 +60,10 @@ void main() {
           body: Center(
             child: SizedBox.fromSize(
               size: size,
-              child: PerfilScreen(api: fakeApi()),
+              child: PerfilScreen(
+                api: fakeApi(),
+                notificacionesApi: _FakeNotificacionesApi(),
+              ),
             ),
           ),
         ),
@@ -51,9 +71,6 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues(<String, String>{});
-    // El entorno de test cae en en_US por defecto; se fuerza espanol para
-    // que coincida con `locale: Locale('es')` de montar() (ver nota igual
-    // en widget_test.dart / planificar_ruta_screen_test.dart).
     final TestPlatformDispatcher dispatcher =
         TestWidgetsFlutterBinding.instance.platformDispatcher;
     dispatcher.localesTestValue = const <Locale>[Locale('es')];
@@ -76,10 +93,10 @@ void main() {
 
     // Cabecera con datos del backend.
     expect(find.text('Ana Fernandez'), findsOneWidget);
-    expect(find.text('Usuario · Activado'), findsOneWidget);
+    expect(find.text('ana@x.co'), findsOneWidget);
     expect(find.text('AF'), findsOneWidget);
 
-    // Tira de metricas (de ejemplo) y menu de accesos.
+    // Tira de metricas y menu de accesos.
     expect(find.text('KM'), findsOneWidget);
     expect(find.text('RUTAS'), findsOneWidget);
     expect(find.text('INSIGNIAS'), findsOneWidget);
@@ -121,7 +138,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ajustes de la cuenta'), findsOneWidget);
-    expect(find.text('ana@x.co'), findsOneWidget);
-    expect(find.text('Cerrar sesion'), findsNothing); // sin callback en el test
+    expect(find.text('ana@x.co'), findsAtLeastNWidgets(1));
+    expect(find.text('Cerrar sesion'), findsNothing);
   });
 }
