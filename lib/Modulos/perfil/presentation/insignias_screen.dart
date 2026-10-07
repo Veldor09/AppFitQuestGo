@@ -2,17 +2,43 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/Modulos/perfil/data/insignia.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 
-/// BDG-01 - Insignias del usuario.
-class InsigniasScreen extends StatelessWidget {
-  const InsigniasScreen({super.key, this.api});
+/// BDG-01 - Insignias del usuario, consumidas desde el backend.
+///
+/// Si se indica [idUsuario] muestra las insignias de ese usuario (perfil
+/// público); si no, las del usuario autenticado.
+class InsigniasScreen extends StatefulWidget {
+  const InsigniasScreen({super.key, this.api, this.idUsuario, this.nombre});
   final PerfilApi? api;
+  final int? idUsuario;
+  final String? nombre;
+
+  @override
+  State<InsigniasScreen> createState() => _InsigniasScreenState();
+}
+
+class _InsigniasScreenState extends State<InsigniasScreen> {
+  late final PerfilApi _api = widget.api ?? PerfilApi();
+  late Future<List<Insignia>> _futuro = _cargar();
+
+  Future<List<Insignia>> _cargar() => widget.idUsuario == null
+      ? _api.misInsignias()
+      : _api.insigniasDeUsuario(widget.idUsuario!);
+
+  Future<void> _recargar() async {
+    final Future<List<Insignia>> nuevo = _cargar();
+    setState(() => _futuro = nuevo);
+    try {
+      await nuevo;
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     final double top = MediaQuery.of(context).padding.top;
-    final PerfilApi perfilApi = api ?? PerfilApi();
+    final bool propio = widget.idUsuario == null;
     return Scaffold(
       backgroundColor: FqColors.paper,
       body: Column(
@@ -26,83 +52,74 @@ class InsigniasScreen extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back_rounded, color: FqColors.white),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                const Expanded(
-                  child: Text('Mis Insignias', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white)),
+                Expanded(
+                  child: Text(
+                    propio
+                        ? 'Mis Insignias'
+                        : 'Insignias${widget.nombre != null ? ' de ${widget.nombre}' : ''}',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white),
+                  ),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: FutureBuilder<Map<String, dynamic>>(
-              future: perfilApi.estadisticasPropias(),
-              builder: (BuildContext ctx, AsyncSnapshot<Map<String, dynamic>> snap) {
+            child: FutureBuilder<List<Insignia>>(
+              future: _futuro,
+              builder: (BuildContext ctx, AsyncSnapshot<List<Insignia>> snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                 }
                 if (snap.hasError) {
-                  return FqEmptyState(icon: Icons.error_outline, title: 'Error', message: snap.error.toString());
+                  return FqEmptyState(
+                    icon: Icons.error_outline,
+                    title: 'No se pudieron cargar las insignias',
+                    message: 'Revisa tu conexión e inténtalo de nuevo.',
+                    action: TextButton(onPressed: _recargar, child: const Text('Reintentar')),
+                  );
                 }
-                final int insignias = (snap.data!['insignias'] as int?) ?? 0;
-                final double km = ((snap.data!['kmRecorridos'] as num?) ?? 0).toDouble();
-                final int rutas = (snap.data!['rutasCompletadas'] as int?) ?? 0;
+                final List<Insignia> todas = snap.data!;
+                final List<Insignia> ganadas =
+                    todas.where((Insignia i) => i.desbloqueada).toList();
+                final List<Insignia> pendientes =
+                    todas.where((Insignia i) => !i.desbloqueada).toList();
 
-                final List<_InsigniaData> ganadas = <_InsigniaData>[
-                  if (rutas >= 1) const _InsigniaData(emoji: '🥾', titulo: 'Primera ruta', sub: 'Completaste tu primera ruta'),
-                  if (rutas >= 5) const _InsigniaData(emoji: '🏅', titulo: 'Explorador', sub: 'Completaste 5 rutas'),
-                  if (rutas >= 10) const _InsigniaData(emoji: '🏆', titulo: 'Veterano', sub: '10 rutas completadas'),
-                  if (km >= 100) const _InsigniaData(emoji: '🌍', titulo: '100 km', sub: 'Recorriste 100 km acumulados'),
-                  if (km >= 500) const _InsigniaData(emoji: '🚀', titulo: '500 km', sub: '500 km acumulados'),
-                ];
-
-                final List<_InsigniaData> pendientes = <_InsigniaData>[
-                  if (rutas < 1) const _InsigniaData(emoji: '🥾', titulo: 'Primera ruta', sub: 'Completa tu primera ruta', pendiente: true),
-                  if (rutas < 5) const _InsigniaData(emoji: '🏅', titulo: 'Explorador', sub: 'Completa 5 rutas', pendiente: true),
-                  if (rutas < 10) const _InsigniaData(emoji: '🏆', titulo: 'Veterano', sub: 'Completa 10 rutas', pendiente: true),
-                  if (km < 100) const _InsigniaData(emoji: '🌍', titulo: '100 km', sub: 'Recorre 100 km acumulados', pendiente: true),
-                  if (km < 500) const _InsigniaData(emoji: '🚀', titulo: '500 km', sub: 'Recorre 500 km acumulados', pendiente: true),
-                ];
-
-                if (insignias == 0 && rutas == 0) {
+                if (todas.isEmpty) {
                   return const FqEmptyState(
                     icon: Icons.military_tech_outlined,
-                    title: 'Aún no tienes insignias',
-                    message: 'Completa rutas publicadas para ganar tus primeras insignias.',
+                    title: 'Aún no hay insignias',
+                    message: 'Pronto podrás desbloquear tus primeros logros.',
                   );
                 }
 
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: <Widget>[
-                    _StatsRow(km: km, rutas: rutas, insignias: insignias),
-                    const SizedBox(height: 16),
-                    if (ganadas.isNotEmpty) ...<Widget>[
-                      const _SeccionTitulo(titulo: 'Insignias ganadas'),
-                      const SizedBox(height: 8),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.85,
-                        children: ganadas.map((d) => _InsigniaCard(data: d)).toList(),
-                      ),
+                return RefreshIndicator(
+                  onRefresh: _recargar,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    children: <Widget>[
+                      _ResumenInsignias(ganadas: ganadas.length, total: todas.length),
                       const SizedBox(height: 16),
+                      if (ganadas.isNotEmpty) ...<Widget>[
+                        const _SeccionTitulo(titulo: 'Insignias ganadas'),
+                        const SizedBox(height: 8),
+                        _Grilla(insignias: ganadas),
+                        const SizedBox(height: 16),
+                      ] else if (propio)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            'Aún no tienes insignias. ¡Crea rutas, reporta alertas y recorre kilómetros para ganarlas!',
+                            style: TextStyle(fontSize: 12, color: FqColors.muted),
+                          ),
+                        ),
+                      if (pendientes.isNotEmpty) ...<Widget>[
+                        const _SeccionTitulo(titulo: 'Por desbloquear'),
+                        const SizedBox(height: 8),
+                        _Grilla(insignias: pendientes),
+                      ],
                     ],
-                    if (pendientes.isNotEmpty) ...<Widget>[
-                      const _SeccionTitulo(titulo: 'Por desbloquear'),
-                      const SizedBox(height: 8),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.85,
-                        children: pendientes.map((d) => _InsigniaCard(data: d)).toList(),
-                      ),
-                    ],
-                  ],
+                  ),
                 );
               },
             ),
@@ -113,19 +130,28 @@ class InsigniasScreen extends StatelessWidget {
   }
 }
 
-class _InsigniaData {
-  const _InsigniaData({required this.emoji, required this.titulo, required this.sub, this.pendiente = false});
-  final String emoji;
-  final String titulo;
-  final String sub;
-  final bool pendiente;
+class _Grilla extends StatelessWidget {
+  const _Grilla({required this.insignias});
+  final List<Insignia> insignias;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 0.8,
+      children: insignias.map((Insignia i) => _InsigniaCard(data: i)).toList(),
+    );
+  }
 }
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.km, required this.rutas, required this.insignias});
-  final double km;
-  final int rutas;
-  final int insignias;
+class _ResumenInsignias extends StatelessWidget {
+  const _ResumenInsignias({required this.ganadas, required this.total});
+  final int ganadas;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
@@ -134,18 +160,15 @@ class _StatsRow extends StatelessWidget {
       decoration: BoxDecoration(color: FqColors.night, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: <Widget>[
-          _Stat(valor: '${km.toStringAsFixed(1)}', etiqueta: 'KM'),
-          _sep(),
-          _Stat(valor: '$rutas', etiqueta: 'RUTAS'),
-          _sep(),
-          _Stat(valor: '$insignias', etiqueta: 'INSIGNIAS'),
+          _Stat(valor: '$ganadas', etiqueta: 'DESBLOQUEADAS'),
+          Container(width: 1, height: 40, color: const Color(0xFF2A4060)),
+          _Stat(valor: '${total - ganadas}', etiqueta: 'POR DESBLOQUEAR'),
         ],
       ),
     );
   }
-
-  Widget _sep() => Container(width: 1, height: 40, color: const Color(0xFF2A4060));
 }
+
 
 class _Stat extends StatelessWidget {
   const _Stat({required this.valor, required this.etiqueta});
@@ -177,27 +200,43 @@ class _SeccionTitulo extends StatelessWidget {
 
 class _InsigniaCard extends StatelessWidget {
   const _InsigniaCard({required this.data});
-  final _InsigniaData data;
+  final Insignia data;
 
   @override
   Widget build(BuildContext context) {
+    final bool pendiente = !data.desbloqueada;
+    final double? p = data.progreso;
+    final double? m = data.meta;
+    final bool conProgreso = pendiente && p != null && m != null && m > 0;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: data.pendiente ? FqColors.cloud : FqColors.white,
+        color: pendiente ? FqColors.cloud : FqColors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: data.pendiente ? FqColors.border : FqColors.volt.withOpacity(0.6)),
+        border: Border.all(color: pendiente ? FqColors.border : FqColors.volt.withOpacity(0.6)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Opacity(
-            opacity: data.pendiente ? 0.3 : 1.0,
+            opacity: pendiente ? 0.3 : 1.0,
             child: Text(data.emoji, style: const TextStyle(fontSize: 28)),
           ),
           const SizedBox(height: 4),
-          Text(data.titulo, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: data.pendiente ? FqColors.stone : FqColors.ink)),
-          Text(data.sub, textAlign: TextAlign.center, style: const TextStyle(fontSize: 8, color: FqColors.muted, height: 1.3)),
+          Text(data.nombre, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: pendiente ? FqColors.stone : FqColors.ink)),
+          Text(data.descripcion, textAlign: TextAlign.center, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 8, color: FqColors.muted, height: 1.3)),
+          if (conProgreso) ...<Widget>[
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (p / m).clamp(0.0, 1.0),
+                minHeight: 4,
+                backgroundColor: FqColors.border,
+                color: FqColors.voltDark,
+              ),
+            ),
+          ],
         ],
       ),
     );

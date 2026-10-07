@@ -1,4 +1,5 @@
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/Modulos/perfil/data/insignia.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 
 class PerfilApi {
@@ -65,4 +66,18 @@ class PerfilApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
+  /// BDG-01: catalogo de insignias con el estado (desbloqueada o no) del
+  /// usuario autenticado.
+  Future<List<Insignia>> misInsignias() => _insignias('/insignias/mias');
+
+  /// Insignias de otro usuario (perfil publico).
+  Future<List<Insignia>> insigniasDeUsuario(int idUsuario) =>
+      _insignias('/usuarios/$idUsuario/insignias');
+
+  Future<List<Insignia>> _insignias(String path) async {
+    final dynamic data = await _client.get(path);
+    return (data as List<dynamic>)
+        .map((dynamic e) => Insignia.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
