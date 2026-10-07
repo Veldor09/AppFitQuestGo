@@ -8,6 +8,7 @@ import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/bienvenida_screen.dart';
+import 'package:fit_quest_go/Modulos/empresa/presentation/empresa_shell.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/user_shell.dart';
 
 /// Widget raiz. Publica el [AuthRepositorio] al arbol y monta el `MaterialApp`.
@@ -41,6 +42,17 @@ class FitQuestGoApp extends StatelessWidget {
   }
 }
 
+/// Que panel abre cada rol al iniciar sesion.
+enum PantallaRaiz { admin, empresa, usuario }
+
+/// El panel de [usuario]: el admin gestiona la plataforma, la empresa publica
+/// sus eventos y nodos, y todos los demas entran como deportistas.
+PantallaRaiz pantallaRaizDe(UsuarioSesion usuario) {
+  if (usuario.esAdmin) return PantallaRaiz.admin;
+  if (usuario.esEmpresa) return PantallaRaiz.empresa;
+  return PantallaRaiz.usuario;
+}
+
 class _RootGate extends StatelessWidget {
   const _RootGate();
 
@@ -51,7 +63,13 @@ class _RootGate extends StatelessWidget {
     if (!auth.autenticado) {
       return const BienvenidaScreen();
     }
-    final UsuarioSesion usuario = auth.usuario!;
-    return usuario.esAdmin ? const AdminShell() : const UserShell();
+    switch (pantallaRaizDe(auth.usuario!)) {
+      case PantallaRaiz.admin:
+        return const AdminShell();
+      case PantallaRaiz.empresa:
+        return const EmpresaShell();
+      case PantallaRaiz.usuario:
+        return const UserShell();
+    }
   }
 }

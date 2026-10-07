@@ -122,6 +122,7 @@ class _FichaNodoState extends State<FichaNodo> {
       otro: _nodo.categoriaOtro,
     );
     final String? descripcion = _nodo.descripcion?.trim();
+    final String? beneficio = _nodo.beneficio?.trim();
     final Widget? voto = _seccionVoto(l10n);
     return SafeArea(
       child: SingleChildScrollView(
@@ -142,6 +143,8 @@ class _FichaNodoState extends State<FichaNodo> {
             Text(
               _nodo.creadoPorNombre == null
                   ? categoria
+                  : _nodo.patrocinado
+                  ? l10n.nodosPatrocinadoPor(categoria, _nodo.creadoPorNombre!)
                   : l10n.nodosPropuestoPor(categoria, _nodo.creadoPorNombre!),
               style: const TextStyle(
                 fontSize: 12,
@@ -149,6 +152,52 @@ class _FichaNodoState extends State<FichaNodo> {
                 color: FqColors.muted,
               ),
             ),
+            if (beneficio != null && beneficio.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              Container(
+                key: const ValueKey<String>('ficha-beneficio'),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: FqColors.chipSelectedBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Icon(
+                      Icons.local_offer_outlined,
+                      size: 18,
+                      color: FqColors.voltDark,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            l10n.nodosBeneficioTitulo,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: FqColors.chipSelectedInk,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            beneficio,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (descripcion != null && descripcion.isNotEmpty) ...<Widget>[
               const SizedBox(height: 12),
               Text(descripcion, style: const TextStyle(fontSize: 13, height: 1.4)),

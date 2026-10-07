@@ -294,10 +294,16 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       for (final Nodo nodo in nodos)
         CircleAnnotationOptions(
           geometry: Point(coordinates: Position(nodo.lng, nodo.lat)),
-          circleColor: colorCategoriaNodo(nodo.categoria).toARGB32(),
-          circleRadius: 8,
-          circleStrokeColor: FqColors.white.toARGB32(),
-          circleStrokeWidth: 2,
+          // Un Nodo de Abastecimiento (de una empresa) se ve mas grande, en
+          // verde lima y con borde oscuro: no se confunde con un punto comun.
+          circleColor: nodo.patrocinado
+              ? FqColors.volt.toARGB32()
+              : colorCategoriaNodo(nodo.categoria).toARGB32(),
+          circleRadius: nodo.patrocinado ? 11 : 8,
+          circleStrokeColor: nodo.patrocinado
+              ? FqColors.night.toARGB32()
+              : FqColors.white.toARGB32(),
+          circleStrokeWidth: nodo.patrocinado ? 3 : 2,
         ),
       for (final Alerta alerta in alertas)
         CircleAnnotationOptions(

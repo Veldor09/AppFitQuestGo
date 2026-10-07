@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta_api.dart';
@@ -197,7 +199,7 @@ class _RutaFila extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${ruta.actividad}  ·  ${ruta.distanciaKm.toStringAsFixed(1)} km',
+                  '${actividadesLabel(AppLocalizations.of(context)!, ruta.actividades)}  ·  ${ruta.distanciaKm.toStringAsFixed(1)} km',
                   style: const TextStyle(fontSize: 10, color: FqColors.muted),
                 ),
               ],

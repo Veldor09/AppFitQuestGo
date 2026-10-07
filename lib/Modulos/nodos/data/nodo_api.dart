@@ -32,6 +32,7 @@ class NodoApi {
     required double lat,
     required double lng,
     String? descripcion,
+    String? beneficio,
   }) async {
     final dynamic data = await _client.post('/nodos', {
       'nombre': nombre,
@@ -44,8 +45,42 @@ class NodoApi {
       'lng': lng,
       if (descripcion != null && descripcion.trim().isNotEmpty)
         'descripcion': descripcion.trim(),
+      if (beneficio != null && beneficio.trim().isNotEmpty)
+        'beneficio': beneficio.trim(),
     });
     return Nodo.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Modulo 5 · Edita un Nodo de Abastecimiento propio. Se envia el formulario
+  /// completo: una descripcion o un beneficio vacios los borran.
+  Future<Nodo> actualizar(
+    int id, {
+    required String nombre,
+    required String categoria,
+    String? categoriaOtro,
+    required double lat,
+    required double lng,
+    String? descripcion,
+    String? beneficio,
+  }) async {
+    final dynamic data = await _client.patch('/nodos/$id', {
+      'nombre': nombre,
+      'categoria': categoria,
+      if (categoria == 'otro' &&
+          categoriaOtro != null &&
+          categoriaOtro.trim().isNotEmpty)
+        'categoriaOtro': categoriaOtro.trim(),
+      'lat': lat,
+      'lng': lng,
+      'descripcion': descripcion?.trim() ?? '',
+      'beneficio': beneficio?.trim() ?? '',
+    });
+    return Nodo.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Modulo 5 · Da de baja un Nodo de Abastecimiento propio.
+  Future<void> eliminar(int id) async {
+    await _client.delete('/nodos/$id');
   }
 
   /// Adjunta la foto (JPEG, PNG o WebP, hasta 3 MB) a un nodo propio.

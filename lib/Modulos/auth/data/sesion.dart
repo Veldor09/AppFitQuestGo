@@ -50,6 +50,9 @@ class UsuarioSesion {
 
   bool get esAdmin => rol == RolUsuario.admin;
 
+  /// Cuenta de un comercio: publica eventos y nodos patrocinados.
+  bool get esEmpresa => rol == RolUsuario.empresa;
+
   String get etiquetaRol => RolUsuario.etiqueta(rol);
 
   /// Iniciales para el avatar. Usa el nombre y, si no hay, el correo.

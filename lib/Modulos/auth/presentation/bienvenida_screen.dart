@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_brand_mark.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/login_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro/registro_flujo.dart';
+import 'package:fit_quest_go/Modulos/auth/presentation/registro_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/auth_layout.dart';
 
 /// APP-02 · Bienvenida.
@@ -46,7 +48,24 @@ class BienvenidaScreen extends StatelessWidget {
               MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
             ),
           ),
-          const SizedBox(height: FqGap.md),
+          const SizedBox(height: FqGap.xs),
+          TextButton(
+            key: const ValueKey<String>('soy-comercio'),
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(
+                builder: (_) => const RegistroEmpresaScreen(),
+              ),
+            ),
+            child: Text(
+              l10n.bienvenidaSoyComercio,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: FqColors.river,
+              ),
+            ),
+          ),
+          const SizedBox(height: FqGap.xs),
           Center(
             child: Text(
               l10n.bienvenidaAvisoLegal,
