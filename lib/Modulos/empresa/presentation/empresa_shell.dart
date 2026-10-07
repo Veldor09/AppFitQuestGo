@@ -6,15 +6,14 @@ import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/empresa/presentation/cuenta_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/empresa/presentation/mapa_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/empresa/presentation/mis_eventos_screen.dart';
-import 'package:fit_quest_go/Modulos/empresa/presentation/mis_nodos_screen.dart';
 
 /// Panel unico de una cuenta de empresa (rol Empresa): el mapa con sus eventos
-/// (pantalla principal), la lista de eventos, sus nodos y su cuenta. Es la
+/// (pantalla principal), la lista de eventos y su cuenta. Es la
 /// pantalla raiz cuando quien inicia sesion es un comercio.
 class EmpresaShell extends StatefulWidget {
   const EmpresaShell({super.key, this.paginas});
 
-  /// Reemplazo de las cuatro pestañas para pruebas (cada una carga datos de la red).
+  /// Reemplazo de las tres pestañas para pruebas (cada una carga datos de la red).
   final List<Widget>? paginas;
 
   @override
@@ -44,7 +43,6 @@ class _EmpresaShellState extends State<EmpresaShell> {
         <Widget>[
           MapaEmpresaScreen(senal: _senalEventos),
           MisEventosScreen(senal: _senalEventos),
-          const MisNodosScreen(),
           CuentaEmpresaScreen(onCerrarSesion: _cerrarSesion),
         ];
     return Scaffold(
@@ -66,11 +64,6 @@ class _EmpresaShellState extends State<EmpresaShell> {
             icon: const Icon(Icons.event_outlined),
             selectedIcon: const Icon(Icons.event, color: FqColors.night),
             label: l10n.comunEventos,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.storefront_outlined),
-            selectedIcon: const Icon(Icons.storefront, color: FqColors.night),
-            label: l10n.navNodos,
           ),
           NavigationDestination(
             icon: const Icon(Icons.person_outline_rounded),

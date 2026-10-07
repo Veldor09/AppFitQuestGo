@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -7,7 +8,8 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 
 /// Los pines con icono que se dibujan en los mapas, uno por cosa que se puede
 /// ver: el local de una empresa, una zona de evento, el inicio y el final de
-/// un recorrido y de una ruta.
+/// un recorrido y de una ruta. (Los puntos de interes tienen un pin por
+/// categoria: ver [estiloPinNodo].)
 enum TipoPin {
   /// Un nodo de abastecimiento (el local de una empresa).
   local,
@@ -24,7 +26,7 @@ enum TipoPin {
   rutaFin,
 }
 
-/// Como se ve un pin: el icono, su color y el color del circulo.
+/// Como se ve un pin: el icono, su color y el color del icono.
 class EstiloPin {
   const EstiloPin({
     required this.icono,
@@ -37,7 +39,7 @@ class EstiloPin {
   final Color colorIcono;
 }
 
-/// El estilo de cada pin. Con [secundario] el circulo va en gris: son pines de
+/// El estilo de cada pin. Con [secundario] la gota va en gris: son pines de
 /// cosas de otras empresas, que no deben confundirse con las propias.
 EstiloPin estiloPin(TipoPin tipo, {bool secundario = false}) {
   final EstiloPin base = switch (tipo) {
@@ -71,26 +73,94 @@ EstiloPin estiloPin(TipoPin tipo, {bool secundario = false}) {
   return EstiloPin(icono: base.icono, fondo: FqColors.muted);
 }
 
-/// Alto y ancho, en pixeles, de la imagen de un pin. Se dibuja a 3x de su
-/// tamaño en pantalla (36) para que se vea nitido en celulares de alta densidad.
-const int kPinPx = 108;
+/// El pin de un punto de interes segun su categoria (las claves de
+/// `categoriasNodo`): cada una con su icono, como en Google Maps. Una categoria
+/// desconocida (y "otro") usa un pin gris generico.
+///
+/// Los colores siguen los de las tarjetas de nodos; ninguna usa el rojo de las
+/// alertas.
+EstiloPin estiloPinNodo(String categoria) {
+  switch (categoria) {
+    case 'agua':
+      return const EstiloPin(
+        icono: Icons.water_drop_rounded,
+        fondo: FqColors.river,
+      );
+    case 'mirador':
+      return const EstiloPin(
+        icono: Icons.landscape_rounded,
+        fondo: FqColors.amber,
+      );
+    case 'taller':
+      return const EstiloPin(
+        icono: Icons.build_rounded,
+        fondo: FqColors.purple,
+      );
+    case 'restaurante':
+      return const EstiloPin(
+        icono: Icons.restaurant_rounded,
+        fondo: FqColors.pink,
+      );
+    case 'comercio':
+      return const EstiloPin(
+        icono: Icons.shopping_bag_rounded,
+        fondo: FqColors.pink,
+      );
+    case 'banos':
+      return const EstiloPin(icono: Icons.wc_rounded, fondo: FqColors.trail);
+    case 'parqueo':
+      return const EstiloPin(
+        icono: Icons.local_parking_rounded,
+        fondo: FqColors.night2,
+      );
+    case 'primeros_auxilios':
+      return const EstiloPin(
+        icono: Icons.medical_services_rounded,
+        fondo: FqColors.voltDark,
+      );
+    default:
+      return const EstiloPin(icono: Icons.place_rounded, fondo: FqColors.muted);
+  }
+}
 
-/// Cuanto hay que achicar la imagen en el mapa para que el pin mida 36 en
-/// pantalla: la inversa del 3x con el que se dibuja.
-const double kPinIconSize = 1 / 3;
+/// Ancho y alto, en pixeles, de la imagen de un pin: 3x de su tamaño en
+/// pantalla (44 x 56) para que se vea nitido en celulares de alta densidad.
+const int kPinAncho = 132;
+const int kPinAlto = 168;
+
+/// El `iconSize` con el que el mapa dibuja un pin para que mida 44 de ancho en
+/// pantalla, cualquiera sea la densidad.
+///
+/// Mapbox trata los pixeles de la imagen como pixeles fisicos: una imagen de
+/// 132 px con `iconSize` 1 mide 132 / [densidad] en pantalla. Para que mida 44
+/// hay que escalarla por `densidad / 3`.
+double iconSizePin(double densidad) => densidad / 3;
 
 final Map<String, Future<Uint8List>> _cache = <String, Future<Uint8List>>{};
 
 /// La imagen PNG del pin [tipo]. Se dibuja una vez y se reutiliza.
 Future<Uint8List> imagenPin(TipoPin tipo, {bool secundario = false}) {
-  return _cache.putIfAbsent('${tipo.name}-$secundario', () {
-    final EstiloPin e = estiloPin(tipo, secundario: secundario);
-    return dibujarPin(icono: e.icono, fondo: e.fondo, colorIcono: e.colorIcono);
-  });
+  return _imagenDe(estiloPin(tipo, secundario: secundario));
 }
 
-/// Dibuja un pin: un circulo de color con borde blanco y sombra suave, y el
-/// [icono] en el centro. Devuelve una imagen PNG cuadrada de [px] pixeles.
+/// La imagen PNG del pin de la categoria [categoria] de un punto de interes.
+Future<Uint8List> imagenPinNodo(String categoria) {
+  return _imagenDe(estiloPinNodo(categoria));
+}
+
+Future<Uint8List> _imagenDe(EstiloPin e) {
+  final String clave =
+      '${e.icono.codePoint}-${e.fondo.toARGB32()}-${e.colorIcono.toARGB32()}';
+  return _cache.putIfAbsent(
+    clave,
+    () => dibujarPin(icono: e.icono, fondo: e.fondo, colorIcono: e.colorIcono),
+  );
+}
+
+/// Dibuja un pin con forma de gota (como los de Google Maps): una cabeza
+/// redonda de color con borde blanco y sombra suave, una punta hacia abajo y el
+/// [icono] en el centro de la cabeza. La punta queda en el centro del borde
+/// inferior de la imagen: ahi se ancla al mapa.
 ///
 /// Los iconos son los de Material (vienen con Flutter): sin descargas, sin
 /// licencias que atribuir y nitidos a cualquier tamaño.
@@ -98,31 +168,43 @@ Future<Uint8List> dibujarPin({
   required IconData icono,
   required Color fondo,
   Color colorIcono = Colors.white,
-  int px = kPinPx,
+  int ancho = kPinAncho,
+  int alto = kPinAlto,
 }) async {
-  final double lado = px.toDouble();
+  final double w = ancho.toDouble();
+  final double h = alto.toDouble();
   final ui.PictureRecorder grabadora = ui.PictureRecorder();
-  final Canvas lienzo = Canvas(grabadora, Rect.fromLTWH(0, 0, lado, lado));
-  final Offset centro = Offset(lado / 2, lado / 2);
-  final double radio = lado / 2 - lado * 0.07;
+  final Canvas lienzo = Canvas(grabadora, Rect.fromLTWH(0, 0, w, h));
 
-  // Sombra, borde blanco y relleno de color.
-  lienzo.drawCircle(
-    centro.translate(0, lado * 0.025),
-    radio,
+  final double margen = w * 0.07;
+  final double radio = w / 2 - margen;
+  final Offset centro = Offset(w / 2, margen + radio);
+  final Offset punta = Offset(w / 2, h - margen * 0.6);
+  final Path gota = _trazoGota(centro, radio, punta);
+
+  // Sombra, relleno de color y borde blanco.
+  lienzo.drawPath(
+    gota.shift(Offset(0, w * 0.02)),
     Paint()
-      ..color = Colors.black.withValues(alpha: 0.28)
-      ..maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, lado * 0.03),
+      ..color = Colors.black.withValues(alpha: 0.30)
+      ..maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, w * 0.03),
   );
-  lienzo.drawCircle(centro, radio, Paint()..color = Colors.white);
-  lienzo.drawCircle(centro, radio - lado * 0.06, Paint()..color = fondo);
+  lienzo.drawPath(gota, Paint()..color = fondo);
+  lienzo.drawPath(
+    gota,
+    Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.05
+      ..strokeJoin = StrokeJoin.round,
+  );
 
-  // El icono es una letra de la fuente de iconos.
+  // El icono es una letra de la fuente de iconos, en el centro de la cabeza.
   final TextPainter pintor = TextPainter(
     text: TextSpan(
       text: String.fromCharCode(icono.codePoint),
       style: TextStyle(
-        fontSize: lado * 0.5,
+        fontSize: radio * 1.15,
         fontFamily: icono.fontFamily,
         package: icono.fontPackage,
         color: colorIcono,
@@ -132,9 +214,32 @@ Future<Uint8List> dibujarPin({
   )..layout();
   pintor.paint(lienzo, centro - Offset(pintor.width / 2, pintor.height / 2));
 
-  final ui.Image imagen = await grabadora.endRecording().toImage(px, px);
+  final ui.Image imagen = await grabadora.endRecording().toImage(ancho, alto);
   final ByteData? datos = await imagen.toByteData(
     format: ui.ImageByteFormat.png,
   );
   return datos!.buffer.asUint8List();
+}
+
+/// El contorno de una gota: un circulo de [radio] en [centro] unido por dos
+/// tangentes a una [punta] que esta debajo.
+Path _trazoGota(Offset centro, double radio, Offset punta) {
+  final double distancia = punta.dy - centro.dy;
+  // Angulo, desde la vertical hacia abajo, del punto donde la tangente toca el circulo.
+  final double phi = math.acos(radio / distancia);
+  final double abajo = math.pi / 2; // en el lienzo, +y es hacia abajo
+  final Offset izquierda = Offset(
+    centro.dx + radio * math.cos(abajo + phi),
+    centro.dy + radio * math.sin(abajo + phi),
+  );
+  return Path()
+    ..moveTo(punta.dx, punta.dy)
+    ..lineTo(izquierda.dx, izquierda.dy)
+    ..arcTo(
+      Rect.fromCircle(center: centro, radius: radio),
+      abajo + phi,
+      2 * math.pi - 2 * phi,
+      false,
+    )
+    ..close();
 }

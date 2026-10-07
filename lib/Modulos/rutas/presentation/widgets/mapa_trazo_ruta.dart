@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -47,11 +48,16 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
   Future<void> _onMapCreated(MapboxMap mapa) async {
     _mapa = mapa;
     _lineas = await mapa.annotations.createPolylineAnnotationManager();
-    _iconos = await mapa.annotations.createPointAnnotationManager();
+    final PointAnnotationManager iconos = await mapa.annotations
+        .createPointAnnotationManager();
+    await prepararPines(iconos);
+    _iconos = iconos;
     await _dibujar();
   }
 
   Future<void> _dibujar() async {
+    // Antes de cualquier await: el context no se usa despues de una espera.
+    final double densidad = MediaQuery.devicePixelRatioOf(context);
     final MapboxMap? mapa = _mapa;
     final PolylineAnnotationManager? lineas = _lineas;
     final PointAnnotationManager? iconos = _iconos;
@@ -72,24 +78,25 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
         lineWidth: 5,
       ),
     );
-    // Salida y llegada con su icono: un triangulo de "play" y una bandera.
+    // Salida y llegada: una gota con "play" y otra con la meta.
     await iconos.createMulti(<PointAnnotationOptions>[
-      PointAnnotationOptions(
-        geometry: Point(
-          coordinates: Position(puntos.first.lng, puntos.first.lat),
-        ),
-        image: await imagenPin(TipoPin.rutaInicio),
-        iconSize: kPinIconSize,
+      opcionesDePin(
+        lat: puntos.first.lat,
+        lng: puntos.first.lng,
+        imagen: await imagenPin(TipoPin.rutaInicio),
+        densidad: densidad,
       ),
-      PointAnnotationOptions(
-        geometry: Point(coordinates: Position(puntos.last.lng, puntos.last.lat)),
-        image: await imagenPin(TipoPin.rutaFin),
-        iconSize: kPinIconSize,
+      opcionesDePin(
+        lat: puntos.last.lat,
+        lng: puntos.last.lng,
+        imagen: await imagenPin(TipoPin.rutaFin),
+        densidad: densidad,
       ),
     ]);
     final CameraOptions camara = await mapa.cameraForCoordinatesPadding(
       <Point>[
-        for (final PuntoRuta p in puntos) Point(coordinates: Position(p.lng, p.lat)),
+        for (final PuntoRuta p in puntos)
+          Point(coordinates: Position(p.lng, p.lat)),
       ],
       CameraOptions(),
       MbxEdgeInsets(top: 40, left: 40, bottom: 40, right: 40),

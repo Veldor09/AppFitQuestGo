@@ -3,8 +3,11 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/geo/centroide.dart';
+import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
@@ -30,6 +33,12 @@ int _pixel(ByteData datos, int ancho, int x, int y) {
   return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
+// Geometria de la gota (ver `dibujarPin`): el centro de la cabeza y su radio.
+const double _margen = kPinAncho * 0.07;
+const double _radio = kPinAncho / 2 - _margen;
+const double _cx = kPinAncho / 2;
+const double _cy = _margen + _radio;
+
 void main() {
   group('estiloPin (que icono y color lleva cada cosa)', () {
     test('cada tipo tiene su propio icono y color', () {
@@ -37,7 +46,6 @@ void main() {
         for (final TipoPin t in TipoPin.values)
           '${estiloPin(t).icono.codePoint}-${estiloPin(t).fondo.toARGB32()}',
       };
-      // recorridoFin y rutaFin comparten la bandera de meta pero no el color.
       expect(firmas, hasLength(TipoPin.values.length));
     });
 
@@ -77,13 +85,79 @@ void main() {
     });
   });
 
+  group('estiloPinNodo (un pin por categoria, como en Google Maps)', () {
+    test('cada categoria del catalogo tiene su propio icono', () {
+      final List<IconData> iconos = <IconData>[
+        for (final OpcionCatalogo o in categoriasNodo)
+          estiloPinNodo(o.clave).icono,
+      ];
+      expect(
+        iconos.map((IconData i) => i.codePoint).toSet(),
+        hasLength(iconos.length),
+      );
+    });
+
+    test('los iconos son los que se esperan de cada categoria', () {
+      expect(estiloPinNodo('agua').icono, Icons.water_drop_rounded);
+      expect(estiloPinNodo('mirador').icono, Icons.landscape_rounded);
+      expect(estiloPinNodo('taller').icono, Icons.build_rounded);
+      expect(estiloPinNodo('restaurante').icono, Icons.restaurant_rounded);
+      expect(estiloPinNodo('comercio').icono, Icons.shopping_bag_rounded);
+      expect(estiloPinNodo('banos').icono, Icons.wc_rounded);
+      expect(estiloPinNodo('parqueo').icono, Icons.local_parking_rounded);
+      expect(
+        estiloPinNodo('primeros_auxilios').icono,
+        Icons.medical_services_rounded,
+      );
+    });
+
+    test(
+      '"otro" y una categoria desconocida usan el pin generico, en gris',
+      () {
+        for (final String clave in <String>[claveOtro, 'lo-que-sea', '']) {
+          expect(
+            estiloPinNodo(clave).icono,
+            Icons.place_rounded,
+            reason: clave,
+          );
+          expect(estiloPinNodo(clave).fondo, FqColors.muted, reason: clave);
+        }
+      },
+    );
+
+    test('ninguna categoria usa el rojo de las alertas', () {
+      for (final OpcionCatalogo o in categoriasNodo) {
+        expect(
+          estiloPinNodo(o.clave).fondo,
+          isNot(FqColors.risk),
+          reason: o.clave,
+        );
+      }
+    });
+
+    test('las categorias con color propio conservan el de sus tarjetas', () {
+      for (final String clave in <String>[
+        'agua',
+        'mirador',
+        'taller',
+        'restaurante',
+        'comercio',
+      ]) {
+        expect(
+          estiloPinNodo(clave).fondo,
+          colorCategoriaNodo(clave),
+          reason: clave,
+        );
+      }
+    });
+  });
+
   group('dibujarPin / imagenPin', () {
-    testWidgets('genera un PNG cuadrado del tamaño esperado', (
+    testWidgets('genera un PNG con el tamaño de la gota', (
       WidgetTester tester,
     ) async {
       await tester.runAsync(() async {
         final Uint8List png = await imagenPin(TipoPin.local);
-        // Firma de un PNG.
         expect(png.sublist(0, 8), <int>[
           0x89,
           0x50,
@@ -95,46 +169,75 @@ void main() {
           0x0a,
         ]);
         final r = await _decodificar(png);
-        expect(r.ancho, kPinPx);
-        expect(r.alto, kPinPx);
+        expect(r.ancho, kPinAncho);
+        expect(r.alto, kPinAlto);
+        expect(r.alto, greaterThan(r.ancho)); // una gota es mas alta que ancha
       });
     });
 
-    testWidgets(
-      'las esquinas son transparentes: es un circulo, no un cuadrado',
-      (WidgetTester tester) async {
-        await tester.runAsync(() async {
-          final r = await _decodificar(await imagenPin(TipoPin.area));
-          final int esquina = _pixel(r.pixeles, r.ancho, 1, 1);
-          expect(esquina >> 24, 0, reason: 'alfa de la esquina');
-        });
-      },
-    );
+    testWidgets('es una gota: las esquinas son transparentes', (
+      WidgetTester tester,
+    ) async {
+      await tester.runAsync(() async {
+        final r = await _decodificar(await imagenPin(TipoPin.area));
+        for (final (int x, int y) in <(int, int)>[
+          (1, 1),
+          (kPinAncho - 2, 1),
+          (1, kPinAlto - 2),
+          (kPinAncho - 2, kPinAlto - 2),
+        ]) {
+          expect(_pixel(r.pixeles, r.ancho, x, y) >> 24, 0, reason: '($x,$y)');
+        }
+      });
+    });
 
-    testWidgets('el circulo lleva el color del tipo y un borde blanco', (
+    testWidgets('la cabeza lleva el color del tipo y un borde blanco', (
       WidgetTester tester,
     ) async {
       await tester.runAsync(() async {
         final r = await _decodificar(await imagenPin(TipoPin.recorridoInicio));
-        final int centroY = kPinPx ~/ 2;
-        // Dentro del circulo, lejos del icono: el color de fondo.
+        // Dentro de la cabeza, lejos del icono: el color de fondo.
         final int relleno = _pixel(
           r.pixeles,
           r.ancho,
-          (kPinPx * 0.2).round(),
-          centroY,
+          (_cx - _radio * 0.75).round(),
+          _cy.round(),
         );
         expect(relleno, FqColors.river.toARGB32());
-        // Cerca del borde: blanco.
+        // Justo en el borde de la cabeza: blanco.
         final int borde = _pixel(
           r.pixeles,
           r.ancho,
-          (kPinPx * 0.1).round(),
-          centroY,
+          (_cx - _radio).round(),
+          _cy.round(),
         );
         expect(borde, 0xFFFFFFFF);
       });
     });
+
+    testWidgets(
+      'tiene punta: el centro, cerca del borde de abajo, es de la gota',
+      (WidgetTester tester) async {
+        await tester.runAsync(() async {
+          final r = await _decodificar(await imagenPin(TipoPin.area));
+          final int enLaPunta = _pixel(
+            r.pixeles,
+            r.ancho,
+            _cx.round(),
+            kPinAlto - 18,
+          );
+          expect(enLaPunta, FqColors.purple.toARGB32());
+          // A los lados de la punta ya no hay gota.
+          final int aLaIzquierda = _pixel(
+            r.pixeles,
+            r.ancho,
+            _cx.round() - 25,
+            kPinAlto - 18,
+          );
+          expect(aLaIzquierda >> 24, lessThan(0x40));
+        });
+      },
+    );
 
     testWidgets('pines de distinto color dan imagenes distintas', (
       WidgetTester tester,
@@ -159,6 +262,23 @@ void main() {
       });
     });
 
+    testWidgets('el pin de una categoria lleva el color de esa categoria', (
+      WidgetTester tester,
+    ) async {
+      await tester.runAsync(() async {
+        final r = await _decodificar(await imagenPinNodo('agua'));
+        expect(
+          _pixel(
+            r.pixeles,
+            r.ancho,
+            (_cx - _radio * 0.75).round(),
+            _cy.round(),
+          ),
+          FqColors.river.toARGB32(),
+        );
+      });
+    });
+
     testWidgets('la version gris es distinta de la normal', (
       WidgetTester tester,
     ) async {
@@ -168,7 +288,12 @@ void main() {
         expect(gris.join(','), isNot(normal.join(',')));
         final r = await _decodificar(gris);
         expect(
-          _pixel(r.pixeles, r.ancho, (kPinPx * 0.2).round(), kPinPx ~/ 2),
+          _pixel(
+            r.pixeles,
+            r.ancho,
+            (_cx - _radio * 0.75).round(),
+            _cy.round(),
+          ),
           FqColors.muted.toARGB32(),
         );
       });
@@ -181,6 +306,11 @@ void main() {
         final Future<Uint8List> a = imagenPin(TipoPin.local);
         final Future<Uint8List> b = imagenPin(TipoPin.local);
         expect(identical(a, b), isTrue);
+        // Y el pin de categoria igual: misma categoria, misma imagen.
+        expect(
+          identical(imagenPinNodo('taller'), imagenPinNodo('taller')),
+          isTrue,
+        );
       });
     });
 
@@ -189,21 +319,86 @@ void main() {
         final Uint8List png = await dibujarPin(
           icono: Icons.star,
           fondo: Colors.orange,
-          px: 64,
+          ancho: 66,
+          alto: 84,
         );
         final r = await _decodificar(png);
-        expect(r.ancho, 64);
-        expect(r.alto, 64);
+        expect(r.ancho, 66);
+        expect(r.alto, 84);
       });
     });
   });
 
-  test(
-    'la imagen se dibuja a 3x y se achica a 1/3 para medir 36 en pantalla',
-    () {
-      expect(kPinPx * kPinIconSize, closeTo(36, 1e-9));
-    },
-  );
+  group('iconSizePin (que mida lo mismo en cualquier celular)', () {
+    test('el pin mide 44 de ancho en pantalla con cualquier densidad', () {
+      for (final double densidad in <double>[1, 1.5, 2, 2.625, 2.75, 3, 3.5]) {
+        // Mapbox trata los pixeles de la imagen como pixeles fisicos.
+        final double enPantalla = kPinAncho * iconSizePin(densidad) / densidad;
+        expect(enPantalla, closeTo(44, 1e-9), reason: 'densidad $densidad');
+      }
+    });
+
+    test('y 56 de alto', () {
+      expect(kPinAlto * iconSizePin(3) / 3, closeTo(56, 1e-9));
+    });
+  });
+
+  group('opcionesDePin (el pin y su nombre en el mapa)', () {
+    final Uint8List imagen = Uint8List.fromList(<int>[1, 2, 3]);
+
+    PointAnnotationOptions opciones({
+      String? etiqueta,
+      bool secundario = false,
+      double densidad = 3,
+    }) => opcionesDePin(
+      lat: 9.93,
+      lng: -84.09,
+      imagen: imagen,
+      densidad: densidad,
+      etiqueta: etiqueta,
+      secundario: secundario,
+    );
+
+    test('la punta de la gota queda en la coordenada', () {
+      final PointAnnotationOptions o = opciones();
+      expect(o.iconAnchor, IconAnchor.BOTTOM);
+      expect(o.geometry.coordinates.lng, -84.09);
+      expect(o.geometry.coordinates.lat, 9.93);
+      expect(o.image, imagen);
+    });
+
+    test('el tamaño sale de la densidad de la pantalla', () {
+      expect(opciones(densidad: 3).iconSize, closeTo(1, 1e-9));
+      expect(opciones(densidad: 2).iconSize, closeTo(2 / 3, 1e-9));
+    });
+
+    test(
+      'con etiqueta escribe el nombre a la derecha, oscuro y con halo blanco',
+      () {
+        final PointAnnotationOptions o = opciones(etiqueta: '  Caminata 5k  ');
+        expect(o.textField, 'Caminata 5k'); // sin espacios sobrantes
+        expect(o.textAnchor, TextAnchor.LEFT);
+        expect(o.textOffset?.first, greaterThan(0)); // a la derecha del pin
+        expect(o.textOffset?.last, lessThan(0)); // a la altura de la cabeza
+        expect(o.textColor, FqColors.night.toARGB32());
+        expect(o.textHaloColor, Colors.white.toARGB32());
+        expect(o.textHaloWidth, greaterThan(0));
+      },
+    );
+
+    test('lo de otras empresas lleva el nombre en gris', () {
+      expect(
+        opciones(etiqueta: 'Ajeno', secundario: true).textColor,
+        FqColors.muted.toARGB32(),
+      );
+    });
+
+    test('sin etiqueta, o en blanco, no escribe ningun texto', () {
+      expect(opciones().textField, isNull);
+      expect(opciones(etiqueta: '').textField, isNull);
+      expect(opciones(etiqueta: '   ').textField, isNull);
+    });
+  });
 
   group('centroideDe (donde va el pin de un area)', () {
     test('un cuadrado: el centro exacto', () {
@@ -239,7 +434,6 @@ void main() {
     test(
       'con muchos puntos de un lado cae en medio de la figura, no cargado a ese lado',
       () {
-        // Un rectangulo con 50 puntos extra en su lado izquierdo.
         final List<PuntoGeo> pts = <PuntoGeo>[
           for (int i = 0; i < 50; i++) _p(10 + i * 0.004, -84),
           _p(10.2, -84),
@@ -247,7 +441,6 @@ void main() {
           _p(10, -83.8),
         ];
         final PuntoGeo c = centroideDe(pts);
-        // El promedio de vertices se iria a la izquierda (~ -83.97).
         expect(c.lng, closeTo(-83.9, 1e-6));
         expect(c.lat, closeTo(10.1, 1e-6));
       },

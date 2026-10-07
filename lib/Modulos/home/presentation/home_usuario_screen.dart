@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -9,6 +8,7 @@ import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
+import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
@@ -25,6 +25,9 @@ import 'package:fit_quest_go/Modulos/clima/application/clima_zona.dart';
 import 'package:fit_quest_go/Modulos/clima/data/alerta_clima.dart';
 import 'package:fit_quest_go/Modulos/clima/data/clima_api.dart';
 import 'package:fit_quest_go/Modulos/clima/presentation/banner_clima.dart';
+import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
+import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
+import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/capa_eventos_mapa.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
@@ -38,12 +41,14 @@ class HomeUsuarioScreen extends StatefulWidget {
     this.climaApi,
     this.voz,
     this.posiciones,
+    this.eventoApi,
   });
 
   /// Inyectables para pruebas; en produccion se crean los reales.
   final NodoApi? nodoApi;
   final AlertaApi? alertaApi;
   final ClimaApi? climaApi;
+  final EventoApi? eventoApi;
   final AvisoVoz? voz;
 
   /// Fabrica del stream de posiciones del aviso de alertas cercanas. En
@@ -70,21 +75,26 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   late final NodoApi _nodoApi = widget.nodoApi ?? NodoApi();
   late final AlertaApi _alertaApi = widget.alertaApi ?? AlertaApi();
   late final ClimaApi _climaApi = widget.climaApi ?? ClimaApi();
+  late final EventoApi _eventoApi = widget.eventoApi ?? EventoApi();
   late final ProximidadAlertas _proximidad;
   late final ClimaZona _clima;
   Timer? _temporizadorAlertas;
   Timer? _temporizadorClima;
   AvisoVoz? _vozActiva;
+  /// Las alertas, como circulos rojos.
   CircleAnnotationManager? _pines;
-  Cancelable? _escuchaTapPines;
 
-  /// Los locales de empresas van aparte, con su icono (una imagen, no un circulo).
-  PointAnnotationManager? _iconosLocales;
-  Cancelable? _escuchaTapLocales;
+  /// Los puntos de interes y los locales de empresas: un pin con forma de gota
+  /// y el icono de su categoria (como en Google Maps).
+  PointAnnotationManager? _iconosNodos;
+  Cancelable? _escuchaTapNodos;
+
+  /// Los eventos de las empresas: sus areas y recorridos, con nombre.
+  CapaEventosMapa? _capaEventos;
+  List<Evento> _eventos = <Evento>[];
 
   /// Pin del mapa -> nodo, para abrir su ficha al tocarlo.
   final Map<String, Nodo> _nodoPorPin = <String, Nodo>{};
-  final Map<String, Nodo> _localPorPin = <String, Nodo>{};
   List<Nodo> _nodos = <Nodo>[];
   List<Alerta> _alertas = <Alerta>[];
   bool _votando = false;
@@ -115,6 +125,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _temporizadorAlertas = Timer.periodic(_refrescoAlertas, (Timer _) {
       _cargarAlertas();
       _cargarNodos();
+      _cargarEventos();
     });
     _temporizadorClima = Timer.periodic(
       _refrescoClima,
@@ -126,8 +137,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   void dispose() {
     _temporizadorAlertas?.cancel();
     _temporizadorClima?.cancel();
-    _escuchaTapPines?.cancel();
-    _escuchaTapLocales?.cancel();
+    _escuchaTapNodos?.cancel();
     _clima.dispose();
     _proximidad.dispose();
     _vozActiva?.detener();
@@ -263,25 +273,23 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   }
 
   Future<void> _onMapCreated(MapboxMap controller) async {
-    final CircleAnnotationManager pines =
-        await controller.annotations.createCircleAnnotationManager();
-    _pines = pines;
-    _escuchaTapPines = pines.tapEvents(onTap: _onTapPin);
-    // Despues de los circulos: los iconos de los locales quedan por encima.
-    final PointAnnotationManager locales =
-        await controller.annotations.createPointAnnotationManager();
-    _iconosLocales = locales;
-    _escuchaTapLocales = locales.tapEvents(onTap: _onTapLocal);
+    // Del fondo al frente: los eventos, las alertas y, encima, los puntos.
+    _capaEventos = await CapaEventosMapa.crear(controller);
+    _pines = await controller.annotations.createCircleAnnotationManager();
+    final PointAnnotationManager nodos = await controller.annotations
+        .createPointAnnotationManager();
+    await prepararPines(nodos);
+    _iconosNodos = nodos;
+    _escuchaTapNodos = nodos.tapEvents(onTap: _onTapNodo);
     await _dibujarPines();
+    await _dibujarEventos();
+    unawaited(_cargarEventos());
     await centrarEnUbicacionActual(controller);
   }
 
   /// Tocar el pin de un punto de interes abre su ficha (con foto, si tiene) y,
   /// si estas cerca, deja votar si sigue ahi o ya no existe.
-  void _onTapPin(CircleAnnotation pin) => _abrirFicha(_nodoPorPin[pin.id]);
-
-  /// Lo mismo para el local de una empresa, que tiene su propio icono.
-  void _onTapLocal(PointAnnotation pin) => _abrirFicha(_localPorPin[pin.id]);
+  void _onTapNodo(PointAnnotation pin) => _abrirFicha(_nodoPorPin[pin.id]);
 
   void _abrirFicha(Nodo? nodo) {
     if (nodo == null || !mounted) return;
@@ -297,37 +305,57 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     );
   }
 
+  Future<void> _cargarEventos() async {
+    // Sin mapa todavia no hay donde dibujarlos: no se piden.
+    if (_capaEventos == null) return;
+    try {
+      final List<Evento> eventos = await _eventoApi.listar();
+      // La recarga es periodica: si no cambio nada no se redibuja.
+      if (!mounted || _mismosEventos(_eventos, eventos)) return;
+      _eventos = eventos;
+      await _dibujarEventos();
+    } catch (_) {
+      // Sin datos por ahora: el mapa queda sin eventos, no bloquea la pantalla.
+    }
+  }
+
+  bool _mismosEventos(List<Evento> a, List<Evento> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id ||
+          a[i].areas.length != b[i].areas.length ||
+          a[i].recorridos.length != b[i].recorridos.length) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> _dibujarEventos() async {
+    final CapaEventosMapa? capa = _capaEventos;
+    if (capa == null || !mounted) return;
+    await capa.dibujar(
+      densidad: MediaQuery.devicePixelRatioOf(context),
+      areas: <ZonaEvento>[for (final Evento e in _eventos) ...e.areas],
+      recorridos: <ZonaEvento>[
+        for (final Evento e in _eventos) ...e.recorridos,
+      ],
+    );
+  }
+
   Future<void> _dibujarPines() async {
-    final CircleAnnotationManager? pines = _pines;
-    if (pines == null) return;
-    await pines.deleteAll();
-    await _iconosLocales?.deleteAll();
+    final CircleAnnotationManager? alertasMgr = _pines;
+    final PointAnnotationManager? nodosMgr = _iconosNodos;
+    if (alertasMgr == null || nodosMgr == null) return;
+    await alertasMgr.deleteAll();
+    await nodosMgr.deleteAll();
     _nodoPorPin.clear();
-    _localPorPin.clear();
     // Copia: las listas pueden cambiar mientras se espera a Mapbox.
-    final List<Nodo> todos = List<Nodo>.of(_nodos);
+    final List<Nodo> nodos = List<Nodo>.of(_nodos);
     final List<Alerta> alertas = List<Alerta>.of(_alertas);
-    // Un local de empresa (nodo patrocinado) se ve con su icono; los demas
-    // puntos de interes, como circulos del color de su categoria.
-    final List<Nodo> nodos = <Nodo>[
-      for (final Nodo n in todos)
-        if (!n.patrocinado) n,
-    ];
-    final List<Nodo> locales = <Nodo>[
-      for (final Nodo n in todos)
-        if (n.patrocinado) n,
-    ];
-    if (nodos.isNotEmpty || alertas.isNotEmpty) {
-      final List<CircleAnnotation?> creados =
-          await pines.createMulti(<CircleAnnotationOptions>[
-        for (final Nodo nodo in nodos)
-          CircleAnnotationOptions(
-            geometry: Point(coordinates: Position(nodo.lng, nodo.lat)),
-            circleColor: colorCategoriaNodo(nodo.categoria).toARGB32(),
-            circleRadius: 8,
-            circleStrokeColor: FqColors.white.toARGB32(),
-            circleStrokeWidth: 2,
-          ),
+
+    if (alertas.isNotEmpty) {
+      await alertasMgr.createMulti(<CircleAnnotationOptions>[
         for (final Alerta alerta in alertas)
           CircleAnnotationOptions(
             geometry: Point(coordinates: Position(alerta.lng, alerta.lat)),
@@ -337,28 +365,28 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
             circleStrokeWidth: 2,
           ),
       ]);
-      // Los pines salen en el orden de las opciones: primero los nodos.
-      for (int i = 0; i < nodos.length && i < creados.length; i++) {
-        final CircleAnnotation? pin = creados[i];
-        if (pin != null) _nodoPorPin[pin.id] = nodos[i];
-      }
     }
 
-    final PointAnnotationManager? iconos = _iconosLocales;
-    if (iconos == null || locales.isEmpty) return;
-    final Uint8List imagen = await imagenPin(TipoPin.local);
-    final List<PointAnnotation?> iconosCreados =
-        await iconos.createMulti(<PointAnnotationOptions>[
-      for (final Nodo local in locales)
-        PointAnnotationOptions(
-          geometry: Point(coordinates: Position(local.lng, local.lat)),
-          image: imagen,
-          iconSize: kPinIconSize,
+    if (nodos.isEmpty || !mounted) return;
+    final double densidad = MediaQuery.devicePixelRatioOf(context);
+    // Un local de empresa (nodo patrocinado) lleva su tienda; los demas puntos,
+    // el icono de su categoria.
+    final List<PointAnnotationOptions> opciones = <PointAnnotationOptions>[
+      for (final Nodo n in nodos)
+        opcionesDePin(
+          lat: n.lat,
+          lng: n.lng,
+          imagen: await (n.patrocinado
+              ? imagenPin(TipoPin.local)
+              : imagenPinNodo(n.categoria)),
+          densidad: densidad,
         ),
-    ]);
-    for (int i = 0; i < locales.length && i < iconosCreados.length; i++) {
-      final PointAnnotation? pin = iconosCreados[i];
-      if (pin != null) _localPorPin[pin.id] = locales[i];
+    ];
+    final List<PointAnnotation?> creados = await nodosMgr.createMulti(opciones);
+    // Los pines salen en el orden de las opciones.
+    for (int i = 0; i < nodos.length && i < creados.length; i++) {
+      final PointAnnotation? pin = creados[i];
+      if (pin != null) _nodoPorPin[pin.id] = nodos[i];
     }
   }
 

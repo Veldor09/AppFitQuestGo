@@ -326,34 +326,53 @@ void main() {
   group('EmpresaShell', () {
     Widget pagina(String t) => Text(t);
 
-    testWidgets('tiene cuatro pestañas y abre en el Mapa', (
-      WidgetTester tester,
-    ) async {
+    testWidgets(
+      'tiene tres pestañas (Mapa, Eventos y Cuenta) y abre en el Mapa',
+      (WidgetTester tester) async {
+        await montarApp(
+          tester,
+          EmpresaShell(
+            paginas: <Widget>[
+              pagina('pag-mapa'),
+              pagina('pag-eventos'),
+              pagina('pag-cuenta'),
+            ],
+          ),
+        );
+
+        // La primera pantalla es el mapa.
+        expect(find.text('pag-mapa'), findsOneWidget);
+        expect(find.byType(NavigationDestination), findsNWidgets(3));
+      },
+    );
+
+    testWidgets('no tiene el panel de Nodos', (WidgetTester tester) async {
       await montarApp(
         tester,
         EmpresaShell(
           paginas: <Widget>[
             pagina('pag-mapa'),
             pagina('pag-eventos'),
-            pagina('pag-nodos'),
             pagina('pag-cuenta'),
           ],
         ),
       );
 
-      // La primera pantalla es el mapa.
-      expect(find.text('pag-mapa'), findsOneWidget);
-      expect(find.byType(NavigationDestination), findsNWidgets(4));
+      final Finder barra = find.byKey(const ValueKey<String>('nav-empresa'));
+      for (final String etiqueta in <String>['Mapa', 'Eventos', 'Cuenta']) {
+        expect(
+          find.descendant(of: barra, matching: find.text(etiqueta)),
+          findsOneWidget,
+          reason: etiqueta,
+        );
+      }
       expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('nav-empresa')),
-          matching: find.text('Mapa'),
-        ),
-        findsOneWidget,
+        find.descendant(of: barra, matching: find.text('Nodos')),
+        findsNothing,
       );
     });
 
-    testWidgets('cambia entre Mapa, Eventos, Nodos y Cuenta', (
+    testWidgets('cambia entre Mapa, Eventos y Cuenta', (
       WidgetTester tester,
     ) async {
       await montarApp(
@@ -362,7 +381,6 @@ void main() {
           paginas: <Widget>[
             pagina('pag-mapa'),
             pagina('pag-eventos'),
-            pagina('pag-nodos'),
             pagina('pag-cuenta'),
           ],
         ),
@@ -380,7 +398,6 @@ void main() {
       }
 
       await ir('Eventos', 'pag-eventos');
-      await ir('Nodos', 'pag-nodos');
       await ir('Cuenta', 'pag-cuenta');
       await ir('Mapa', 'pag-mapa');
     });
