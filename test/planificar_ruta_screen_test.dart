@@ -29,6 +29,7 @@ class _RutaApiFalsa extends RutaApi {
     String? dificultad,
     required double distanciaKm,
     required List<PuntoRuta> puntos,
+    String? visibilidad,
   }) async {
     actividadesCreadas.add(actividades);
     return Ruta(

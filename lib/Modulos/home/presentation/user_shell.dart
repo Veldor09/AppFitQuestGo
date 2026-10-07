@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
-import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
-import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/eventos/presentation/eventos_screen.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/user_nav_bar.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/perfil_screen.dart';
@@ -25,15 +24,11 @@ class _UserShellState extends State<UserShell> {
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final List<Widget> pestanas = <Widget>[
       const HomeUsuarioScreen(),
       const RutasScreen(),
       const PlanificarRutaScreen(),
-      _Pendiente(
-        titulo: l10n.comunEventos,
-        icono: Icons.auto_awesome_outlined,
-      ),
+      const EventosScreen(),
       PerfilScreen(onCerrarSesion: _cerrarSesion),
     ];
 
@@ -43,26 +38,6 @@ class _UserShellState extends State<UserShell> {
       bottomNavigationBar: UserNavBar(
         currentIndex: _tab,
         onSelect: (int i) => setState(() => _tab = i),
-      ),
-    );
-  }
-}
-
-/// Pestana sin backend todavia: estado vacio honesto, sin datos inventados.
-class _Pendiente extends StatelessWidget {
-  const _Pendiente({required this.titulo, required this.icono});
-
-  final String titulo;
-  final IconData icono;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: FqColors.paper,
-      child: FqEmptyState(
-        icon: icono,
-        title: titulo,
-        message: AppLocalizations.of(context)!.comunSeccionPronto,
       ),
     );
   }

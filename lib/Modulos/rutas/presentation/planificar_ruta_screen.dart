@@ -406,6 +406,29 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                           value: 'dificil',
                           child: Text(dificultadLabel(l10n, 'dificil')),
                         ),
+                      ],
+                      onChanged: (String? v) =>
+                          setSheetState(() => dificultad = v ?? dificultad),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: visibilidad,
+                      decoration: const InputDecoration(
+                        labelText: 'Visibilidad de la ruta (RTE-08)',
+                        helperText: 'Pública la envía a revisión comunitaria',
+                      ),
+                      items: const <DropdownMenuItem<String>>[
+                        DropdownMenuItem<String>(
+                          value: 'privada',
+                          child: Text('🔒 Privada (Solo tú)'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'amigos',
+                          child: Text('👥 Solo amigos'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'publica',
+                          child: Text('🌍 Pública (Comunidad)'),
                         ),
                       ],
                       onChanged: (String? v) =>
