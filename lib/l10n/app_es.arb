@@ -525,7 +525,7 @@
   "@homePublicarAlerta": {
     "description": "Submit button on the alert creation form."
   },
-  "homeNodoEnviadoExito": "Punto enviado. Va a aparecer en el mapa cuando se apruebe.",
+  "homeNodoEnviadoExito": "Punto publicado. Ya aparece en el mapa.",
   "@homeNodoEnviadoExito": {
     "description": "Snackbar after successfully proposing a point of interest."
   },
@@ -1506,5 +1506,521 @@
     "placeholders": {
       "cantidad": { "type": "int" }
     }
+  },
+
+  "comunReintentar": "Reintentar",
+  "@comunReintentar": {
+    "description": "Generic retry button shown next to a load error."
+  },
+  "navNodos": "Nodos",
+  "@navNodos": {
+    "description": "Bottom navigation label of the business panel's 'sponsored nodes' tab."
+  },
+  "bienvenidaSoyComercio": "Tengo un comercio",
+  "@bienvenidaSoyComercio": {
+    "description": "Link on the welcome screen that opens the business (empresa) sign-up."
+  },
+  "registroEmpresaTitulo": "Cuenta de empresa",
+  "@registroEmpresaTitulo": {
+    "description": "Header title of the business sign-up screen."
+  },
+  "registroEmpresaSubtitulo": "Publica eventos y nodos para los deportistas",
+  "@registroEmpresaSubtitulo": {
+    "description": "Header subtitle of the business sign-up screen."
+  },
+  "registroEmpresaNombreComercial": "Nombre comercial",
+  "@registroEmpresaNombreComercial": {
+    "description": "Label of the business-name field."
+  },
+  "registroEmpresaTelefono": "Telefono (opcional)",
+  "@registroEmpresaTelefono": {
+    "description": "Label of the optional phone field."
+  },
+  "registroEmpresaTelefonoHint": "8888-8888",
+  "@registroEmpresaTelefonoHint": {
+    "description": "Placeholder of the phone field."
+  },
+  "registroEmpresaValidacionNombre": "El nombre comercial es obligatorio",
+  "@registroEmpresaValidacionNombre": {
+    "description": "Inline error when the business name is empty or too short."
+  },
+  "registroEmpresaValidacionTelefono": "Telefono invalido: usa de 8 a 20 digitos",
+  "@registroEmpresaValidacionTelefono": {
+    "description": "Inline error when the phone does not match the allowed format."
+  },
+  "registroEmpresaBoton": "Crear cuenta de empresa",
+  "@registroEmpresaBoton": {
+    "description": "Primary button of the business sign-up screen."
+  },
+  "registroEmpresaExito": "Cuenta de empresa creada",
+  "@registroEmpresaExito": {
+    "description": "Success toast after creating a business account."
+  },
+  "categoriaEventoBenefico": "Benefico",
+  "@categoriaEventoBenefico": {
+    "description": "Event category."
+  },
+  "categoriaEventoCaminata": "Caminata",
+  "@categoriaEventoCaminata": {
+    "description": "Event category."
+  },
+  "categoriaEventoCarrera": "Carrera",
+  "@categoriaEventoCarrera": {
+    "description": "Event category."
+  },
+  "categoriaEventoCiclismo": "Ciclismo",
+  "@categoriaEventoCiclismo": {
+    "description": "Event category."
+  },
+  "categoriaEventoSenderismo": "Senderismo",
+  "@categoriaEventoSenderismo": {
+    "description": "Event category."
+  },
+  "categoriaEventoOtro": "Otro",
+  "@categoriaEventoOtro": {
+    "description": "Event category."
+  },
+  "eventoNuevoTitulo": "Nuevo evento",
+  "@eventoNuevoTitulo": {
+    "description": "Header title of the event editor when creating."
+  },
+  "eventoEditarTitulo": "Editar evento",
+  "@eventoEditarTitulo": {
+    "description": "Header title of the event editor when editing."
+  },
+  "eventoPestanaDatos": "Datos",
+  "@eventoPestanaDatos": {
+    "description": "Editor tab with the event's name, dates and category."
+  },
+  "eventoPestanaMapa": "Mapa",
+  "@eventoPestanaMapa": {
+    "description": "Editor tab where areas and routes are drawn."
+  },
+  "eventoNombreLabel": "Nombre del evento",
+  "@eventoNombreLabel": {
+    "description": "Label of the event name field."
+  },
+  "eventoNombreHint": "Ej. Caminata benefica",
+  "@eventoNombreHint": {
+    "description": "Placeholder of the event name field."
+  },
+  "eventoCategoriaTitulo": "Categoria",
+  "@eventoCategoriaTitulo": {
+    "description": "Section title above the event category chips."
+  },
+  "eventoFaltaCategoria": "Elige una categoria",
+  "@eventoFaltaCategoria": {
+    "description": "Error when no event category was chosen."
+  },
+  "eventoInicioLabel": "Inicia",
+  "@eventoInicioLabel": {
+    "description": "Label of the event start date row."
+  },
+  "eventoFinLabel": "Termina",
+  "@eventoFinLabel": {
+    "description": "Label of the event end date row."
+  },
+  "eventoElegirFecha": "Elegir fecha y hora",
+  "@eventoElegirFecha": {
+    "description": "Placeholder of an unset date row."
+  },
+  "eventoFaltaFechas": "Elige cuando empieza y cuando termina",
+  "@eventoFaltaFechas": {
+    "description": "Error when the event dates are missing."
+  },
+  "eventoFinAntesDeInicio": "El evento debe terminar despues de empezar",
+  "@eventoFinAntesDeInicio": {
+    "description": "Error when the end date is not after the start date."
+  },
+  "eventoYaTermino": "El evento ya termino: cambia la fecha de fin",
+  "@eventoYaTermino": {
+    "description": "Error when creating an event that ends in the past."
+  },
+  "eventoFaltaTrazo": "Dibuja al menos un area o un recorrido en el mapa",
+  "@eventoFaltaTrazo": {
+    "description": "Error / hint when the event has no drawn area or route."
+  },
+  "eventoModoMover": "Mover mapa",
+  "@eventoModoMover": {
+    "description": "Drawing toolbar: pan the map normally."
+  },
+  "eventoModoRecorrido": "Trazar recorrido",
+  "@eventoModoRecorrido": {
+    "description": "Drawing toolbar: draw a line with the finger."
+  },
+  "eventoModoArea": "Trazar area",
+  "@eventoModoArea": {
+    "description": "Drawing toolbar: draw a closed zone with the finger."
+  },
+  "eventoAyudaDibujo": "Arrastra el dedo sobre el mapa para trazar. Al soltar, le pones nombre.",
+  "@eventoAyudaDibujo": {
+    "description": "Hint shown while a drawing mode is active."
+  },
+  "eventoTrazoCorto": "El trazo es muy corto. Intenta de nuevo.",
+  "@eventoTrazoCorto": {
+    "description": "Info toast when the drawn stroke has too few points."
+  },
+  "eventoNombreTrazoTitulo": "Nombre del trazo",
+  "@eventoNombreTrazoTitulo": {
+    "description": "Dialog title asking for the name of a just-drawn area or route."
+  },
+  "eventoNombreAreaDefecto": "Area {n}",
+  "@eventoNombreAreaDefecto": {
+    "description": "Default name of a drawn area.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "eventoNombreRecorridoDefecto": "Recorrido {n}",
+  "@eventoNombreRecorridoDefecto": {
+    "description": "Default name of a drawn route.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "eventoSinTrazos": "Aun no dibujas nada",
+  "@eventoSinTrazos": {
+    "description": "Panel over the map when nothing is drawn yet."
+  },
+  "eventoResumenTrazos": "Areas: {areas} - Recorridos: {recorridos}",
+  "@eventoResumenTrazos": {
+    "description": "Count of drawn areas and routes of an event.",
+    "placeholders": {
+      "areas": {
+        "type": "int"
+      },
+      "recorridos": {
+        "type": "int"
+      }
+    }
+  },
+  "eventoGuardar": "Guardar evento",
+  "@eventoGuardar": {
+    "description": "Save button of the event editor."
+  },
+  "eventoGuardado": "Evento guardado",
+  "@eventoGuardado": {
+    "description": "Success toast after saving an event."
+  },
+  "eventoErrorGuardar": "No se pudo guardar el evento",
+  "@eventoErrorGuardar": {
+    "description": "Error toast when saving an event fails."
+  },
+  "eventoEstadoTerminado": "Terminado",
+  "@eventoEstadoTerminado": {
+    "description": "Event status tag."
+  },
+  "eventoEstadoEnCurso": "En curso",
+  "@eventoEstadoEnCurso": {
+    "description": "Event status tag."
+  },
+  "eventoEstadoProximo": "Proximo",
+  "@eventoEstadoProximo": {
+    "description": "Event status tag."
+  },
+  "eventoOrganizadoPor": "Organiza {empresa}",
+  "@eventoOrganizadoPor": {
+    "description": "Event detail: the business that organizes it.",
+    "placeholders": {
+      "empresa": {
+        "type": "String"
+      }
+    }
+  },
+  "eventoAreasTitulo": "Areas",
+  "@eventoAreasTitulo": {
+    "description": "Event detail: list title."
+  },
+  "eventoRecorridosTitulo": "Recorridos",
+  "@eventoRecorridosTitulo": {
+    "description": "Event detail: list title."
+  },
+  "eventosSubtitulo": "Lo que se organiza cerca de ti",
+  "@eventosSubtitulo": {
+    "description": "Subtitle of the athlete's Events tab."
+  },
+  "eventosErrorCarga": "No se pudo cargar",
+  "@eventosErrorCarga": {
+    "description": "Empty-state title when loading a list fails."
+  },
+  "eventosVacioTitulo": "Aun no hay eventos",
+  "@eventosVacioTitulo": {
+    "description": "Empty-state title of the athlete's Events tab."
+  },
+  "eventosVacioMensaje": "Cuando una empresa publique uno, lo veras aqui.",
+  "@eventosVacioMensaje": {
+    "description": "Empty-state message of the athlete's Events tab."
+  },
+  "eventosSeccionEnCurso": "En curso",
+  "@eventosSeccionEnCurso": {
+    "description": "Section title of events already started."
+  },
+  "eventosSeccionProximos": "Proximos",
+  "@eventosSeccionProximos": {
+    "description": "Section title of events not started yet."
+  },
+  "misEventosTitulo": "Mis eventos",
+  "@misEventosTitulo": {
+    "description": "Title of the business panel's events tab."
+  },
+  "misEventosSubtitulo": "Los que publicas para los deportistas",
+  "@misEventosSubtitulo": {
+    "description": "Subtitle of the business panel's events tab."
+  },
+  "misEventosVacioTitulo": "Aun no tienes eventos",
+  "@misEventosVacioTitulo": {
+    "description": "Empty-state title of the business events tab."
+  },
+  "misEventosVacioMensaje": "Crea el primero: dibuja el area o el recorrido en el mapa.",
+  "@misEventosVacioMensaje": {
+    "description": "Empty-state message of the business events tab."
+  },
+  "eventoNuevo": "Nuevo evento",
+  "@eventoNuevo": {
+    "description": "Floating button to create an event."
+  },
+  "eventoEliminarTitulo": "Eliminar evento",
+  "@eventoEliminarTitulo": {
+    "description": "Confirm dialog title."
+  },
+  "eventoEliminarMensaje": "Se borrara \"{nombre}\" y dejara de verse en el mapa.",
+  "@eventoEliminarMensaje": {
+    "description": "Confirm dialog message before deleting an event.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "eventoEliminado": "Evento eliminado",
+  "@eventoEliminado": {
+    "description": "Success toast after deleting an event."
+  },
+  "eventoErrorEliminar": "No se pudo eliminar el evento",
+  "@eventoErrorEliminar": {
+    "description": "Error toast when deleting an event fails."
+  },
+  "nodoEmpresaTitulo": "Mis nodos",
+  "@nodoEmpresaTitulo": {
+    "description": "Title of the business panel's nodes tab."
+  },
+  "nodoEmpresaSubtitulo": "Tus puntos de abastecimiento en el mapa",
+  "@nodoEmpresaSubtitulo": {
+    "description": "Subtitle of the business panel's nodes tab."
+  },
+  "nodoEmpresaNuevo": "Nuevo nodo",
+  "@nodoEmpresaNuevo": {
+    "description": "Floating button to create a sponsored node."
+  },
+  "nodoEmpresaNuevoTitulo": "Nuevo nodo de abastecimiento",
+  "@nodoEmpresaNuevoTitulo": {
+    "description": "Header title of the node form when creating."
+  },
+  "nodoEmpresaEditarTitulo": "Editar nodo",
+  "@nodoEmpresaEditarTitulo": {
+    "description": "Header title of the node form when editing."
+  },
+  "nodoEmpresaNombreLabel": "Nombre del comercio",
+  "@nodoEmpresaNombreLabel": {
+    "description": "Label of the node name field."
+  },
+  "nodoEmpresaBeneficioLabel": "Cupon o beneficio",
+  "@nodoEmpresaBeneficioLabel": {
+    "description": "Label of the benefit field."
+  },
+  "nodoEmpresaBeneficioHint": "Ej. 10% de descuento al mostrar tu ruta",
+  "@nodoEmpresaBeneficioHint": {
+    "description": "Placeholder of the benefit field."
+  },
+  "nodoEmpresaUbicacionTitulo": "Ubicacion",
+  "@nodoEmpresaUbicacionTitulo": {
+    "description": "Section title above the location map."
+  },
+  "nodoEmpresaUbicacionAyuda": "Toca el mapa para marcar tu local",
+  "@nodoEmpresaUbicacionAyuda": {
+    "description": "Hint above the location map."
+  },
+  "nodoEmpresaGuardado": "Nodo publicado",
+  "@nodoEmpresaGuardado": {
+    "description": "Success toast after saving a sponsored node."
+  },
+  "nodoEmpresaErrorGuardar": "No se pudo guardar el nodo",
+  "@nodoEmpresaErrorGuardar": {
+    "description": "Error toast when saving a node fails."
+  },
+  "nodoEmpresaVacioTitulo": "Aun no tienes nodos",
+  "@nodoEmpresaVacioTitulo": {
+    "description": "Empty-state title of the business nodes tab."
+  },
+  "nodoEmpresaVacioMensaje": "Publica tu local para que los deportistas lo vean en el mapa.",
+  "@nodoEmpresaVacioMensaje": {
+    "description": "Empty-state message of the business nodes tab."
+  },
+  "nodoEmpresaSinBeneficio": "Sin cupon ni beneficio",
+  "@nodoEmpresaSinBeneficio": {
+    "description": "Shown on a node card without a benefit."
+  },
+  "nodoEmpresaPublicado": "Publicado",
+  "@nodoEmpresaPublicado": {
+    "description": "Status tag of a sponsored node."
+  },
+  "nodoEmpresaEliminarTitulo": "Eliminar nodo",
+  "@nodoEmpresaEliminarTitulo": {
+    "description": "Confirm dialog title."
+  },
+  "nodoEmpresaEliminarMensaje": "Se borrara \"{nombre}\" y dejara de verse en el mapa.",
+  "@nodoEmpresaEliminarMensaje": {
+    "description": "Confirm dialog message before deleting a node.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "nodoEmpresaEliminado": "Nodo eliminado",
+  "@nodoEmpresaEliminado": {
+    "description": "Success toast after deleting a node."
+  },
+  "nodoEmpresaErrorEliminar": "No se pudo eliminar el nodo",
+  "@nodoEmpresaErrorEliminar": {
+    "description": "Error toast when deleting a node fails."
+  },
+  "cuentaEmpresaTitulo": "Cuenta",
+  "@cuentaEmpresaTitulo": {
+    "description": "Title of the business panel's account tab."
+  },
+  "cuentaEmpresaSinNombre": "Tu empresa",
+  "@cuentaEmpresaSinNombre": {
+    "description": "Fallback name when the session has no business name."
+  },
+  "nodosPatrocinadoPor": "{categoria} - Patrocinado por {empresa}",
+  "@nodosPatrocinadoPor": {
+    "description": "Node sheet subtitle for a sponsored node.",
+    "placeholders": {
+      "categoria": {
+        "type": "String"
+      },
+      "empresa": {
+        "type": "String"
+      }
+    }
+  },
+  "nodosBeneficioTitulo": "Beneficio para ti",
+  "@nodosBeneficioTitulo": {
+    "description": "Title of the benefit box in a sponsored node's sheet."
+  },
+
+  "mapaEmpresaOtrasEmpresas": "Ver otras empresas",
+  "@mapaEmpresaOtrasEmpresas": {
+    "description": "Switch on the business map to also show events and nodes of other businesses."
+  },
+  "mapaEmpresaLeyendaOtras": "Otras empresas",
+  "@mapaEmpresaLeyendaOtras": {
+    "description": "Map legend entry for other businesses' shapes."
+  },
+  "mapaEmpresaVacioTitulo": "Aun no tienes eventos",
+  "@mapaEmpresaVacioTitulo": {
+    "description": "Card over the business map when it has no events."
+  },
+  "mapaEmpresaVacioMensaje": "Toca Nuevo evento y dibuja el area o el recorrido en el mapa.",
+  "@mapaEmpresaVacioMensaje": {
+    "description": "Hint on the business map when it has no events."
+  },
+  "mapaEmpresaErrorCarga": "No se pudieron cargar tus eventos",
+  "@mapaEmpresaErrorCarga": {
+    "description": "Business map: load error."
+  },
+  "mapaEmpresaResumen": "Tus eventos en el mapa: {n}",
+  "@mapaEmpresaResumen": {
+    "description": "Business map header: how many of its own events are drawn.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cuentaEmpresaGuardar": "Guardar cambios",
+  "@cuentaEmpresaGuardar": {
+    "description": "Save button of the business account screen."
+  },
+  "cuentaEmpresaGuardada": "Datos actualizados",
+  "@cuentaEmpresaGuardada": {
+    "description": "Success toast after editing the business account."
+  },
+  "cuentaEmpresaErrorGuardar": "No se pudieron guardar los cambios",
+  "@cuentaEmpresaErrorGuardar": {
+    "description": "Error toast when editing the business account fails."
+  },
+  "cuentaEmpresaCambiarFoto": "Cambiar foto",
+  "@cuentaEmpresaCambiarFoto": {
+    "description": "Button under the profile picture."
+  },
+  "cuentaEmpresaFotoActualizada": "Foto actualizada",
+  "@cuentaEmpresaFotoActualizada": {
+    "description": "Success toast after uploading the profile picture."
+  },
+  "cuentaEmpresaFotoError": "No se pudo actualizar la foto",
+  "@cuentaEmpresaFotoError": {
+    "description": "Error toast when the profile picture upload fails."
+  },
+  "cuentaEmpresaFotoQuitada": "Foto eliminada",
+  "@cuentaEmpresaFotoQuitada": {
+    "description": "Success toast after removing the profile picture."
+  },
+  "cuentaEmpresaCorreoNota": "El correo no se puede cambiar desde aqui",
+  "@cuentaEmpresaCorreoNota": {
+    "description": "Helper text under the read-only email field."
+  },
+  "cuentaEmpresaErrorCarga": "No se pudo cargar tu cuenta",
+  "@cuentaEmpresaErrorCarga": {
+    "description": "Empty-state title when the account fails to load."
+  },
+  "nodoUsuarioSubtitulo": "Los puntos de interes que publicaste",
+  "@nodoUsuarioSubtitulo": {
+    "description": "Subtitle of the athlete's My nodes tab."
+  },
+  "nodoUsuarioNuevo": "Publicar nodo",
+  "@nodoUsuarioNuevo": {
+    "description": "Floating button of the athlete's My nodes tab."
+  },
+  "nodoUsuarioNuevoTitulo": "Publicar un punto",
+  "@nodoUsuarioNuevoTitulo": {
+    "description": "Header title of the node form for an athlete."
+  },
+  "nodoUsuarioNombreLabel": "Nombre del punto",
+  "@nodoUsuarioNombreLabel": {
+    "description": "Label of the node name field for an athlete."
+  },
+  "nodoUsuarioVacioTitulo": "Aun no publicas nodos",
+  "@nodoUsuarioVacioTitulo": {
+    "description": "Empty-state title of the athlete's My nodes tab."
+  },
+  "nodoUsuarioVacioMensaje": "Un nodo es un punto util en la ruta: agua, taller, mirador... Se publica de inmediato en el mapa.",
+  "@nodoUsuarioVacioMensaje": {
+    "description": "Empty-state message of the athlete's My nodes tab."
+  },
+  "nodoUsuarioEnviado": "Nodo publicado",
+  "@nodoUsuarioEnviado": {
+    "description": "Success toast after an athlete proposes a node."
+  },
+  "nodoEstadoPendiente": "En revision",
+  "@nodoEstadoPendiente": {
+    "description": "Status tag of a node waiting for an admin."
+  },
+  "nodoEstadoAprobado": "Aprobado",
+  "@nodoEstadoAprobado": {
+    "description": "Status tag of an approved node."
+  },
+  "nodoEstadoRechazado": "Rechazado",
+  "@nodoEstadoRechazado": {
+    "description": "Status tag of a rejected node."
+  },
+  "nodoEstadoObsoleto": "Obsoleto",
+  "@nodoEstadoObsoleto": {
+    "description": "Status tag of a node the community marked as gone."
   }
 }

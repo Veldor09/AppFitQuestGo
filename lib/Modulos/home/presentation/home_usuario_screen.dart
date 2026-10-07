@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -8,6 +9,7 @@ import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
+import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -76,8 +78,13 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   CircleAnnotationManager? _pines;
   Cancelable? _escuchaTapPines;
 
+  /// Los locales de empresas van aparte, con su icono (una imagen, no un circulo).
+  PointAnnotationManager? _iconosLocales;
+  Cancelable? _escuchaTapLocales;
+
   /// Pin del mapa -> nodo, para abrir su ficha al tocarlo.
   final Map<String, Nodo> _nodoPorPin = <String, Nodo>{};
+  final Map<String, Nodo> _localPorPin = <String, Nodo>{};
   List<Nodo> _nodos = <Nodo>[];
   List<Alerta> _alertas = <Alerta>[];
   bool _votando = false;
@@ -123,6 +130,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _temporizadorAlertas?.cancel();
     _temporizadorClima?.cancel();
     _escuchaTapPines?.cancel();
+    _escuchaTapLocales?.cancel();
     _clima.dispose();
     _proximidad.dispose();
     _vozActiva?.detener();
@@ -262,14 +270,23 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         await controller.annotations.createCircleAnnotationManager();
     _pines = pines;
     _escuchaTapPines = pines.tapEvents(onTap: _onTapPin);
+    // Despues de los circulos: los iconos de los locales quedan por encima.
+    final PointAnnotationManager locales =
+        await controller.annotations.createPointAnnotationManager();
+    _iconosLocales = locales;
+    _escuchaTapLocales = locales.tapEvents(onTap: _onTapLocal);
     await _dibujarPines();
     await centrarEnUbicacionActual(controller);
   }
 
   /// Tocar el pin de un punto de interes abre su ficha (con foto, si tiene) y,
   /// si estas cerca, deja votar si sigue ahi o ya no existe.
-  void _onTapPin(CircleAnnotation pin) {
-    final Nodo? nodo = _nodoPorPin[pin.id];
+  void _onTapPin(CircleAnnotation pin) => _abrirFicha(_nodoPorPin[pin.id]);
+
+  /// Lo mismo para el local de una empresa, que tiene su propio icono.
+  void _onTapLocal(PointAnnotation pin) => _abrirFicha(_localPorPin[pin.id]);
+
+  void _abrirFicha(Nodo? nodo) {
     if (nodo == null || !mounted) return;
     unawaited(
       mostrarFichaNodo(
@@ -287,34 +304,64 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     final CircleAnnotationManager? pines = _pines;
     if (pines == null) return;
     await pines.deleteAll();
+    await _iconosLocales?.deleteAll();
     _nodoPorPin.clear();
+    _localPorPin.clear();
     // Copia: las listas pueden cambiar mientras se espera a Mapbox.
-    final List<Nodo> nodos = List<Nodo>.of(_nodos);
+    final List<Nodo> todos = List<Nodo>.of(_nodos);
     final List<Alerta> alertas = List<Alerta>.of(_alertas);
-    if (nodos.isEmpty && alertas.isEmpty) return;
-    final List<CircleAnnotation?> creados =
-        await pines.createMulti(<CircleAnnotationOptions>[
-      for (final Nodo nodo in nodos)
-        CircleAnnotationOptions(
-          geometry: Point(coordinates: Position(nodo.lng, nodo.lat)),
-          circleColor: colorCategoriaNodo(nodo.categoria).toARGB32(),
-          circleRadius: 8,
-          circleStrokeColor: FqColors.white.toARGB32(),
-          circleStrokeWidth: 2,
-        ),
-      for (final Alerta alerta in alertas)
-        CircleAnnotationOptions(
-          geometry: Point(coordinates: Position(alerta.lng, alerta.lat)),
-          circleColor: FqColors.risk.toARGB32(),
-          circleRadius: alerta.gravedad == 'alta' ? 10 : 8,
-          circleStrokeColor: FqColors.white.toARGB32(),
-          circleStrokeWidth: 2,
+    // Un local de empresa (nodo patrocinado) se ve con su icono; los demas
+    // puntos de interes, como circulos del color de su categoria.
+    final List<Nodo> nodos = <Nodo>[
+      for (final Nodo n in todos)
+        if (!n.patrocinado) n,
+    ];
+    final List<Nodo> locales = <Nodo>[
+      for (final Nodo n in todos)
+        if (n.patrocinado) n,
+    ];
+    if (nodos.isNotEmpty || alertas.isNotEmpty) {
+      final List<CircleAnnotation?> creados =
+          await pines.createMulti(<CircleAnnotationOptions>[
+        for (final Nodo nodo in nodos)
+          CircleAnnotationOptions(
+            geometry: Point(coordinates: Position(nodo.lng, nodo.lat)),
+            circleColor: colorCategoriaNodo(nodo.categoria).toARGB32(),
+            circleRadius: 8,
+            circleStrokeColor: FqColors.white.toARGB32(),
+            circleStrokeWidth: 2,
+          ),
+        for (final Alerta alerta in alertas)
+          CircleAnnotationOptions(
+            geometry: Point(coordinates: Position(alerta.lng, alerta.lat)),
+            circleColor: FqColors.risk.toARGB32(),
+            circleRadius: alerta.gravedad == 'alta' ? 10 : 8,
+            circleStrokeColor: FqColors.white.toARGB32(),
+            circleStrokeWidth: 2,
+          ),
+      ]);
+      // Los pines salen en el orden de las opciones: primero los nodos.
+      for (int i = 0; i < nodos.length && i < creados.length; i++) {
+        final CircleAnnotation? pin = creados[i];
+        if (pin != null) _nodoPorPin[pin.id] = nodos[i];
+      }
+    }
+
+    final PointAnnotationManager? iconos = _iconosLocales;
+    if (iconos == null || locales.isEmpty) return;
+    final Uint8List imagen = await imagenPin(TipoPin.local);
+    final List<PointAnnotation?> iconosCreados =
+        await iconos.createMulti(<PointAnnotationOptions>[
+      for (final Nodo local in locales)
+        PointAnnotationOptions(
+          geometry: Point(coordinates: Position(local.lng, local.lat)),
+          image: imagen,
+          iconSize: kPinIconSize,
         ),
     ]);
-    // Los pines salen en el orden de las opciones: primero los nodos.
-    for (int i = 0; i < nodos.length && i < creados.length; i++) {
-      final CircleAnnotation? pin = creados[i];
-      if (pin != null) _nodoPorPin[pin.id] = nodos[i];
+    for (int i = 0; i < locales.length && i < iconosCreados.length; i++) {
+      final PointAnnotation? pin = iconosCreados[i];
+      if (pin != null) _localPorPin[pin.id] = locales[i];
     }
   }
 
@@ -331,6 +378,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.homeNodoEnviadoExito)),
       );
+      // Sale publicado de inmediato: se trae de nuevo para que aparezca ya.
+      unawaited(_cargarNodos());
     } else {
       final Alerta? creada =
           await _mostrarFormularioAlerta(lat: lat, lng: lng);

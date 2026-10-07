@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
@@ -24,7 +25,7 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
 
   MapboxMap? _mapa;
   PolylineAnnotationManager? _lineas;
-  CircleAnnotationManager? _pines;
+  PointAnnotationManager? _iconos;
 
   /// Camara con la que arranca el mapa, antes de ajustarla al trazo completo.
   /// Tiene que ser la MISMA instancia en cada `build`: `MapWidget` la compara
@@ -46,20 +47,20 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
   Future<void> _onMapCreated(MapboxMap mapa) async {
     _mapa = mapa;
     _lineas = await mapa.annotations.createPolylineAnnotationManager();
-    _pines = await mapa.annotations.createCircleAnnotationManager();
+    _iconos = await mapa.annotations.createPointAnnotationManager();
     await _dibujar();
   }
 
   Future<void> _dibujar() async {
     final MapboxMap? mapa = _mapa;
     final PolylineAnnotationManager? lineas = _lineas;
-    final CircleAnnotationManager? pines = _pines;
+    final PointAnnotationManager? iconos = _iconos;
     final List<PuntoRuta> puntos = widget.puntos;
-    if (mapa == null || lineas == null || pines == null || puntos.length < 2) {
+    if (mapa == null || lineas == null || iconos == null || puntos.length < 2) {
       return;
     }
     await lineas.deleteAll();
-    await pines.deleteAll();
+    await iconos.deleteAll();
     await lineas.create(
       PolylineAnnotationOptions(
         geometry: LineString(
@@ -71,9 +72,20 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
         lineWidth: 5,
       ),
     );
-    await pines.createMulti(<CircleAnnotationOptions>[
-      _marcador(puntos.first, FqColors.voltDark),
-      _marcador(puntos.last, FqColors.risk),
+    // Salida y llegada con su icono: un triangulo de "play" y una bandera.
+    await iconos.createMulti(<PointAnnotationOptions>[
+      PointAnnotationOptions(
+        geometry: Point(
+          coordinates: Position(puntos.first.lng, puntos.first.lat),
+        ),
+        image: await imagenPin(TipoPin.rutaInicio),
+        iconSize: kPinIconSize,
+      ),
+      PointAnnotationOptions(
+        geometry: Point(coordinates: Position(puntos.last.lng, puntos.last.lat)),
+        image: await imagenPin(TipoPin.rutaFin),
+        iconSize: kPinIconSize,
+      ),
     ]);
     final CameraOptions camara = await mapa.cameraForCoordinatesPadding(
       <Point>[
@@ -85,16 +97,6 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
       null,
     );
     await mapa.setCamera(camara);
-  }
-
-  CircleAnnotationOptions _marcador(PuntoRuta punto, Color color) {
-    return CircleAnnotationOptions(
-      geometry: Point(coordinates: Position(punto.lng, punto.lat)),
-      circleColor: color.toARGB32(),
-      circleRadius: 8,
-      circleStrokeColor: FqColors.white.toARGB32(),
-      circleStrokeWidth: 3,
-    );
   }
 
   @override

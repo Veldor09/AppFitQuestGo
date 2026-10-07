@@ -42,6 +42,7 @@ class _NodoApiFalsa extends NodoApi {
     required double lat,
     required double lng,
     String? descripcion,
+    String? beneficio,
   }) async {
     if (errorAlProponer != null) throw errorAlProponer!;
     eventos.add('proponer');

@@ -48,6 +48,22 @@ class AuthRepositorio extends ChangeNotifier {
     await _persistir(sesion);
   }
 
+  Future<void> registrarEmpresa({
+    required String nombreComercial,
+    required String email,
+    required String contrasena,
+    required bool aceptaTerminos,
+    String? telefono,
+  }) async {
+    final Sesion sesion = await _api.registrarEmpresa(
+      nombreComercial: nombreComercial,
+      email: email,
+      contrasena: contrasena,
+      aceptaTerminos: aceptaTerminos,
+      telefono: telefono,
+    );
+    await _persistir(sesion);
+  }
 
   Future<void> iniciarSesion({
     required String email,
@@ -58,6 +74,20 @@ class AuthRepositorio extends ChangeNotifier {
       contrasena: contrasena,
     );
     await _persistir(sesion);
+  }
+
+  /// Cambia el nombre que muestra la sesion (p. ej. al editar el nombre
+  /// comercial de una empresa) sin tener que iniciar sesion de nuevo.
+  void actualizarNombre(String nombre) {
+    final UsuarioSesion? actual = _usuario;
+    if (actual == null) return;
+    _usuario = UsuarioSesion(
+      id: actual.id,
+      nombre: nombre,
+      email: actual.email,
+      rol: actual.rol,
+    );
+    notifyListeners();
   }
 
   Future<void> cerrarSesion() async {

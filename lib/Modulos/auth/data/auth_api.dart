@@ -30,6 +30,24 @@ class AuthApi {
     return Sesion.fromJson(data as Map<String, dynamic>);
   }
 
+  /// Alta de una cuenta Empresa (`POST /auth/registro-empresa`).
+  Future<Sesion> registrarEmpresa({
+    required String nombreComercial,
+    required String email,
+    required String contrasena,
+    required bool aceptaTerminos,
+    String? telefono,
+  }) async {
+    final dynamic data = await _client.post('/auth/registro-empresa', {
+      'nombreComercial': nombreComercial,
+      'email': email,
+      'contrasena': contrasena,
+      'aceptaTerminos': aceptaTerminos,
+      if (telefono != null && telefono.trim().isNotEmpty)
+        'telefono': telefono.trim(),
+    });
+    return Sesion.fromJson(data as Map<String, dynamic>);
+  }
 
   Future<Sesion> iniciarSesion({
     required String email,

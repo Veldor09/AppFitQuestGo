@@ -14,6 +14,8 @@ class Nodo {
     this.confirmaciones = 0,
     this.obsoletos = 0,
     this.miVoto,
+    this.beneficio,
+    this.patrocinado = false,
   });
 
   factory Nodo.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,8 @@ class Nodo {
       confirmaciones: json['confirmaciones'] as int? ?? 0,
       obsoletos: json['obsoletos'] as int? ?? 0,
       miVoto: json['miVoto'] as String?,
+      beneficio: json['beneficio'] as String?,
+      patrocinado: json['patrocinado'] as bool? ?? false,
     );
   }
 
@@ -63,4 +67,10 @@ class Nodo {
 
   /// Voto de quien consulta (`confirmar` / `obsoleto`), o null si aun no voto.
   final String? miVoto;
+
+  /// Cupon o beneficio que ofrece el comercio (solo en nodos patrocinados).
+  final String? beneficio;
+
+  /// Nodo de Abastecimiento de una empresa: sale al mapa sin moderacion.
+  final bool patrocinado;
 }
