@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -15,7 +17,13 @@ import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento
 /// primero y los terminados al final. Crear uno nuevo, tocar uno para editarlo
 /// o borrarlo.
 class MisEventosScreen extends StatefulWidget {
-  const MisEventosScreen({super.key, this.api, this.ahora, this.editorBuilder});
+  const MisEventosScreen({
+    super.key,
+    this.api,
+    this.ahora,
+    this.editorBuilder,
+    this.senal,
+  });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final EventoApi? api;
@@ -26,6 +34,10 @@ class MisEventosScreen extends StatefulWidget {
   /// Abre el editor. Las pruebas lo reemplazan para no montar Mapbox.
   final Widget Function(BuildContext context, Evento? evento)? editorBuilder;
 
+  /// Aviso compartido con el mapa de la empresa: quien guarda o borra un evento
+  /// suma uno y todos se recargan. Sin él, esta pantalla se recarga sola.
+  final ValueNotifier<int>? senal;
+
   @override
   State<MisEventosScreen> createState() => _MisEventosScreenState();
 }
@@ -35,6 +47,31 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
   late Future<List<Evento>> _futuro = _api.mios();
 
   DateTime get _ahora => (widget.ahora ?? DateTime.now)();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.senal?.addListener(_alSenal);
+  }
+
+  @override
+  void dispose() {
+    widget.senal?.removeListener(_alSenal);
+    super.dispose();
+  }
+
+  void _alSenal() => unawaited(_recargar());
+
+  /// Algo cambio (se guardo o borro un evento): con señal compartida la avisa
+  /// a todos —esta pantalla incluida—; sin ella se recarga sola.
+  Future<void> _huboCambios() async {
+    final ValueNotifier<int>? senal = widget.senal;
+    if (senal != null) {
+      senal.value++;
+    } else {
+      await _recargar();
+    }
+  }
 
   Future<void> _recargar() async {
     final Future<List<Evento>> nuevo = _api.mios();
@@ -56,7 +93,7 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
             EditorEventoScreen(api: _api, evento: evento, ahora: widget.ahora),
       ),
     );
-    if (guardado != null && mounted) await _recargar();
+    if (guardado != null && mounted) await _huboCambios();
   }
 
   Future<void> _eliminar(Evento evento) async {
@@ -84,7 +121,7 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
       await _api.eliminar(evento.id);
       if (!mounted) return;
       notificarExito(l10n.eventoEliminado);
-      await _recargar();
+      await _huboCambios();
     } on ApiException catch (e) {
       notificarError(e.message);
     } catch (_) {

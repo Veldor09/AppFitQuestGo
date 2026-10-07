@@ -76,6 +76,20 @@ class AuthRepositorio extends ChangeNotifier {
     await _persistir(sesion);
   }
 
+  /// Cambia el nombre que muestra la sesion (p. ej. al editar el nombre
+  /// comercial de una empresa) sin tener que iniciar sesion de nuevo.
+  void actualizarNombre(String nombre) {
+    final UsuarioSesion? actual = _usuario;
+    if (actual == null) return;
+    _usuario = UsuarioSesion(
+      id: actual.id,
+      nombre: nombre,
+      email: actual.email,
+      rol: actual.rol,
+    );
+    notifyListeners();
+  }
+
   Future<void> cerrarSesion() async {
     final String? refresh = await _tokens.leerRefresh();
     try {

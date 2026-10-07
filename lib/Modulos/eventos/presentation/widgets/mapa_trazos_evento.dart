@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
+import 'package:fit_quest_go/core/geo/centroide.dart';
 import 'package:fit_quest_go/core/geo/simplificar_trazo.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
+import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
@@ -39,6 +41,9 @@ class MapaTrazosEvento extends StatefulWidget {
     this.onTrazoDibujado,
     this.onTrazoCorto,
     this.centrarEnUsuario = false,
+    this.areasSecundarias = const <ZonaEvento>[],
+    this.recorridosSecundarios = const <ZonaEvento>[],
+    this.pines = const <PuntoGeo>[],
   });
 
   /// Trazos ya guardados. La lista se redibuja cuando cambia la instancia:
@@ -54,6 +59,15 @@ class MapaTrazosEvento extends StatefulWidget {
 
   /// Sin trazos que encuadrar, mueve la camara a donde esta la persona.
   final bool centrarEnUsuario;
+
+  /// Trazos de otros (p. ej. de otras empresas): se dibujan debajo, en gris,
+  /// para distinguirlos de los propios. Igual que [areas], se redibujan cuando
+  /// cambia la instancia de la lista.
+  final List<ZonaEvento> areasSecundarias;
+  final List<ZonaEvento> recorridosSecundarios;
+
+  /// Lugares sueltos (nodos de abastecimiento) como pines.
+  final List<PuntoGeo> pines;
 
   @override
   State<MapaTrazosEvento> createState() => _MapaTrazosEventoState();
@@ -73,6 +87,7 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
   MapboxMap? _mapa;
   PolygonAnnotationManager? _poligonos;
   PolylineAnnotationManager? _lineas;
+  PointAnnotationManager? _iconos;
   PolylineAnnotation? _previa;
 
   /// Puntos del trazo en curso, en el orden en que el dedo los dejo.
@@ -87,14 +102,26 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
   /// si cambia vuelve a mover la camara (ver `MapaTrazoRuta`).
   late final CameraViewportState _viewportInicial = CameraViewportState(
     center: _centroDeInicio(),
-    zoom: widget.areas.isEmpty && widget.recorridos.isEmpty ? 13.5 : 14,
+    zoom: _todosLosPuntos().isEmpty ? 13.5 : 14,
   );
 
-  Point _centroDeInicio() {
-    final List<PuntoGeo> todos = <PuntoGeo>[
+  /// Todo lo que hay que tener a la vista: primero lo propio y, si no hay
+  /// nada, lo secundario y los pines.
+  List<PuntoGeo> _todosLosPuntos() {
+    final List<PuntoGeo> propios = <PuntoGeo>[
       for (final ZonaEvento z in widget.areas) ...z.puntos,
       for (final ZonaEvento z in widget.recorridos) ...z.puntos,
     ];
+    if (propios.isNotEmpty) return propios;
+    return <PuntoGeo>[
+      for (final ZonaEvento z in widget.areasSecundarias) ...z.puntos,
+      for (final ZonaEvento z in widget.recorridosSecundarios) ...z.puntos,
+      ...widget.pines,
+    ];
+  }
+
+  Point _centroDeInicio() {
+    final List<PuntoGeo> todos = _todosLosPuntos();
     if (todos.isEmpty) {
       return Point(coordinates: Position(_lngInicial, _latInicial));
     }
@@ -105,7 +132,13 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
   void didUpdateWidget(covariant MapaTrazosEvento oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.areas, widget.areas) ||
-        !identical(oldWidget.recorridos, widget.recorridos)) {
+        !identical(oldWidget.recorridos, widget.recorridos) ||
+        !identical(oldWidget.areasSecundarias, widget.areasSecundarias) ||
+        !identical(
+          oldWidget.recorridosSecundarios,
+          widget.recorridosSecundarios,
+        ) ||
+        !identical(oldWidget.pines, widget.pines)) {
       unawaited(_dibujarTrazos());
     }
     if (oldWidget.modoDibujo != widget.modoDibujo) {
@@ -118,9 +151,10 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
     // Primero los poligonos: las lineas quedan por encima del relleno.
     _poligonos = await mapa.annotations.createPolygonAnnotationManager();
     _lineas = await mapa.annotations.createPolylineAnnotationManager();
+    // Los iconos al final: quedan por encima del relleno y de las lineas.
+    _iconos = await mapa.annotations.createPointAnnotationManager();
     await _dibujarTrazos();
-    final bool hayTrazos =
-        widget.areas.isNotEmpty || widget.recorridos.isNotEmpty;
+    final bool hayTrazos = _todosLosPuntos().isNotEmpty;
     if (hayTrazos) {
       await _encuadrar();
     } else if (widget.centrarEnUsuario) {
@@ -134,9 +168,42 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
     if (poligonos == null || lineas == null) return;
     await poligonos.deleteAll();
     await lineas.deleteAll();
+    await _iconos?.deleteAll();
     _previa = null;
     final List<ZonaEvento> areas = List<ZonaEvento>.of(widget.areas);
     final List<ZonaEvento> recorridos = List<ZonaEvento>.of(widget.recorridos);
+    final List<ZonaEvento> areasSec = List<ZonaEvento>.of(
+      widget.areasSecundarias,
+    );
+    final List<ZonaEvento> recorridosSec = List<ZonaEvento>.of(
+      widget.recorridosSecundarios,
+    );
+    // Lo secundario primero: queda por debajo de lo propio.
+    if (areasSec.isNotEmpty) {
+      await poligonos.createMulti(<PolygonAnnotationOptions>[
+        for (final ZonaEvento a in areasSec)
+          if (a.puntos.length >= 3)
+            PolygonAnnotationOptions(
+              geometry: Polygon(
+                coordinates: <List<Position>>[_anillo(a.puntos)],
+              ),
+              fillColor: colorSecundarioEvento.toARGB32(),
+              fillOpacity: 0.18,
+              fillOutlineColor: colorSecundarioEvento.toARGB32(),
+            ),
+      ]);
+    }
+    if (recorridosSec.isNotEmpty) {
+      await lineas.createMulti(<PolylineAnnotationOptions>[
+        for (final ZonaEvento r in recorridosSec)
+          if (r.puntos.length >= 2)
+            PolylineAnnotationOptions(
+              geometry: LineString(coordinates: _posiciones(r.puntos)),
+              lineColor: colorSecundarioEvento.toARGB32(),
+              lineWidth: 4,
+            ),
+      ]);
+    }
     if (areas.isNotEmpty) {
       await poligonos.createMulti(<PolygonAnnotationOptions>[
         for (final ZonaEvento a in areas)
@@ -162,6 +229,61 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
             ),
       ]);
     }
+    await _dibujarIconos(
+      areasSec: areasSec,
+      recorridosSec: recorridosSec,
+      areas: areas,
+      recorridos: recorridos,
+    );
+  }
+
+  /// Un icono por cosa: una bandera en el centro de cada area, el inicio y el
+  /// final de cada recorrido, y un local por cada nodo. Lo de otras empresas
+  /// va en gris y por debajo.
+  Future<void> _dibujarIconos({
+    required List<ZonaEvento> areasSec,
+    required List<ZonaEvento> recorridosSec,
+    required List<ZonaEvento> areas,
+    required List<ZonaEvento> recorridos,
+  }) async {
+    final PointAnnotationManager? iconos = _iconos;
+    if (iconos == null) return;
+    final List<PointAnnotationOptions> opciones = <PointAnnotationOptions>[];
+
+    Future<void> agregar(PuntoGeo punto, TipoPin tipo, bool secundario) async {
+      opciones.add(
+        PointAnnotationOptions(
+          geometry: Point(coordinates: Position(punto.lng, punto.lat)),
+          image: await imagenPin(tipo, secundario: secundario),
+          iconSize: kPinIconSize,
+        ),
+      );
+    }
+
+    Future<void> deZonas(
+      List<ZonaEvento> a,
+      List<ZonaEvento> r,
+      bool secundario,
+    ) async {
+      for (final ZonaEvento z in a) {
+        if (z.puntos.length >= 3) {
+          await agregar(centroideDe(z.puntos), TipoPin.area, secundario);
+        }
+      }
+      for (final ZonaEvento z in r) {
+        if (z.puntos.length >= 2) {
+          await agregar(z.puntos.first, TipoPin.recorridoInicio, secundario);
+          await agregar(z.puntos.last, TipoPin.recorridoFin, secundario);
+        }
+      }
+    }
+
+    await deZonas(areasSec, recorridosSec, true);
+    await deZonas(areas, recorridos, false);
+    for (final PuntoGeo p in widget.pines) {
+      await agregar(p, TipoPin.local, false);
+    }
+    if (opciones.isNotEmpty) await iconos.createMulti(opciones);
   }
 
   List<Position> _posiciones(List<PuntoGeo> puntos) => <Position>[
@@ -177,10 +299,7 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
   Future<void> _encuadrar() async {
     final MapboxMap? mapa = _mapa;
     if (mapa == null) return;
-    final List<PuntoGeo> todos = <PuntoGeo>[
-      for (final ZonaEvento z in widget.areas) ...z.puntos,
-      for (final ZonaEvento z in widget.recorridos) ...z.puntos,
-    ];
+    final List<PuntoGeo> todos = _todosLosPuntos();
     if (todos.isEmpty) return;
     final CameraOptions camara = await mapa.cameraForCoordinatesPadding(
       <Point>[

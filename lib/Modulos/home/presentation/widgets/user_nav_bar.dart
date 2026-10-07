@@ -18,12 +18,13 @@ class UserNavBar extends StatelessWidget {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final List<({IconData icon, String label})> items =
         <({IconData icon, String label})>[
-      (icon: Icons.map_outlined, label: l10n.navMapa),
-      (icon: Icons.route_outlined, label: l10n.rutasTitulo),
-      (icon: Icons.add_rounded, label: l10n.navCrear),
-      (icon: Icons.auto_awesome_outlined, label: l10n.comunEventos),
-      (icon: Icons.person_outline_rounded, label: l10n.navPerfil),
-    ];
+          (icon: Icons.map_outlined, label: l10n.navMapa),
+          (icon: Icons.route_outlined, label: l10n.rutasTitulo),
+          (icon: Icons.add_rounded, label: l10n.navCrear),
+          (icon: Icons.auto_awesome_outlined, label: l10n.comunEventos),
+          (icon: Icons.place_outlined, label: l10n.navNodos),
+          (icon: Icons.person_outline_rounded, label: l10n.navPerfil),
+        ];
     return Container(
       height: 62 + MediaQuery.of(context).padding.bottom,
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
@@ -31,15 +32,18 @@ class UserNavBar extends StatelessWidget {
         color: FqColors.white.withValues(alpha: .96),
         border: const Border(top: BorderSide(color: FqColors.border)),
       ),
+      // Cada opcion se reparte el ancho por igual: con seis opciones un ancho
+      // fijo no cabe en un celular angosto.
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
           for (int i = 0; i < items.length; i++)
-            _NavItem(
-              icon: items[i].icon,
-              label: items[i].label,
-              selected: i == currentIndex,
-              onTap: () => onSelect(i),
+            Expanded(
+              child: _NavItem(
+                icon: items[i].icon,
+                label: items[i].label,
+                selected: i == currentIndex,
+                onTap: () => onSelect(i),
+              ),
             ),
         ],
       ),
@@ -67,7 +71,7 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       radius: 34,
       child: SizedBox(
-        width: 58,
+        width: double.infinity,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -75,6 +79,8 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: selected ? FqColors.night : color,
                 fontSize: 9,

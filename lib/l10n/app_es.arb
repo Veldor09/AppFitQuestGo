@@ -525,7 +525,7 @@
   "@homePublicarAlerta": {
     "description": "Submit button on the alert creation form."
   },
-  "homeNodoEnviadoExito": "Punto enviado. Va a aparecer en el mapa cuando se apruebe.",
+  "homeNodoEnviadoExito": "Punto publicado. Ya aparece en el mapa.",
   "@homeNodoEnviadoExito": {
     "description": "Snackbar after successfully proposing a point of interest."
   },
@@ -1912,5 +1912,115 @@
   "nodosBeneficioTitulo": "Beneficio para ti",
   "@nodosBeneficioTitulo": {
     "description": "Title of the benefit box in a sponsored node's sheet."
+  },
+
+  "mapaEmpresaOtrasEmpresas": "Ver otras empresas",
+  "@mapaEmpresaOtrasEmpresas": {
+    "description": "Switch on the business map to also show events and nodes of other businesses."
+  },
+  "mapaEmpresaLeyendaOtras": "Otras empresas",
+  "@mapaEmpresaLeyendaOtras": {
+    "description": "Map legend entry for other businesses' shapes."
+  },
+  "mapaEmpresaVacioTitulo": "Aun no tienes eventos",
+  "@mapaEmpresaVacioTitulo": {
+    "description": "Card over the business map when it has no events."
+  },
+  "mapaEmpresaVacioMensaje": "Toca Nuevo evento y dibuja el area o el recorrido en el mapa.",
+  "@mapaEmpresaVacioMensaje": {
+    "description": "Hint on the business map when it has no events."
+  },
+  "mapaEmpresaErrorCarga": "No se pudieron cargar tus eventos",
+  "@mapaEmpresaErrorCarga": {
+    "description": "Business map: load error."
+  },
+  "mapaEmpresaResumen": "Tus eventos en el mapa: {n}",
+  "@mapaEmpresaResumen": {
+    "description": "Business map header: how many of its own events are drawn.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cuentaEmpresaGuardar": "Guardar cambios",
+  "@cuentaEmpresaGuardar": {
+    "description": "Save button of the business account screen."
+  },
+  "cuentaEmpresaGuardada": "Datos actualizados",
+  "@cuentaEmpresaGuardada": {
+    "description": "Success toast after editing the business account."
+  },
+  "cuentaEmpresaErrorGuardar": "No se pudieron guardar los cambios",
+  "@cuentaEmpresaErrorGuardar": {
+    "description": "Error toast when editing the business account fails."
+  },
+  "cuentaEmpresaCambiarFoto": "Cambiar foto",
+  "@cuentaEmpresaCambiarFoto": {
+    "description": "Button under the profile picture."
+  },
+  "cuentaEmpresaFotoActualizada": "Foto actualizada",
+  "@cuentaEmpresaFotoActualizada": {
+    "description": "Success toast after uploading the profile picture."
+  },
+  "cuentaEmpresaFotoError": "No se pudo actualizar la foto",
+  "@cuentaEmpresaFotoError": {
+    "description": "Error toast when the profile picture upload fails."
+  },
+  "cuentaEmpresaFotoQuitada": "Foto eliminada",
+  "@cuentaEmpresaFotoQuitada": {
+    "description": "Success toast after removing the profile picture."
+  },
+  "cuentaEmpresaCorreoNota": "El correo no se puede cambiar desde aqui",
+  "@cuentaEmpresaCorreoNota": {
+    "description": "Helper text under the read-only email field."
+  },
+  "cuentaEmpresaErrorCarga": "No se pudo cargar tu cuenta",
+  "@cuentaEmpresaErrorCarga": {
+    "description": "Empty-state title when the account fails to load."
+  },
+  "nodoUsuarioSubtitulo": "Los puntos de interes que publicaste",
+  "@nodoUsuarioSubtitulo": {
+    "description": "Subtitle of the athlete's My nodes tab."
+  },
+  "nodoUsuarioNuevo": "Publicar nodo",
+  "@nodoUsuarioNuevo": {
+    "description": "Floating button of the athlete's My nodes tab."
+  },
+  "nodoUsuarioNuevoTitulo": "Publicar un punto",
+  "@nodoUsuarioNuevoTitulo": {
+    "description": "Header title of the node form for an athlete."
+  },
+  "nodoUsuarioNombreLabel": "Nombre del punto",
+  "@nodoUsuarioNombreLabel": {
+    "description": "Label of the node name field for an athlete."
+  },
+  "nodoUsuarioVacioTitulo": "Aun no publicas nodos",
+  "@nodoUsuarioVacioTitulo": {
+    "description": "Empty-state title of the athlete's My nodes tab."
+  },
+  "nodoUsuarioVacioMensaje": "Un nodo es un punto util en la ruta: agua, taller, mirador... Se publica de inmediato en el mapa.",
+  "@nodoUsuarioVacioMensaje": {
+    "description": "Empty-state message of the athlete's My nodes tab."
+  },
+  "nodoUsuarioEnviado": "Nodo publicado",
+  "@nodoUsuarioEnviado": {
+    "description": "Success toast after an athlete proposes a node."
+  },
+  "nodoEstadoPendiente": "En revision",
+  "@nodoEstadoPendiente": {
+    "description": "Status tag of a node waiting for an admin."
+  },
+  "nodoEstadoAprobado": "Aprobado",
+  "@nodoEstadoAprobado": {
+    "description": "Status tag of an approved node."
+  },
+  "nodoEstadoRechazado": "Rechazado",
+  "@nodoEstadoRechazado": {
+    "description": "Status tag of a rejected node."
+  },
+  "nodoEstadoObsoleto": "Obsoleto",
+  "@nodoEstadoObsoleto": {
+    "description": "Status tag of a node the community marked as gone."
   }
 }

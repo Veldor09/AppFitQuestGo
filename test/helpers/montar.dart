@@ -82,6 +82,19 @@ class AuthFalso extends AuthRepositorio {
   }
 
   @override
+  void actualizarNombre(String nombre) {
+    final UsuarioSesion? actual = _usuario;
+    if (actual == null) return;
+    _usuario = UsuarioSesion(
+      id: actual.id,
+      nombre: nombre,
+      email: actual.email,
+      rol: actual.rol,
+    );
+    notifyListeners();
+  }
+
+  @override
   Future<void> cerrarSesion() async {
     cierres++;
     _usuario = null;
@@ -90,6 +103,15 @@ class AuthFalso extends AuthRepositorio {
 }
 
 class SinTokens extends AlmacenTokens {
+  @override
+  Future<void> guardar({
+    required String access,
+    required String refresh,
+  }) async {}
+
+  @override
+  Future<void> limpiar() async {}
+
   @override
   Future<String?> leerAccess() => Future<String?>.value(null);
 
@@ -117,9 +139,15 @@ ApiClient apiFalso(
 ) {
   return ApiClient(
     client: MockClient((http.Request req) async {
-      final Map<String, dynamic>? cuerpo = req.body.isEmpty
-          ? null
-          : jsonDecode(req.body) as Map<String, dynamic>;
+      // Un cuerpo que no es JSON (p. ej. la foto, multipart) se registra sin cuerpo.
+      Map<String, dynamic>? cuerpo;
+      try {
+        cuerpo = req.body.isEmpty
+            ? null
+            : jsonDecode(req.body) as Map<String, dynamic>;
+      } catch (_) {
+        cuerpo = null;
+      }
       final Peticion p = Peticion(req.method, req.url.path, cuerpo);
       registro.add(p);
       final ({Object? cuerpo, int estado}) r = responder(p);

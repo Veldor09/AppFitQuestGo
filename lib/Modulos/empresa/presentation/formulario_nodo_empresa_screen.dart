@@ -22,15 +22,22 @@ typedef ConstructorSelectorUbicacion =
       void Function(double lat, double lng) onCambio,
     );
 
-/// Modulo 5 · Alta o edicion de un Nodo de Abastecimiento: el comercio pone su
-/// nombre, elige la categoria, marca su local en el mapa y escribe el cupon o
-/// beneficio que ofrece a los deportistas. Sale publicado al guardar.
+/// Alta o edicion de un nodo desde el panel "Mis nodos".
+///
+/// Como empresa (modulo 5, Nodo de Abastecimiento): pone el nombre del comercio,
+/// elige la categoria, marca su local en el mapa y escribe el cupon o beneficio
+/// que ofrece. Sale publicado al guardar.
+///
+/// Como deportista ([esEmpresa] en false): propone un punto de interes (nombre,
+/// categoria, descripcion y lugar en el mapa), sin beneficio. Queda pendiente
+/// hasta que un admin lo revisa.
 class FormularioNodoEmpresaScreen extends StatefulWidget {
   const FormularioNodoEmpresaScreen({
     super.key,
     this.api,
     this.nodo,
     this.selectorBuilder,
+    this.esEmpresa = true,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -40,6 +47,9 @@ class FormularioNodoEmpresaScreen extends StatefulWidget {
   final Nodo? nodo;
 
   final ConstructorSelectorUbicacion? selectorBuilder;
+
+  /// Quien lo usa. Con false no hay beneficio y el punto queda pendiente.
+  final bool esEmpresa;
 
   @override
   State<FormularioNodoEmpresaScreen> createState() =>
@@ -123,10 +133,12 @@ class _FormularioNodoEmpresaScreenState
               lat: ubicacion.lat,
               lng: ubicacion.lng,
               descripcion: _descripcion.text,
-              beneficio: _beneficio.text,
+              beneficio: widget.esEmpresa ? _beneficio.text : null,
             );
       if (!mounted) return;
-      notificarExito(l10n.nodoEmpresaGuardado);
+      notificarExito(
+        widget.esEmpresa ? l10n.nodoEmpresaGuardado : l10n.nodoUsuarioEnviado,
+      );
       Navigator.of(context).pop(guardado);
     } on ApiException catch (e) {
       _fallar(e.message);
@@ -152,7 +164,9 @@ class _FormularioNodoEmpresaScreenState
             FqAppHeader(
               title: _esEdicion
                   ? l10n.nodoEmpresaEditarTitulo
-                  : l10n.nodoEmpresaNuevoTitulo,
+                  : widget.esEmpresa
+                  ? l10n.nodoEmpresaNuevoTitulo
+                  : l10n.nodoUsuarioNuevoTitulo,
               onLeading: _guardando
                   ? null
                   : () => Navigator.of(context).maybePop(),
@@ -175,7 +189,9 @@ class _FormularioNodoEmpresaScreenState
                         controller: _nombre,
                         maxLength: 100,
                         decoration: InputDecoration(
-                          labelText: l10n.nodoEmpresaNombreLabel,
+                          labelText: widget.esEmpresa
+                              ? l10n.nodoEmpresaNombreLabel
+                              : l10n.nodoUsuarioNombreLabel,
                         ),
                         validator: (String? v) =>
                             (v == null || v.trim().isEmpty)
@@ -216,17 +232,19 @@ class _FormularioNodoEmpresaScreenState
                         ),
                       ],
                       const SizedBox(height: 10),
-                      TextFormField(
-                        key: const ValueKey<String>('campo-beneficio-nodo'),
-                        controller: _beneficio,
-                        maxLength: 300,
-                        maxLines: 2,
-                        decoration: InputDecoration(
-                          labelText: l10n.nodoEmpresaBeneficioLabel,
-                          hintText: l10n.nodoEmpresaBeneficioHint,
-                          prefixIcon: const Icon(Icons.local_offer_outlined),
+                      if (widget.esEmpresa) ...<Widget>[
+                        TextFormField(
+                          key: const ValueKey<String>('campo-beneficio-nodo'),
+                          controller: _beneficio,
+                          maxLength: 300,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            labelText: l10n.nodoEmpresaBeneficioLabel,
+                            hintText: l10n.nodoEmpresaBeneficioHint,
+                            prefixIcon: const Icon(Icons.local_offer_outlined),
+                          ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _descripcion,

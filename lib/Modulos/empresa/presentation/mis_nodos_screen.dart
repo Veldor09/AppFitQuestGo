@@ -11,17 +11,37 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/empresa/presentation/formulario_nodo_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
+import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
 
-/// Panel de la empresa · "Mis nodos": los Nodos de Abastecimiento que publico,
-/// con el beneficio que ofrece cada uno. Crear, editar y dar de baja.
+/// Quien usa el panel de nodos. El panel es el mismo; cambia lo que se puede
+/// hacer con cada nodo.
+enum ModoNodos {
+  /// Una empresa: sus Nodos de Abastecimiento salen publicados con su
+  /// beneficio, y los puede editar y dar de baja.
+  empresa,
+
+  /// Un deportista: sus puntos de interes quedan pendientes hasta que un admin
+  /// los revisa; aqui solo los ve y propone nuevos.
+  usuario,
+}
+
+/// Panel "Mis nodos": los nodos que creo quien esta conectado. Lo usan la
+/// empresa (en su panel) y el deportista (en su barra de navegacion).
 class MisNodosScreen extends StatefulWidget {
-  const MisNodosScreen({super.key, this.api, this.formularioBuilder});
+  const MisNodosScreen({
+    super.key,
+    this.api,
+    this.formularioBuilder,
+    this.modo = ModoNodos.empresa,
+  });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final NodoApi? api;
 
   /// Abre el formulario. Las pruebas lo reemplazan para no montar Mapbox.
   final Widget Function(BuildContext context, Nodo? nodo)? formularioBuilder;
+
+  final ModoNodos modo;
 
   @override
   State<MisNodosScreen> createState() => _MisNodosScreenState();
@@ -30,6 +50,8 @@ class MisNodosScreen extends StatefulWidget {
 class _MisNodosScreenState extends State<MisNodosScreen> {
   late final NodoApi _api = widget.api ?? NodoApi();
   late Future<List<Nodo>> _futuro = _api.misNodos();
+
+  bool get _esEmpresa => widget.modo == ModoNodos.empresa;
 
   Future<void> _recargar() async {
     final Future<List<Nodo>> nuevo = _api.misNodos();
@@ -48,10 +70,24 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
       MaterialPageRoute<Nodo>(
         builder: (BuildContext ctx) =>
             widget.formularioBuilder?.call(ctx, nodo) ??
-            FormularioNodoEmpresaScreen(api: _api, nodo: nodo),
+            FormularioNodoEmpresaScreen(
+              api: _api,
+              nodo: nodo,
+              esEmpresa: _esEmpresa,
+            ),
       ),
     );
     if (guardado != null && mounted) await _recargar();
+  }
+
+  /// Tocar un nodo: la empresa lo edita; el deportista solo ve su ficha (una
+  /// vez propuesto, el punto lo gestiona el admin).
+  void _abrirNodo(Nodo nodo) {
+    if (_esEmpresa) {
+      _abrirFormulario(nodo);
+    } else {
+      mostrarFichaNodo(context, nodo, _api);
+    }
   }
 
   Future<void> _eliminar(Nodo nodo) async {
@@ -98,7 +134,7 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
         backgroundColor: FqColors.volt,
         foregroundColor: FqColors.primaryInk,
         icon: const Icon(Icons.add),
-        label: Text(l10n.nodoEmpresaNuevo),
+        label: Text(_esEmpresa ? l10n.nodoEmpresaNuevo : l10n.nodoUsuarioNuevo),
       ),
       body: SafeArea(
         bottom: false,
@@ -118,7 +154,9 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(FqGap.xl, 0, FqGap.xl, 8),
               child: Text(
-                l10n.nodoEmpresaSubtitulo,
+                _esEmpresa
+                    ? l10n.nodoEmpresaSubtitulo
+                    : l10n.nodoUsuarioSubtitulo,
                 style: const TextStyle(fontSize: 12, color: FqColors.muted),
               ),
             ),
@@ -142,9 +180,15 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
                   final List<Nodo> nodos = s.data ?? const <Nodo>[];
                   if (nodos.isEmpty) {
                     return FqEmptyState(
-                      icon: Icons.storefront_outlined,
-                      title: l10n.nodoEmpresaVacioTitulo,
-                      message: l10n.nodoEmpresaVacioMensaje,
+                      icon: _esEmpresa
+                          ? Icons.storefront_outlined
+                          : Icons.place_outlined,
+                      title: _esEmpresa
+                          ? l10n.nodoEmpresaVacioTitulo
+                          : l10n.nodoUsuarioVacioTitulo,
+                      message: _esEmpresa
+                          ? l10n.nodoEmpresaVacioMensaje
+                          : l10n.nodoUsuarioVacioMensaje,
                     );
                   }
                   return RefreshIndicator(
@@ -162,8 +206,11 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (BuildContext _, int i) => _TarjetaNodo(
                         nodo: nodos[i],
-                        onTap: () => _abrirFormulario(nodos[i]),
-                        onEliminar: () => _eliminar(nodos[i]),
+                        esEmpresa: _esEmpresa,
+                        onTap: () => _abrirNodo(nodos[i]),
+                        onEliminar: _esEmpresa
+                            ? () => _eliminar(nodos[i])
+                            : null,
                       ),
                     ),
                   );
@@ -180,13 +227,17 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
 class _TarjetaNodo extends StatelessWidget {
   const _TarjetaNodo({
     required this.nodo,
+    required this.esEmpresa,
     required this.onTap,
     required this.onEliminar,
   });
 
   final Nodo nodo;
+  final bool esEmpresa;
   final VoidCallback onTap;
-  final VoidCallback onEliminar;
+
+  /// Null cuando quien mira no puede dar de baja el nodo.
+  final VoidCallback? onEliminar;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +250,7 @@ class _TarjetaNodo extends StatelessWidget {
         onTap: onTap,
         borderRadius: FqRadius.allLg,
         child: Ink(
-          padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+          padding: EdgeInsets.fromLTRB(12, 12, onEliminar == null ? 12 : 4, 12),
           decoration: BoxDecoration(
             color: FqColors.white,
             borderRadius: FqRadius.allLg,
@@ -215,7 +266,11 @@ class _TarjetaNodo extends StatelessWidget {
                   color: color.withValues(alpha: .14),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.storefront_outlined, size: 20, color: color),
+                child: Icon(
+                  esEmpresa ? Icons.storefront_outlined : Icons.place_outlined,
+                  size: 20,
+                  color: color,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -242,51 +297,71 @@ class _TarjetaNodo extends StatelessWidget {
                         color: FqColors.muted,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    if (beneficio != null && beneficio.isNotEmpty)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          const Icon(
-                            Icons.local_offer_outlined,
-                            size: 14,
-                            color: FqColors.voltDark,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              beneficio,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                    if (esEmpresa) ...<Widget>[
+                      const SizedBox(height: 6),
+                      if (beneficio != null && beneficio.isNotEmpty)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const Icon(
+                              Icons.local_offer_outlined,
+                              size: 14,
+                              color: FqColors.voltDark,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                beneficio,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
+                          ],
+                        )
+                      else
+                        Text(
+                          l10n.nodoEmpresaSinBeneficio,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: FqColors.muted,
                           ),
-                        ],
-                      )
-                    else
-                      Text(
-                        l10n.nodoEmpresaSinBeneficio,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: FqColors.muted,
                         ),
-                      ),
+                    ],
                     const SizedBox(height: 8),
-                    FqTag(l10n.nodoEmpresaPublicado, tone: FqTagTone.green),
+                    _etiquetaEstado(l10n),
                   ],
                 ),
               ),
-              IconButton(
-                key: ValueKey<String>('eliminar-nodo-${nodo.id}'),
-                tooltip: l10n.comunEliminar,
-                onPressed: onEliminar,
-                icon: const Icon(Icons.delete_outline, color: FqColors.risk),
-              ),
+              if (onEliminar != null)
+                IconButton(
+                  key: ValueKey<String>('eliminar-nodo-${nodo.id}'),
+                  tooltip: l10n.comunEliminar,
+                  onPressed: onEliminar,
+                  icon: const Icon(Icons.delete_outline, color: FqColors.risk),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// La empresa publica sin revision. El deportista ve en que va su punto.
+  Widget _etiquetaEstado(AppLocalizations l10n) {
+    if (esEmpresa) {
+      return FqTag(l10n.nodoEmpresaPublicado, tone: FqTagTone.green);
+    }
+    switch (nodo.estado) {
+      case 'Aprobado':
+        return FqTag(l10n.nodoEstadoAprobado, tone: FqTagTone.green);
+      case 'Rechazado':
+        return FqTag(l10n.nodoEstadoRechazado, tone: FqTagTone.red);
+      case 'Obsoleto':
+        return FqTag(l10n.nodoEstadoObsoleto);
+      default:
+        return FqTag(l10n.nodoEstadoPendiente, tone: FqTagTone.amber);
+    }
   }
 }

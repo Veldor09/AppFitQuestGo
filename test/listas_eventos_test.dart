@@ -498,4 +498,100 @@ void main() {
       expect(find.text('Caminata benefica'), findsOneWidget);
     });
   });
+
+  group('MisEventosScreen con señal compartida (mapa + lista)', () {
+    testWidgets(
+      'una señal de afuera (se creo un evento en el mapa) recarga la lista',
+      (WidgetTester tester) async {
+        final _EventoApiFalsa api = _EventoApiFalsa();
+        final ValueNotifier<int> senal = ValueNotifier<int>(0);
+        addTearDown(senal.dispose);
+        await montarApp(
+          tester,
+          MisEventosScreen(api: api, ahora: () => _ahora, senal: senal),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Aun no tienes eventos'), findsOneWidget);
+
+        api.propios = <Evento>[_proximo];
+        senal.value++;
+        await tester.pumpAndSettle();
+
+        expect(find.text('Caminata benefica'), findsOneWidget);
+        expect(api.listados, 2);
+      },
+    );
+
+    testWidgets('guardar en el editor suma la señal y recarga una sola vez', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa();
+      final ValueNotifier<int> senal = ValueNotifier<int>(0);
+      addTearDown(senal.dispose);
+      await montarApp(
+        tester,
+        MisEventosScreen(
+          api: api,
+          ahora: () => _ahora,
+          senal: senal,
+          editorBuilder: (BuildContext ctx, Evento? _) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(ctx).pop(_proximo),
+              child: const Text('guardar-falso'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey<String>('nuevo-evento')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('guardar-falso'));
+      await tester.pumpAndSettle();
+
+      expect(senal.value, 1);
+      expect(api.listados, 2); // la carga inicial + la de la señal
+    });
+
+    testWidgets('borrar un evento tambien avisa a las demas pantallas', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa(propios: <Evento>[_proximo]);
+      final ValueNotifier<int> senal = ValueNotifier<int>(0);
+      addTearDown(senal.dispose);
+      await montarApp(
+        tester,
+        MisEventosScreen(api: api, ahora: () => _ahora, senal: senal),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey<String>('eliminar-evento-2')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('confirmar-eliminar')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(senal.value, 1);
+      expect(find.text('Caminata benefica'), findsNothing);
+    });
+
+    testWidgets('al salir de la pantalla deja de escuchar la señal', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa();
+      final ValueNotifier<int> senal = ValueNotifier<int>(0);
+      addTearDown(senal.dispose);
+      await montarApp(
+        tester,
+        MisEventosScreen(api: api, ahora: () => _ahora, senal: senal),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      senal.value++; // no debe romper aunque ya no haya pantalla
+
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

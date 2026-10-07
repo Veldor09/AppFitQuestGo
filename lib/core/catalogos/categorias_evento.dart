@@ -50,3 +50,6 @@ IconData iconoCategoriaEvento(String clave) {
 /// alertas ni los colores de los pines de nodos.
 const Color colorAreaEvento = FqColors.purple;
 const Color colorRecorridoEvento = FqColors.river;
+
+/// Trazos de eventos de otras empresas: grises, para que no se confundan con los propios.
+const Color colorSecundarioEvento = FqColors.muted;

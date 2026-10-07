@@ -9,7 +9,6 @@ import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/bienvenida_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro_empresa_screen.dart';
-import 'package:fit_quest_go/Modulos/empresa/presentation/cuenta_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/empresa/presentation/empresa_shell.dart';
 
 import 'helpers/montar.dart';
@@ -325,58 +324,65 @@ void main() {
   });
 
   group('EmpresaShell', () {
-    testWidgets('cambia entre sus tres pestañas', (WidgetTester tester) async {
+    Widget pagina(String t) => Text(t);
+
+    testWidgets('tiene cuatro pestañas y abre en el Mapa', (
+      WidgetTester tester,
+    ) async {
       await montarApp(
         tester,
-        const EmpresaShell(
+        EmpresaShell(
           paginas: <Widget>[
-            Text('pag-eventos'),
-            Text('pag-nodos'),
-            Text('pag-cuenta'),
+            pagina('pag-mapa'),
+            pagina('pag-eventos'),
+            pagina('pag-nodos'),
+            pagina('pag-cuenta'),
           ],
         ),
       );
 
-      expect(find.text('pag-eventos'), findsOneWidget);
-
-      await tester.tap(find.text('Nodos'));
-      await tester.pumpAndSettle();
-      expect(find.text('pag-nodos'), findsOneWidget);
-
-      await tester.tap(find.text('Cuenta'));
-      await tester.pumpAndSettle();
-      expect(find.text('pag-cuenta'), findsOneWidget);
+      // La primera pantalla es el mapa.
+      expect(find.text('pag-mapa'), findsOneWidget);
+      expect(find.byType(NavigationDestination), findsNWidgets(4));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('nav-empresa')),
+          matching: find.text('Mapa'),
+        ),
+        findsOneWidget,
+      );
     });
-  });
 
-  group('CuentaEmpresaScreen', () {
-    testWidgets('muestra el nombre y el correo de la sesion', (
+    testWidgets('cambia entre Mapa, Eventos, Nodos y Cuenta', (
       WidgetTester tester,
     ) async {
       await montarApp(
         tester,
-        CuentaEmpresaScreen(onCerrarSesion: () {}),
-        auth: AuthFalso(usuario: _usuario(RolUsuario.empresa)),
+        EmpresaShell(
+          paginas: <Widget>[
+            pagina('pag-mapa'),
+            pagina('pag-eventos'),
+            pagina('pag-nodos'),
+            pagina('pag-cuenta'),
+          ],
+        ),
       );
 
-      expect(find.text('Cafe El Roble'), findsOneWidget);
-      expect(find.text('contacto@elroble.co'), findsOneWidget);
-    });
+      Future<void> ir(String etiqueta, String pagina) async {
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('nav-empresa')),
+            matching: find.text(etiqueta),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(pagina), findsOneWidget);
+      }
 
-    testWidgets('"Cerrar sesion" llama al callback', (
-      WidgetTester tester,
-    ) async {
-      int cierres = 0;
-      await montarApp(
-        tester,
-        CuentaEmpresaScreen(onCerrarSesion: () => cierres++),
-        auth: AuthFalso(usuario: _usuario(RolUsuario.empresa)),
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('cerrar-sesion-empresa')),
-      );
-      expect(cierres, 1);
+      await ir('Eventos', 'pag-eventos');
+      await ir('Nodos', 'pag-nodos');
+      await ir('Cuenta', 'pag-cuenta');
+      await ir('Mapa', 'pag-mapa');
     });
   });
 }
