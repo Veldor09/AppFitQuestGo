@@ -11,6 +11,9 @@ import 'package:fit_quest_go/Modulos/alertas/data/alerta.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 
+import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
+
 /// PRF-02 / RTE-02 - Mis aportes: Rutas creadas, Alertas y Nodos.
 class AportesScreen extends StatefulWidget {
   const AportesScreen({
@@ -34,11 +37,18 @@ class _AportesScreenState extends State<AportesScreen>
   late final RutaApi _rutaApi = widget.rutaApi ?? RutaApi();
   late final AlertaApi _alertaApi = widget.alertaApi ?? AlertaApi();
   late final NodoApi _nodoApi = widget.nodoApi ?? NodoApi();
+  int _recargarContador = 0;
 
   @override
   void dispose() {
     _tabs.dispose();
     super.dispose();
+  }
+
+  void _recargarRutas() {
+    setState(() {
+      _recargarContador++;
+    });
   }
 
   @override
@@ -96,7 +106,11 @@ class _AportesScreenState extends State<AportesScreen>
             child: TabBarView(
               controller: _tabs,
               children: <Widget>[
-                _TabMisRutas(rutaApi: _rutaApi),
+                _TabMisRutas(
+                  key: ValueKey<int>(_recargarContador),
+                  rutaApi: _rutaApi,
+                  onCambio: _recargarRutas,
+                ),
                 _TabMisAlertas(alertaApi: _alertaApi),
                 _TabMisNodos(nodoApi: _nodoApi),
               ],
@@ -111,8 +125,14 @@ class _AportesScreenState extends State<AportesScreen>
 // ── Tab 1: Rutas Creadas ──────────────────────────────────────────────────────
 
 class _TabMisRutas extends StatelessWidget {
-  const _TabMisRutas({required this.rutaApi});
+  const _TabMisRutas({
+    super.key,
+    required this.rutaApi,
+    required this.onCambio,
+  });
+
   final RutaApi rutaApi;
+  final VoidCallback onCambio;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +161,11 @@ class _TabMisRutas extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           itemCount: rutas.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (_, int i) => _RutaFila(ruta: rutas[i]),
+          itemBuilder: (_, int i) => _RutaFila(
+            ruta: rutas[i],
+            rutaApi: rutaApi,
+            onCambio: onCambio,
+          ),
         );
       },
     );
@@ -149,78 +173,84 @@ class _TabMisRutas extends StatelessWidget {
 }
 
 class _RutaFila extends StatelessWidget {
-  const _RutaFila({required this.ruta});
-  final Ruta ruta;
+  const _RutaFila({
+    required this.ruta,
+    required this.rutaApi,
+    required this.onCambio,
+  });
 
-  Color get _colorEstado {
-    switch (ruta.estado) {
-      case 'Publicada':
-        return FqColors.trail;
-      case 'Pendiente':
-        return FqColors.amber;
-      default:
-        return FqColors.muted;
-    }
-  }
+  final Ruta ruta;
+  final RutaApi rutaApi;
+  final VoidCallback onCambio;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: FqColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: FqColors.border),
-      ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: FqColors.listIconBg,
-              borderRadius: BorderRadius.circular(11),
+    final AppLocalizations? l10n = AppLocalizations.of(context);
+    final String acts = l10n != null
+        ? actividadesLabel(l10n, ruta.actividades)
+        : ruta.actividades.join(', ');
+    final String subtitulo = acts.isNotEmpty
+        ? '$acts  ·  ${ruta.distanciaKm.toStringAsFixed(1)} km'
+        : '${ruta.distanciaKm.toStringAsFixed(1)} km';
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (BuildContext _) => RutaDetalleScreen(
+              ruta: ruta,
+              api: rutaApi,
+              puedeEnviarARevision: ruta.estado == 'Privada',
+              onCambio: onCambio,
             ),
-            child: const Icon(Icons.route_outlined,
-                size: 18, color: FqColors.night),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  ruta.nombre,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: FqColors.ink,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FqColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FqColors.border),
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: FqColors.listIconBg,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.route_outlined,
+                  size: 18, color: FqColors.night),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    ruta.nombre,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: FqColors.ink,
+                    ),
                   ),
-                ),
-                Text(
-                  '${actividadesLabel(AppLocalizations.of(context)!, ruta.actividades)}  ·  ${ruta.distanciaKm.toStringAsFixed(1)} km',
-                  style: const TextStyle(fontSize: 10, color: FqColors.muted),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: _colorEstado.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              ruta.estado,
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: _colorEstado,
+                  Text(
+                    subtitulo,
+                    style: const TextStyle(fontSize: 10, color: FqColors.muted),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            EtiquetaEstadoRuta(ruta.estado),
+          ],
+        ),
       ),
     );
   }

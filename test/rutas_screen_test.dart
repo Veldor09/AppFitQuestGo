@@ -30,6 +30,12 @@ class _RutaApiFalsa extends RutaApi {
   final List<int> solicitudes = <int>[];
 
   @override
+  Future<Set<int>> favoritasIds() async => <int>{};
+
+  @override
+  Future<List<Ruta>> favoritas() async => <Ruta>[];
+
+  @override
   Future<List<Ruta>> explorar() async => <Ruta>[_ruta(1, 'Sendero del rio', 'Publicada')];
 
   @override
@@ -46,6 +52,11 @@ class _RutaApiFalsa extends RutaApi {
 }
 
 Future<_RutaApiFalsa> _montar(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(800, 1200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
   tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
   tester.platformDispatcher.localeTestValue = const Locale('es');
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -75,7 +86,7 @@ void main() {
     await tester.tap(find.text('Sendero del rio'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ruta publica: la ve toda la comunidad.'), findsOneWidget);
+    expect(find.text('PUBLICADA'), findsOneWidget);
     expect(find.text('Enviar a revision'), findsNothing);
   });
 
@@ -89,7 +100,7 @@ void main() {
     await tester.tap(find.text('Mi vuelta al lago'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ruta privada: solo vos la ves.'), findsOneWidget);
+    expect(find.text('PRIVADA'), findsOneWidget);
     expect(find.widgetWithText(FqButton, 'Enviar a revision'), findsOneWidget);
   });
 
@@ -109,6 +120,5 @@ void main() {
     expect(api.solicitudes, <int>[2]);
     expect(api.cargasDeMisRutas, 2);
     expect(find.text('Ruta enviada a revision'), findsOneWidget);
-    expect(find.text('Ruta privada: solo vos la ves.'), findsNothing);
   });
 }

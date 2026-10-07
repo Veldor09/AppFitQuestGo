@@ -105,7 +105,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     switch (n.referenciaTipo ?? n.categoria) {
       case 'ruta':
       case 'rutas':
-        return const Scaffold(body: RutasScreen(initialTab: 1));
+        return const RutasScreen(initialTab: 1, showBackButton: true);
       case 'insignia':
       case 'insignias':
         return const InsigniasScreen();

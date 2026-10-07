@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
@@ -36,11 +37,21 @@ Future<bool> _pedirPermiso() async {
 /// hay servicio de ubicacion o permiso.
 Stream<PosicionGps> posicionesGps({int distanciaMinimaM = 10}) async* {
   if (!await asegurarPermisoUbicacion()) return;
-  yield* geo.Geolocator.getPositionStream(
-    locationSettings: geo.LocationSettings(
+  final geo.LocationSettings settings;
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    settings = geo.AndroidSettings(
       accuracy: geo.LocationAccuracy.high,
       distanceFilter: distanciaMinimaM,
-    ),
+      intervalDuration: const Duration(seconds: 5),
+    );
+  } else {
+    settings = geo.LocationSettings(
+      accuracy: geo.LocationAccuracy.high,
+      distanceFilter: distanciaMinimaM,
+    );
+  }
+  yield* geo.Geolocator.getPositionStream(
+    locationSettings: settings,
   ).map((geo.Position p) => (lat: p.latitude, lng: p.longitude));
 }
 
@@ -58,7 +69,9 @@ Future<void> centrarEnUbicacionActual(MapboxMap controller) async {
 
     if (!await asegurarPermisoUbicacion()) return;
 
-    final geo.Position posicion = await geo.Geolocator.getCurrentPosition();
+    final geo.Position posicion = await geo.Geolocator.getCurrentPosition(
+      timeLimit: const Duration(seconds: 5),
+    );
     await controller.flyTo(
       CameraOptions(
         center: Point(coordinates: Position(posicion.longitude, posicion.latitude)),

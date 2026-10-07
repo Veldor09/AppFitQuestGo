@@ -2,7 +2,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AlmacenTokens {
   AlmacenTokens([FlutterSecureStorage? almacen])
-    : _almacen = almacen ?? const FlutterSecureStorage();
+    : _almacen =
+          almacen ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(),
+          );
 
   final FlutterSecureStorage _almacen;
 
@@ -13,20 +17,38 @@ class AlmacenTokens {
     required String access,
     required String refresh,
   }) async {
-    await _almacen.write(key: _kAccess, value: access);
-    await _almacen.write(key: _kRefresh, value: refresh);
+    try {
+      await _almacen.write(key: _kAccess, value: access);
+      await _almacen.write(key: _kRefresh, value: refresh);
+    } catch (_) {}
   }
 
-  Future<void> guardarAccess(String access) {
-    return _almacen.write(key: _kAccess, value: access);
+  Future<void> guardarAccess(String access) async {
+    try {
+      await _almacen.write(key: _kAccess, value: access);
+    } catch (_) {}
   }
 
-  Future<String?> leerAccess() => _almacen.read(key: _kAccess);
+  Future<String?> leerAccess() async {
+    try {
+      return await _almacen.read(key: _kAccess);
+    } catch (_) {
+      return null;
+    }
+  }
 
-  Future<String?> leerRefresh() => _almacen.read(key: _kRefresh);
+  Future<String?> leerRefresh() async {
+    try {
+      return await _almacen.read(key: _kRefresh);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> limpiar() async {
-    await _almacen.delete(key: _kAccess);
-    await _almacen.delete(key: _kRefresh);
+    try {
+      await _almacen.delete(key: _kAccess);
+      await _almacen.delete(key: _kRefresh);
+    } catch (_) {}
   }
 }
