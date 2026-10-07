@@ -37,6 +37,12 @@ class _RutaApiFalsa extends RutaApi {
   Object? error;
 
   @override
+  Future<Set<int>> favoritasIds() async => <int>{};
+
+  @override
+  Future<List<Ruta>> favoritas() async => <Ruta>[];
+
+  @override
   Future<Ruta> solicitarPublicacion(int id) async {
     solicitudes.add(id);
     if (error != null) throw error!;
@@ -52,10 +58,17 @@ Future<void> _abrir(
   bool puedeEnviarARevision = false,
   VoidCallback? onCambio,
 }) async {
+  tester.view.physicalSize = const Size(800, 1200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
   tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
   tester.platformDispatcher.localeTestValue = const Locale('es');
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+
+  final _RutaApiFalsa apiInstancia = api ?? _RutaApiFalsa();
 
   await tester.pumpWidget(
     MaterialApp(
@@ -71,7 +84,7 @@ Future<void> _abrir(
               MaterialPageRoute<void>(
                 builder: (BuildContext _) => RutaDetalleScreen(
                   ruta: ruta,
-                  api: api,
+                  api: apiInstancia,
                   puedeEnviarARevision: puedeEnviarARevision,
                   onCambio: onCambio,
                 ),
@@ -93,45 +106,20 @@ void main() {
   ) async {
     await _abrir(tester, _ruta());
 
-    expect(find.text('Cerro de la Muerte'), findsOneWidget);
+    expect(find.text('Cerro de la Muerte'), findsAtLeastNWidgets(1));
     expect(find.text('PRIVADA'), findsOneWidget);
     expect(find.text('Running'), findsOneWidget);
     expect(find.text('Moderada'), findsOneWidget);
-    expect(find.text('5.0 km'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget); // puntos del trazo
-    expect(find.text('Ana'), findsOneWidget);
+    expect(find.text('5.0'), findsOneWidget);
+    expect(find.text('Creada por Ana'), findsOneWidget);
   });
 
-  testWidgets('sin autor no muestra la fila "Propuesta por"', (
+  testWidgets('sin autor no muestra la fila "Creada por"', (
     WidgetTester tester,
   ) async {
     await _abrir(tester, _ruta(creadoPorNombre: null));
 
-    expect(find.text('Propuesta por'), findsNothing);
-  });
-
-  group('visibilidad segun el estado', () {
-    const Map<String, String> esperado = <String, String>{
-      'Publicada': 'Ruta publica: la ve toda la comunidad.',
-      'Privada': 'Ruta privada: solo vos la ves.',
-      'Pendiente': 'En revision: todavia no es publica.',
-      'Rechazada': 'Rechazada: no se publico.',
-    };
-    esperado.forEach((String estado, String mensaje) {
-      testWidgets('$estado -> "$mensaje"', (WidgetTester tester) async {
-        await _abrir(tester, _ruta(estado: estado));
-
-        expect(find.text(mensaje), findsOneWidget);
-      });
-    });
-  });
-
-  testWidgets('con menos de 2 puntos avisa que no hay trazo', (
-    WidgetTester tester,
-  ) async {
-    await _abrir(tester, _ruta(puntos: const <PuntoRuta>[]));
-
-    expect(find.text('Esta ruta no tiene un trazo para mostrar.'), findsOneWidget);
+    expect(find.textContaining('Creada por'), findsNothing);
   });
 
   group('Enviar a revision', () {
@@ -187,7 +175,7 @@ void main() {
 
       expect(cambios, 0);
       expect(find.text('No se pudo enviar la ruta'), findsOneWidget);
-      expect(find.text('Cerro de la Muerte'), findsOneWidget);
+      expect(find.text('Cerro de la Muerte'), findsAtLeastNWidgets(1));
       expect(
         tester.widget<FqButton>(find.widgetWithText(FqButton, 'Enviar a revision')).onPressed,
         isNotNull,

@@ -102,9 +102,12 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       api: _climaApi,
       posicion: () => _proximidad.ultimaPosicion,
     );
-    _proximidad.iniciar();
-    _cargarNodos();
-    _cargarAlertas();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _proximidad.iniciar();
+      _cargarNodos();
+      _cargarAlertas();
+    });
     _temporizadorAlertas = Timer.periodic(_refrescoAlertas, (Timer _) {
       _cargarAlertas();
       _cargarNodos();

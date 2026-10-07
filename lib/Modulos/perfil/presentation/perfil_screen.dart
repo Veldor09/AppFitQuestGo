@@ -12,10 +12,11 @@ import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/insignias_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/preferencias_screen.dart';
+import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/actividades_modal.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/editar_perfil_modal.dart';
+import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/intereses_modal.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
-import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
 
 
 class PerfilScreen extends StatefulWidget {
@@ -71,12 +72,33 @@ class _PerfilScreenState extends State<PerfilScreen> {
     _cargarNoLeidas();
   }
 
-  Future<void> _editarPerfil(Usuario usuario, [int initialTab = 0]) async {
+  Future<void> _editarPerfil(Usuario usuario) async {
     final bool? cambiado = await EditarPerfilModal.abrir(
       context,
       usuario: usuario,
       api: _api,
-      initialTab: initialTab,
+    );
+    if (cambiado == true) {
+      _recargar();
+    }
+  }
+
+  Future<void> _gestionarActividades(Usuario usuario) async {
+    final bool? cambiado = await GestionarActividadesModal.abrir(
+      context,
+      usuario: usuario,
+      api: _api,
+    );
+    if (cambiado == true) {
+      _recargar();
+    }
+  }
+
+  Future<void> _gestionarIntereses(Usuario usuario) async {
+    final bool? cambiado = await GestionarInteresesModal.abrir(
+      context,
+      usuario: usuario,
+      api: _api,
     );
     if (cambiado == true) {
       _recargar();
@@ -116,10 +138,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
           final Usuario usuario = snap.data!;
           return _PerfilContenido(
             usuario: usuario,
+            api: _api,
             onAjustes: () => _abrirAjustes(usuario),
-            onEditar: () => _editarPerfil(usuario, 0),
-            onGestionarActividades: () => _editarPerfil(usuario, 1),
-            onGestionarIntereses: () => _editarPerfil(usuario, 2),
+            onEditar: () => _editarPerfil(usuario),
+            onGestionarActividades: () => _gestionarActividades(usuario),
+            onGestionarIntereses: () => _gestionarIntereses(usuario),
             onPreferencias: () => _abrirPreferencias(usuario),
             onNotificaciones: _abrirNotificaciones,
             noLeidas: _noLeidas,
@@ -141,7 +164,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
       builder: (_) => _HojaAjustes(
         usuario: usuario,
         onCerrarSesion: widget.onCerrarSesion,
-        onEditar: () => _editarPerfil(usuario, 0),
+        onEditar: () => _editarPerfil(usuario),
       ),
     );
   }
@@ -150,6 +173,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 class _PerfilContenido extends StatelessWidget {
   const _PerfilContenido({
     required this.usuario,
+    required this.api,
     required this.onAjustes,
     required this.onEditar,
     required this.onGestionarIntereses,
@@ -161,6 +185,7 @@ class _PerfilContenido extends StatelessWidget {
   });
 
   final Usuario usuario;
+  final PerfilApi api;
   final VoidCallback onAjustes;
   final VoidCallback onEditar;
   final VoidCallback onGestionarIntereses;
@@ -178,6 +203,7 @@ class _PerfilContenido extends StatelessWidget {
       children: <Widget>[
         _Hero(
           usuario: usuario,
+          api: api,
           onAjustes: onAjustes,
           onEditar: onEditar,
         ),
@@ -202,8 +228,9 @@ class _PerfilContenido extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const Scaffold(
-                          body: RutasScreen(initialTab: 1),
+                        builder: (_) => const RutasScreen(
+                          initialTab: 1,
+                          showBackButton: true,
                         ),
                       ),
                     );
@@ -232,7 +259,7 @@ class _PerfilContenido extends StatelessWidget {
                 _MenuFila(
                   icono: Icons.download_outlined,
                   texto: l10n.perfilMapasOffline,
-                  onTap: onPreferencias,
+                  onTap: () => notificarInfo('Mapas offline: disponible próximamente'),
                 ),
                 _MenuFila(
                   icono: Icons.tune_rounded,
@@ -252,11 +279,13 @@ class _PerfilContenido extends StatelessWidget {
 class _Hero extends StatelessWidget {
   const _Hero({
     required this.usuario,
+    required this.api,
     required this.onAjustes,
     required this.onEditar,
   });
 
   final Usuario usuario;
+  final PerfilApi api;
   final VoidCallback onAjustes;
   final VoidCallback onEditar;
 
@@ -292,10 +321,10 @@ class _Hero extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${rolLabel(l10n, usuario.idrol)} · ${estadoUsuarioLabel(l10n, usuario.estado)}',
+                  usuario.emailUser,
                   style: const TextStyle(
                     color: Color(0xFFB7C3D1),
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -333,7 +362,7 @@ class _Hero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const _MetricasEjemplo(),
+                _MetricasEjemplo(api: api),
               ],
             ),
           ),
@@ -414,14 +443,17 @@ class _Avatar extends StatelessWidget {
 
 /// Tira blanca de 3 métricas reales (PRF-01 / NAV-07).
 class _MetricasEjemplo extends StatefulWidget {
-  const _MetricasEjemplo();
+  const _MetricasEjemplo({required this.api});
+
+  final PerfilApi api;
 
   @override
   State<_MetricasEjemplo> createState() => _MetricasEjemploState();
 }
 
 class _MetricasEjemploState extends State<_MetricasEjemplo> {
-  final Future<Map<String, dynamic>> _stats = PerfilApi().estadisticasPropias();
+  late final Future<Map<String, dynamic>> _stats =
+      widget.api.estadisticasPropias();
 
   @override
   Widget build(BuildContext context) {
@@ -708,11 +740,9 @@ class _HojaAjustes extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             _Dato(label: l10n.comunNombre, valor: usuario.nombreUser),
-            _Dato(label: l10n.comunCorreo, valor: usuario.emailUser),
-            _Dato(label: l10n.perfilRol, valor: rolLabel(l10n, usuario.idrol)),
             _Dato(
-              label: l10n.perfilEstado,
-              valor: estadoUsuarioLabel(l10n, usuario.estado),
+              label: l10n.comunCorreo,
+              valor: usuario.emailUser,
               ultimo: true,
             ),
             const SizedBox(height: 16),

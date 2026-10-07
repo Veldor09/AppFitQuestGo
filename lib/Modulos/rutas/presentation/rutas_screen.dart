@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
@@ -16,13 +17,22 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_
 /// - "Mis rutas" (RTE-02): rutas propias (`/rutas/mias`).
 /// - "Guardadas" (RTE-03): rutas favoritas / guardadas (`/rutas/favoritas`).
 class RutasScreen extends StatefulWidget {
-  const RutasScreen({super.key, this.api, this.initialTab = 0});
+  const RutasScreen({
+    super.key,
+    this.api,
+    this.initialTab = 0,
+    this.showBackButton,
+  });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
 
   /// Pestaña inicial (0: Explorar, 1: Mis rutas, 2: Guardadas).
   final int initialTab;
+
+  /// Si es true muestra la cabecera oscura con botón de retroceso (estilo "Mis Insignias" / "Mis Contribuciones").
+  /// Si es null, detecta automáticamente si la pantalla fue abierta mediante push (Navigator.canPop).
+  final bool? showBackButton;
 
   @override
   State<RutasScreen> createState() => _RutasScreenState();
@@ -77,6 +87,69 @@ class _RutasScreenState extends State<RutasScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final bool mostrarAtras =
+        widget.showBackButton ?? Navigator.canPop(context);
+
+    if (mostrarAtras) {
+      final double top = MediaQuery.of(context).padding.top;
+      return Scaffold(
+        backgroundColor: FqColors.paper,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // ── Cabecera oscura con botón Volver (estilo Mis Aportes / Mis Insignias)
+            Container(
+              color: FqColors.night,
+              padding: EdgeInsets.fromLTRB(4, top + 4, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded,
+                            color: FqColors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      Expanded(
+                        child: Text(
+                          l10n.rutasTitulo,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: FqColors.white,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: _Segmentado(
+                      opciones: <String>[
+                        l10n.rutasExplorar,
+                        l10n.rutasMisRutas,
+                        'Guardadas'
+                      ],
+                      seleccion: _tab,
+                      onSeleccion: (int i) => setState(() => _tab = i),
+                      enCabeceraOscura: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _buildCuerpoTab(),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ColoredBox(
       color: FqColors.paper,
       child: SafeArea(
@@ -87,13 +160,18 @@ class _RutasScreenState extends State<RutasScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
                 l10n.rutasTitulo,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _Segmentado(
-                opciones: <String>[l10n.rutasExplorar, l10n.rutasMisRutas, 'Guardadas'],
+                opciones: <String>[
+                  l10n.rutasExplorar,
+                  l10n.rutasMisRutas,
+                  'Guardadas'
+                ],
                 seleccion: _tab,
                 onSeleccion: (int i) => setState(() => _tab = i),
               ),
@@ -155,18 +233,20 @@ class _Segmentado extends StatelessWidget {
     required this.opciones,
     required this.seleccion,
     required this.onSeleccion,
+    this.enCabeceraOscura = false,
   });
 
   final List<String> opciones;
   final int seleccion;
   final ValueChanged<int> onSeleccion;
+  final bool enCabeceraOscura;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: FqColors.cloud,
+        color: enCabeceraOscura ? const Color(0x2AFFFFFF) : FqColors.cloud,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -179,9 +259,13 @@ class _Segmentado extends StatelessWidget {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: i == seleccion ? FqColors.white : Colors.transparent,
+                    color: i == seleccion
+                        ? (enCabeceraOscura ? FqColors.volt : FqColors.white)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: i == seleccion ? FqColors.panelShadow : null,
+                    boxShadow: (i == seleccion && !enCabeceraOscura)
+                        ? FqColors.panelShadow
+                        : null,
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -189,7 +273,11 @@ class _Segmentado extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: i == seleccion ? FqColors.ink : FqColors.muted,
+                      color: i == seleccion
+                          ? (enCabeceraOscura ? FqColors.night : FqColors.ink)
+                          : (enCabeceraOscura
+                              ? const Color(0xFFB7C3D1)
+                              : FqColors.muted),
                     ),
                   ),
                 ),

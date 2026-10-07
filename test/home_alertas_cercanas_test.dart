@@ -13,6 +13,8 @@ import 'package:fit_quest_go/Modulos/alertas/data/alerta_api.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
+import 'package:fit_quest_go/Modulos/clima/data/alerta_clima.dart';
+import 'package:fit_quest_go/Modulos/clima/data/clima_api.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
@@ -34,6 +36,14 @@ class _NodoApiFalsa extends NodoApi {
     cargas++;
     return <Nodo>[];
   }
+}
+
+class _ClimaApiFalsa extends ClimaApi {
+  @override
+  Future<RespuestaClima> alertas({
+    required double lat,
+    required double lng,
+  }) async => const RespuestaClima(alertas: <AlertaClima>[], fuente: '');
 }
 
 class _AlertaApiFalsa extends AlertaApi {
@@ -112,11 +122,13 @@ class _Escenario {
   _Escenario(List<Alerta> alertas)
     : api = _AlertaApiFalsa(alertas),
       nodoApi = _NodoApiFalsa(),
+      climaApi = _ClimaApiFalsa(),
       voz = _VozFalsa(),
       gps = StreamController<PosicionGps>();
 
   final _AlertaApiFalsa api;
   final _NodoApiFalsa nodoApi;
+  final _ClimaApiFalsa climaApi;
   final _VozFalsa voz;
   final StreamController<PosicionGps> gps;
 
@@ -133,6 +145,7 @@ class _Escenario {
           body: HomeUsuarioScreen(
             nodoApi: nodoApi,
             alertaApi: api,
+            climaApi: climaApi,
             voz: voz,
             posiciones: () => gps.stream,
           ),

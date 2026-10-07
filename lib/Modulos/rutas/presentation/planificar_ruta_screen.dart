@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -156,11 +157,22 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           return;
         }
 
-        stream = geo.Geolocator.getPositionStream(
-          locationSettings: geo.LocationSettings(
+        final geo.LocationSettings settings;
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          settings = geo.AndroidSettings(
             accuracy: geo.LocationAccuracy.high,
             distanceFilter: _distanciaMinimaEntrePuntosM.toInt(),
-          ),
+            intervalDuration: const Duration(seconds: 2),
+          );
+        } else {
+          settings = geo.LocationSettings(
+            accuracy: geo.LocationAccuracy.high,
+            distanceFilter: _distanciaMinimaEntrePuntosM.toInt(),
+          );
+        }
+
+        stream = geo.Geolocator.getPositionStream(
+          locationSettings: settings,
         );
       }
 
@@ -406,10 +418,9 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                           value: 'dificil',
                           child: Text(dificultadLabel(l10n, 'dificil')),
                         ),
-                        ),
                       ],
                       onChanged: (String? v) =>
-                          setSheetState(() => visibilidad = v ?? visibilidad),
+                          setSheetState(() => dificultad = v ?? dificultad),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
