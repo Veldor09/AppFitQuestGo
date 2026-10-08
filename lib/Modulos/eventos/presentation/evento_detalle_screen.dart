@@ -48,8 +48,8 @@ class EventoDetalleScreen extends StatelessWidget {
               child: mapaBuilder != null
                   ? mapaBuilder!(context)
                   : MapaTrazosEvento(
-                      areas: evento.areas,
-                      recorridos: evento.recorridos,
+                      areas: evento.areasRotuladas,
+                      recorridos: evento.recorridosRotulados,
                     ),
             ),
             Expanded(

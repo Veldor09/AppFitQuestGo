@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -47,6 +48,7 @@ class _MapaTrazoRutaState extends State<MapaTrazoRuta> {
 
   Future<void> _onMapCreated(MapboxMap mapa) async {
     _mapa = mapa;
+    await ocultarAdornos(mapa);
     _lineas = await mapa.annotations.createPolylineAnnotationManager();
     final PointAnnotationManager iconos = await mapa.annotations
         .createPointAnnotationManager();

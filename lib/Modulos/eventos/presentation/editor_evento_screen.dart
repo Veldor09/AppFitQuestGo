@@ -21,6 +21,7 @@ typedef ConstructorMapaEditor =
       BuildContext context,
       List<ZonaEvento> areas,
       List<ZonaEvento> recorridos,
+      String etiqueta,
       ModoDibujo modo,
       void Function(ModoDibujo modo, List<PuntoGeo> puntos) onTrazoDibujado,
       VoidCallback onTrazoCorto,
@@ -132,16 +133,18 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
 
   // ---- Trazos --------------------------------------------------------------
 
-  Future<void> _alTrazoDibujado(ModoDibujo modo, List<PuntoGeo> puntos) async {
+  /// Un trazo terminado: se agrega con un nombre interno ("Area 1", "Recorrido
+  /// 2"). En el mapa no se ve: cada pin escribe el nombre del EVENTO.
+  void _alTrazoDibujado(ModoDibujo modo, List<PuntoGeo> puntos) {
     if (!mounted) return;
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final bool esArea = modo == ModoDibujo.area;
-    final String sugerido = esArea
-        ? l10n.eventoNombreAreaDefecto(_areas.length + 1)
-        : l10n.eventoNombreRecorridoDefecto(_recorridos.length + 1);
-    final String? nombre = await _pedirNombreTrazo(l10n, sugerido);
-    if (nombre == null || !mounted) return;
-    final ZonaEvento zona = ZonaEvento(nombre: nombre, puntos: puntos);
+    final ZonaEvento zona = ZonaEvento(
+      nombre: esArea
+          ? l10n.eventoNombreAreaDefecto(_areas.length + 1)
+          : l10n.eventoNombreRecorridoDefecto(_recorridos.length + 1),
+      puntos: puntos,
+    );
     setState(() {
       // Listas nuevas, no mutadas: el mapa redibuja cuando cambia la instancia.
       if (esArea) {
@@ -151,39 +154,6 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
       }
       _modo = ModoDibujo.ninguno;
     });
-  }
-
-  Future<String?> _pedirNombreTrazo(AppLocalizations l10n, String sugerido) {
-    final TextEditingController controlador = TextEditingController(
-      text: sugerido,
-    );
-    return showDialog<String>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l10n.eventoNombreTrazoTitulo),
-        content: TextField(
-          key: const ValueKey<String>('campo-nombre-trazo'),
-          controller: controlador,
-          autofocus: true,
-          maxLength: 100,
-          decoration: InputDecoration(labelText: l10n.comunNombre),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.comunCancelar),
-          ),
-          FilledButton(
-            key: const ValueKey<String>('aceptar-nombre-trazo'),
-            onPressed: () {
-              final String texto = controlador.text.trim();
-              Navigator.of(ctx).pop(texto.isEmpty ? sugerido : texto);
-            },
-            child: Text(l10n.comunGuardar),
-          ),
-        ],
-      ),
-    );
   }
 
   void _alTrazoCorto() {
@@ -437,6 +407,7 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
                 context,
                 _areas,
                 _recorridos,
+                _nombre.text.trim(),
                 _modo,
                 _alTrazoDibujado,
                 _alTrazoCorto,
@@ -444,6 +415,8 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
             : MapaTrazosEvento(
                 areas: _areas,
                 recorridos: _recorridos,
+                // Cada pin escribe el nombre del evento que se esta escribiendo.
+                etiquetaZonas: _nombre.text.trim(),
                 modoDibujo: _modo,
                 onTrazoDibujado: _alTrazoDibujado,
                 onTrazoCorto: _alTrazoCorto,

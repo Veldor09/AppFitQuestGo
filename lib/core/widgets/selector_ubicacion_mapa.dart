@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 
@@ -49,6 +50,7 @@ class _SelectorUbicacionMapaState extends State<SelectorUbicacionMapa> {
 
   Future<void> _onMapCreated(MapboxMap mapa) async {
     _mapa = mapa;
+    await ocultarAdornos(mapa);
     mapa.addInteraction(TapInteraction.onMap(_alTocar));
     _pin = await mapa.annotations.createCircleAnnotationManager();
     await _dibujarPin();

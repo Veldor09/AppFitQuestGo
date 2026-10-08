@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/geo/simplificar_trazo.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
@@ -42,6 +43,8 @@ class MapaTrazosEvento extends StatefulWidget {
     this.areasSecundarias = const <ZonaEvento>[],
     this.recorridosSecundarios = const <ZonaEvento>[],
     this.pines = const <PuntoGeo>[],
+    this.etiquetaZonas,
+    this.alTocarEvento,
   });
 
   /// Trazos ya guardados. La lista se redibuja cuando cambia la instancia:
@@ -66,6 +69,14 @@ class MapaTrazosEvento extends StatefulWidget {
 
   /// Lugares sueltos (nodos de abastecimiento) como pines.
   final List<PuntoGeo> pines;
+
+  /// Si se da, todos los pines de [areas] y [recorridos] escriben este texto en
+  /// vez del nombre de cada zona (el editor pasa el nombre del evento).
+  final String? etiquetaZonas;
+
+  /// Se llama con el id del evento cuya area, recorrido o pin se toca (los
+  /// trazos tienen que traer su `eventoId`: ver `Evento.areasRotuladas`).
+  final void Function(int eventoId)? alTocarEvento;
 
   @override
   State<MapaTrazosEvento> createState() => _MapaTrazosEventoState();
@@ -128,6 +139,12 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
   }
 
   @override
+  void dispose() {
+    _capa?.liberar();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant MapaTrazosEvento oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.areas, widget.areas) ||
@@ -137,7 +154,8 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
           oldWidget.recorridosSecundarios,
           widget.recorridosSecundarios,
         ) ||
-        !identical(oldWidget.pines, widget.pines)) {
+        !identical(oldWidget.pines, widget.pines) ||
+        oldWidget.etiquetaZonas != widget.etiquetaZonas) {
       unawaited(_dibujarTrazos());
     }
     if (oldWidget.modoDibujo != widget.modoDibujo) {
@@ -147,7 +165,12 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
 
   Future<void> _onMapCreated(MapboxMap mapa) async {
     _mapa = mapa;
-    _capa = await CapaEventosMapa.crear(mapa);
+    await ocultarAdornos(mapa);
+    _capa = await CapaEventosMapa.crear(
+      mapa,
+      // Siempre el callback actual del widget, aunque cambie despues.
+      alTocarEvento: (int id) => widget.alTocarEvento?.call(id),
+    );
     await _dibujarTrazos();
     final bool hayTrazos = _todosLosPuntos().isNotEmpty;
     if (hayTrazos) {
@@ -169,6 +192,7 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
       areasSecundarias: widget.areasSecundarias,
       recorridosSecundarios: widget.recorridosSecundarios,
       pines: widget.pines,
+      etiquetaZonas: widget.etiquetaZonas,
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -32,7 +33,10 @@ class FqLiveMapView extends StatelessWidget {
                 center: Point(coordinates: Position(-84.0907, 9.9281)),
                 zoom: 13.5,
               ),
-              onMapCreated: centrarEnUbicacionActual,
+              onMapCreated: (MapboxMap mapa) async {
+                await ocultarAdornos(mapa);
+                await centrarEnUbicacionActual(mapa);
+              },
             ),
     );
   }

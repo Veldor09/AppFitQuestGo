@@ -100,6 +100,9 @@ class _Captura {
   List<ZonaEvento> areasOtras = const <ZonaEvento>[];
   List<ZonaEvento> recorridosOtros = const <ZonaEvento>[];
   List<PuntoGeo> pines = const <PuntoGeo>[];
+
+  /// Lo que haria el mapa al tocarse un trazo: avisar el id de su evento.
+  void Function(int eventoId)? tocar;
 }
 
 Widget _mapaFalso(
@@ -110,7 +113,9 @@ Widget _mapaFalso(
   List<ZonaEvento> areasOtras,
   List<ZonaEvento> recorridosOtros,
   List<PuntoGeo> pines,
+  void Function(int eventoId) alTocarEvento,
 ) {
+  c.tocar = alTocarEvento;
   c.areas = areas;
   c.recorridos = recorridos;
   c.areasOtras = areasOtras;
@@ -140,8 +145,8 @@ Future<_Captura> _abrir(
       nodoApi: nodos ?? _NodoApiFalsa(),
       senal: senal,
       editorBuilder: editor,
-      mapaBuilder: (BuildContext c, a, r, ao, ro, p) =>
-          _mapaFalso(captura, c, a, r, ao, ro, p),
+      mapaBuilder: (BuildContext c, a, r, ao, ro, p, tocar) =>
+          _mapaFalso(captura, c, a, r, ao, ro, p, tocar),
     ),
     auth: AuthFalso(
       usuario: const UsuarioSesion(
@@ -224,6 +229,126 @@ void main() {
 
       expect(c.pines, <PuntoGeo>[const PuntoGeo(lat: 9.1, lng: -84.1)]);
     });
+  });
+
+  group('el nombre que escribe el mapa', () {
+    testWidgets('cada trazo propio lleva el nombre de su EVENTO', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa()
+        ..propios = <Evento>[
+          _evento(1, 'Caminata', areas: 2, recorridos: 1),
+          _evento(2, 'Carrera', recorridos: 1),
+        ];
+      final _Captura c = await _abrir(tester, eventos: api);
+
+      expect(c.areas.map((ZonaEvento z) => z.nombre), <String>[
+        'Caminata',
+        'Caminata',
+        'Carrera',
+      ]);
+      expect(c.recorridos.map((ZonaEvento z) => z.nombre), <String>[
+        'Caminata',
+        'Carrera',
+      ]);
+    });
+
+    testWidgets('lo de otras empresas lleva el nombre de SU evento', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa()
+        ..todos = <Evento>[
+          _evento(2, 'Ajeno', dueno: _otraEmpresa, areas: 1, recorridos: 1),
+        ];
+      final _Captura c = await _abrir(tester, eventos: api);
+
+      await tester.tap(_clave('ver-otras-empresas'));
+      await tester.pumpAndSettle();
+
+      expect(c.areasOtras.single.nombre, 'Ajeno');
+      expect(c.recorridosOtros.single.nombre, 'Ajeno');
+    });
+
+    testWidgets('los puntos de los trazos no cambian', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa()
+        ..propios = <Evento>[_evento(1, 'Caminata', recorridos: 1)];
+      final _Captura c = await _abrir(tester, eventos: api);
+
+      expect(c.areas.single.puntos, _triangulo);
+      expect(c.recorridos.single.puntos, _linea);
+    });
+  });
+
+  group('tocar un trazo abre la ficha de su evento', () {
+    testWidgets(
+      'el trazo de un evento propio abre su ficha con toda la informacion',
+      (WidgetTester tester) async {
+        final _EventoApiFalsa api = _EventoApiFalsa()
+          ..propios = <Evento>[_evento(1, 'Caminata', areas: 1, recorridos: 1)];
+        final _Captura c = await _abrir(tester, eventos: api);
+
+        c.tocar!(1);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey<String>('ficha-evento-nombre')),
+          findsOneWidget,
+        );
+        expect(find.text('Caminata'), findsWidgets);
+        expect(find.text('Organiza Mi empresa'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'los trazos traen el id de su evento (es lo que permite abrirlo)',
+      (WidgetTester tester) async {
+        final _EventoApiFalsa api = _EventoApiFalsa()
+          ..propios = <Evento>[
+            _evento(1, 'Caminata', areas: 1),
+            _evento(7, 'Carrera', areas: 0, recorridos: 1),
+          ];
+        final _Captura c = await _abrir(tester, eventos: api);
+
+        expect(c.areas.single.eventoId, 1);
+        expect(c.recorridos.single.eventoId, 7);
+      },
+    );
+
+    testWidgets('el evento de otra empresa tambien se puede abrir', (
+      WidgetTester tester,
+    ) async {
+      final _EventoApiFalsa api = _EventoApiFalsa()
+        ..todos = <Evento>[_evento(2, 'Ajeno', dueno: _otraEmpresa, areas: 1)];
+      final _Captura c = await _abrir(tester, eventos: api);
+      await tester.tap(_clave('ver-otras-empresas'));
+      await tester.pumpAndSettle();
+
+      expect(c.areasOtras.single.eventoId, 2);
+      c.tocar!(2);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Organiza Otra empresa'), findsOneWidget);
+    });
+
+    testWidgets(
+      'un evento que ya no esta (id desconocido) no abre nada ni falla',
+      (WidgetTester tester) async {
+        final _EventoApiFalsa api = _EventoApiFalsa()
+          ..propios = <Evento>[_evento(1, 'Caminata')];
+        final _Captura c = await _abrir(tester, eventos: api);
+
+        c.tocar!(999);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey<String>('ficha-evento-nombre')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   group('"Ver otras empresas"', () {

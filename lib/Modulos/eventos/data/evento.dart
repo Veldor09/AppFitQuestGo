@@ -25,7 +25,7 @@ class PuntoGeo {
 /// Un trazo con nombre dibujado por la empresa: un area (poligono, el ultimo
 /// punto se une al primero sin repetirlo) o un recorrido (linea).
 class ZonaEvento {
-  const ZonaEvento({required this.nombre, required this.puntos});
+  const ZonaEvento({required this.nombre, required this.puntos, this.eventoId});
 
   factory ZonaEvento.fromJson(Map<String, dynamic> json) {
     return ZonaEvento(
@@ -38,6 +38,12 @@ class ZonaEvento {
 
   final String nombre;
   final List<PuntoGeo> puntos;
+
+  /// El evento al que pertenece este trazo. No viaja al servidor (el trazo
+  /// ya vive dentro de su evento): solo sirve para saber a que evento llevar a
+  /// quien toca el trazo en el mapa. Lo llenan [Evento.areasRotuladas] y
+  /// [Evento.recorridosRotulados].
+  final int? eventoId;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'nombre': nombre,
@@ -101,6 +107,17 @@ class Evento {
   /// Nombre comercial de la empresa que lo publica.
   final String? creadoPorNombre;
   final int? creadoPorId;
+
+  /// Las areas y los recorridos para dibujarlos en un mapa: cada uno lleva el
+  /// nombre del EVENTO (no su nombre interno, "Area 1" / "Recorrido 1"), porque
+  /// es lo que se escribe junto al pin.
+  List<ZonaEvento> get areasRotuladas => _conNombreDelEvento(areas);
+  List<ZonaEvento> get recorridosRotulados => _conNombreDelEvento(recorridos);
+
+  List<ZonaEvento> _conNombreDelEvento(List<ZonaEvento> zonas) => <ZonaEvento>[
+    for (final ZonaEvento z in zonas)
+      ZonaEvento(nombre: nombre, puntos: z.puntos, eventoId: id),
+  ];
 
   /// Todos los puntos de todos los trazos (para encuadrar la camara).
   List<PuntoGeo> get todosLosPuntos => <PuntoGeo>[

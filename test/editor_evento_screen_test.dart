@@ -130,6 +130,7 @@ Widget _mapaFalso(
   BuildContext context,
   List<ZonaEvento> areas,
   List<ZonaEvento> recorridos,
+  String etiqueta,
   ModoDibujo modo,
   void Function(ModoDibujo, List<PuntoGeo>) onTrazoDibujado,
   VoidCallback onTrazoCorto,
@@ -142,6 +143,10 @@ Widget _mapaFalso(
       children: <Widget>[
         Text('modo:${modo.name}', key: const ValueKey<String>('modo-actual')),
         Text('areas:${areas.length} recorridos:${recorridos.length}'),
+        Text(
+          'etiqueta:$etiqueta',
+          key: const ValueKey<String>('etiqueta-mapa'),
+        ),
         TextButton(
           key: const ValueKey<String>('simular-trazo'),
           onPressed: () => onTrazoDibujado(
@@ -310,34 +315,23 @@ void main() {
       await _elegirFecha(tester, 'fecha-fin');
 
       await _irAlMapa(tester);
-      // Trazar un area.
+      // Trazar un area: no pide ningun nombre, se agrega de una vez.
       await tester.tap(find.byKey(const ValueKey<String>('modo-area')));
       await tester.pump();
       expect(find.text('modo:area'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey<String>('simular-trazo')));
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('aceptar-nombre-trazo')),
-      );
-      await tester.pumpAndSettle();
-      // Tras nombrar el trazo vuelve a "mover mapa".
+      expect(find.byType(AlertDialog), findsNothing);
+      // Y vuelve a "mover mapa".
       expect(find.text('modo:ninguno'), findsOneWidget);
       expect(find.text('Area 1'), findsOneWidget);
 
-      // Trazar un recorrido con nombre propio.
+      // Trazar un recorrido.
       await tester.tap(find.byKey(const ValueKey<String>('modo-recorrido')));
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey<String>('simular-trazo')));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const ValueKey<String>('campo-nombre-trazo')),
-        'Caminata 5k',
-      );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('aceptar-nombre-trazo')),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Caminata 5k'), findsOneWidget);
+      expect(find.text('Recorrido 1'), findsOneWidget);
       expect(find.text('areas:1 recorridos:1'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey<String>('guardar-evento')));
@@ -355,29 +349,84 @@ void main() {
           enviado['recorridos']! as List<ZonaEvento>;
       expect(areas.single.nombre, 'Area 1');
       expect(areas.single.puntos, _triangulo);
-      expect(recorridos.single.nombre, 'Caminata 5k');
+      expect(recorridos.single.nombre, 'Recorrido 1');
       expect(recorridos.single.puntos, _linea);
       // Cerro la pantalla y avisa.
       expect(find.byType(EditorEventoScreen), findsNothing);
       expect(find.text('Evento guardado'), findsOneWidget);
     });
 
-    testWidgets('cancelar el nombre del trazo lo descarta', (
+    testWidgets('los trazos se numeran solos: Area 1, Area 2, Recorrido 1...', (
       WidgetTester tester,
     ) async {
       final _EventoApiFalsa api = _EventoApiFalsa();
       await _abrir(tester, api);
       await _irAlMapa(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('modo-recorrido')));
-      await tester.pump();
-      await tester.tap(find.byKey(const ValueKey<String>('simular-trazo')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Cancelar'));
-      await tester.pumpAndSettle();
 
-      expect(find.text('areas:0 recorridos:0'), findsOneWidget);
-      expect(find.text('Aun no dibujas nada'), findsOneWidget);
+      Future<void> trazar(String modo) async {
+        await tester.tap(find.byKey(ValueKey<String>(modo)));
+        await tester.pump();
+        await tester.tap(find.byKey(const ValueKey<String>('simular-trazo')));
+        await tester.pumpAndSettle();
+      }
+
+      await trazar('modo-area');
+      await trazar('modo-area');
+      await trazar('modo-recorrido');
+
+      expect(find.text('Area 1'), findsOneWidget);
+      expect(find.text('Area 2'), findsOneWidget);
+      expect(find.text('Recorrido 1'), findsOneWidget);
+      expect(find.text('areas:2 recorridos:1'), findsOneWidget);
     });
+
+    testWidgets('el mapa escribe el nombre del EVENTO, no el de cada trazo', (
+      WidgetTester tester,
+    ) async {
+      await _abrir(tester, _EventoApiFalsa());
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('campo-nombre-evento')),
+        '  Caminata benefica  ',
+      );
+      await _irAlMapa(tester);
+
+      expect(find.text('etiqueta:Caminata benefica'), findsOneWidget);
+    });
+
+    testWidgets('si aun no hay nombre del evento, el mapa no escribe ninguno', (
+      WidgetTester tester,
+    ) async {
+      await _abrir(tester, _EventoApiFalsa());
+      await _irAlMapa(tester);
+
+      expect(find.text('etiqueta:'), findsOneWidget);
+    });
+
+    testWidgets('al editar, el mapa ya trae el nombre del evento', (
+      WidgetTester tester,
+    ) async {
+      await _abrir(tester, _EventoApiFalsa(), evento: _evento());
+      await _irAlMapa(tester);
+
+      expect(find.text('etiqueta:Caminata benefica'), findsOneWidget);
+    });
+
+    testWidgets(
+      'cambiar el nombre y volver al mapa actualiza el texto de los pines',
+      (WidgetTester tester) async {
+        await _abrir(tester, _EventoApiFalsa(), evento: _evento());
+        await _irAlMapa(tester);
+        await tester.tap(find.text('Datos'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey<String>('campo-nombre-evento')),
+          'Carrera 10k',
+        );
+        await _irAlMapa(tester);
+
+        expect(find.text('etiqueta:Carrera 10k'), findsOneWidget);
+      },
+    );
 
     testWidgets('un trazo demasiado corto avisa y no agrega nada', (
       WidgetTester tester,

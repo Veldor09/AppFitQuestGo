@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
@@ -27,6 +28,7 @@ import 'package:fit_quest_go/Modulos/clima/data/clima_api.dart';
 import 'package:fit_quest_go/Modulos/clima/presentation/banner_clima.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
+import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/capa_eventos_mapa.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
@@ -138,6 +140,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   @override
   void dispose() {
+    _capaEventos?.liberar();
     _temporizadorAlertas?.cancel();
     _temporizadorClima?.cancel();
     _escuchaTapNodos?.cancel();
@@ -276,8 +279,12 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   }
 
   Future<void> _onMapCreated(MapboxMap controller) async {
+    await ocultarAdornos(controller);
     // Del fondo al frente: los eventos, las alertas y, encima, los puntos.
-    _capaEventos = await CapaEventosMapa.crear(controller);
+    _capaEventos = await CapaEventosMapa.crear(
+      controller,
+      alTocarEvento: _abrirEvento,
+    );
     _pines = await controller.annotations.createCircleAnnotationManager();
     final PointAnnotationManager nodos = await controller.annotations
         .createPointAnnotationManager();
@@ -306,6 +313,19 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         alVotar: _reemplazarNodo,
       ),
     );
+  }
+
+  /// Tocar el area, el recorrido o el pin de un evento abre su ficha.
+  void _abrirEvento(int eventoId) {
+    Evento? evento;
+    for (final Evento e in _eventos) {
+      if (e.id == eventoId) {
+        evento = e;
+        break;
+      }
+    }
+    if (evento == null || !mounted) return;
+    unawaited(mostrarFichaEvento(context, evento));
   }
 
   Future<void> _cargarEventos() async {
@@ -339,9 +359,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (capa == null || !mounted) return;
     await capa.dibujar(
       densidad: MediaQuery.devicePixelRatioOf(context),
-      areas: <ZonaEvento>[for (final Evento e in _eventos) ...e.areas],
+      areas: <ZonaEvento>[for (final Evento e in _eventos) ...e.areasRotuladas],
       recorridos: <ZonaEvento>[
-        for (final Evento e in _eventos) ...e.recorridos,
+        for (final Evento e in _eventos) ...e.recorridosRotulados,
       ],
     );
   }
