@@ -25,6 +25,7 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _seleccion = 0;
   bool _sidebarFijo = false;
+  bool _sidebarMovilAbierto = false;
 
   Future<void> _cerrarSesion() async {
     await AuthScope.read(context).cerrarSesion();
@@ -41,6 +42,7 @@ class _AdminShellState extends State<AdminShell> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final List<AdminSeccion> secciones = buildAdminSecciones(l10n);
     final AdminSeccion actual = secciones[_seleccion];
+    final bool esMovil = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
       backgroundColor: FqColors.adminBg,
@@ -49,8 +51,15 @@ class _AdminShellState extends State<AdminShell> {
           AdminTopBar(
             title: actual.headerTitle,
             userInitials: usuario.iniciales,
-            onToggleSidebar: () =>
-                setState(() => _sidebarFijo = !_sidebarFijo),
+            onToggleSidebar: () {
+              setState(() {
+                if (esMovil) {
+                  _sidebarMovilAbierto = !_sidebarMovilAbierto;
+                } else {
+                  _sidebarFijo = !_sidebarFijo;
+                }
+              });
+            },
           ),
           Expanded(
             child: Stack(
@@ -59,7 +68,7 @@ class _AdminShellState extends State<AdminShell> {
                 // despliega por encima sin redimensionarlo. El RepaintBoundary
                 // aisla el contenido de los repintados del sidebar al animar.
                 Positioned.fill(
-                  left: AdminSidebar.railWidth,
+                  left: esMovil ? 0 : AdminSidebar.railWidth,
                   child: RepaintBoundary(
                     child: ColoredBox(
                       color: FqColors.adminBg,
@@ -68,25 +77,45 @@ class _AdminShellState extends State<AdminShell> {
                         itemCount: secciones.length,
                         itemBuilder: (BuildContext context, int i) =>
                             KeyedSubtree(
-                          key: ValueKey<String>(secciones[i].code),
-                          child: Builder(builder: secciones[i].builder),
-                        ),
+                              key: ValueKey<String>(secciones[i].code),
+                              child: Builder(builder: secciones[i].builder),
+                            ),
                       ),
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  child: AdminSidebar(
-                    secciones: secciones,
-                    selectedIndex: _seleccion,
-                    pinned: _sidebarFijo,
-                    onSelect: (int i) => setState(() => _seleccion = i),
-                    onLogout: _cerrarSesion,
+                if (esMovil && _sidebarMovilAbierto)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _sidebarMovilAbierto = false;
+                        });
+                      },
+                      child: Container(color: Colors.black54),
+                    ),
                   ),
-                ),
+                if (!esMovil || _sidebarMovilAbierto)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    child: AdminSidebar(
+                      secciones: secciones,
+                      selectedIndex: _seleccion,
+                      pinned: esMovil ? true : _sidebarFijo,
+                      onSelect: (int i) {
+                        setState(() {
+                          _seleccion = i;
+                          if (esMovil) {
+                            _sidebarMovilAbierto = false;
+                          }
+                        });
+                      },
+                      onLogout: _cerrarSesion,
+                    ),
+                  ),
               ],
             ),
           ),
