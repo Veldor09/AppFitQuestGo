@@ -19,6 +19,8 @@ import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart'
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 
+import 'helpers/home_falsos.dart';
+
 const double _lat = 9.9281;
 const double _lng = -84.0907;
 
@@ -146,6 +148,9 @@ class _Escenario {
             nodoApi: nodoApi,
             alertaApi: api,
             climaApi: climaApi,
+            eventoApi: EventoApiVacia(),
+            rutaApi: RutaApiVacia(),
+            notificacionesApi: NotificacionesApiVacia(),
             voz: voz,
             posiciones: () => gps.stream,
           ),

@@ -168,8 +168,6 @@
   "homeFiltroPois": "POIs",
   "homeCercaDeTi": "Perto de voce",
   "homeMantenPresionado": "Mantenha pressionado o mapa para reportar",
-  "homeRutaFake": "Rota · 1,2 km",
-  "homeAlertaFake": "Alerta · 300 m",
 
   "rolEmpresa": "Empresa",
   "rolAdmin": "Admin",
@@ -563,5 +561,14 @@
   "nodoEstadoPendiente": "Em revisao",
   "nodoEstadoAprobado": "Aprovado",
   "nodoEstadoRechazado": "Rejeitado",
-  "nodoEstadoObsoleto": "Obsoleto"
+  "nodoEstadoObsoleto": "Obsoleto",
+  "homeBuscarLimpiar": "Limpar busca",
+  "homeBuscarSinResultados": "Sem resultados para \"{consulta}\"",
+  "homeNotificaciones": "Notificacoes",
+  "homeNotificacionesSinLeer": "{cantidad, plural, =1{1 notificacao nao lida} other{{cantidad} notificacoes nao lidas}}",
+  "homeSinRutasCerca": "Sem rotas por perto",
+  "homeSinAlertasCerca": "Sem alertas por perto",
+  "homeBuscandoUbicacion": "Buscando sua localizacao...",
+  "homeReportarAqui": "Reportar aqui",
+  "homeSinUbicacionParaReportar": "Ainda nao tenho sua localizacao. Aguarde alguns segundos ou mantenha o mapa pressionado."
 }

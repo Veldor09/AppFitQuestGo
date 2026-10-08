@@ -19,6 +19,8 @@ import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart'
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 
+import 'helpers/home_falsos.dart';
+
 const PosicionGps _aqui = (lat: 9.9281, lng: -84.0907);
 
 class _NodoApiFalsa extends NodoApi {
@@ -106,6 +108,9 @@ void main() {
               nodoApi: _NodoApiFalsa(),
               alertaApi: _AlertaApiFalsa(),
               climaApi: clima,
+              eventoApi: EventoApiVacia(),
+              rutaApi: RutaApiVacia(),
+              notificacionesApi: NotificacionesApiVacia(),
               voz: _VozFalsa(),
               posiciones: () => gps.stream,
             ),

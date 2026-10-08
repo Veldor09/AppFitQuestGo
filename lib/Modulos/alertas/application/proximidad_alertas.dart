@@ -69,6 +69,14 @@ class ProximidadAlertas extends ChangeNotifier {
   List<Alerta> _alertas = const <Alerta>[];
   PosicionGps? _ultimaPosicion;
   Alerta? _alertaCercana;
+  final ValueNotifier<PosicionGps?> _posicion = ValueNotifier<PosicionGps?>(
+    null,
+  );
+
+  /// La ultima posicion recibida, y un aviso cada vez que cambia: la pantalla
+  /// la usa para lo que depende de donde estas (el cuadro "Cerca de ti"). Es
+  /// aparte de este notificador, que solo avisa cuando cambia la alerta.
+  ValueListenable<PosicionGps?> get posicion => _posicion;
 
   /// La alerta que se le esta preguntando al usuario, o null.
   Alerta? get alertaCercana => _alertaCercana;
@@ -89,6 +97,7 @@ class ProximidadAlertas extends ChangeNotifier {
       (PosicionGps pos) {
         final bool primera = _ultimaPosicion == null;
         _ultimaPosicion = pos;
+        _posicion.value = pos;
         if (primera) _alPrimeraPosicion?.call(pos);
         _evaluar();
       },
@@ -148,6 +157,7 @@ class ProximidadAlertas extends ChangeNotifier {
   void dispose() {
     _suscripcion?.cancel();
     _suscripcion = null;
+    _posicion.dispose();
     super.dispose();
   }
 }
