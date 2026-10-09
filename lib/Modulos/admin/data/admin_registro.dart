@@ -5,6 +5,8 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/reportes_contenido_screen.dart'
+    as reportes;
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/alertas/presentation/alertas_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/nodos_admin_screen.dart';
@@ -122,7 +124,7 @@ List<AdminSeccion> buildAdminSecciones(AppLocalizations l10n) {
       headerTitle: l10n.admNavReportesContenido,
       descripcion: l10n.admDescReportesContenido,
       icono: Icons.flag_outlined,
-      builder: (_) => const ReportesContenidoScreen(),
+      builder: (_) => const reportes.ReportesContenidoScreen(),
     ),
     AdminSeccion(
       code: 'ADM-13',
