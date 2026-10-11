@@ -290,39 +290,40 @@ void main() {
   });
 
   group('Barra de navegacion del deportista', () {
-    testWidgets('tiene el panel de Nodos junto a los demas', (
-      WidgetTester tester,
-    ) async {
-      int? elegido;
-      await montarApp(
-        tester,
-        Scaffold(
-          bottomNavigationBar: UserNavBar(
-            currentIndex: 0,
-            onSelect: (int i) => elegido = i,
+    testWidgets(
+      'tiene Mapa, Rutas, Crear, Eventos y Perfil, y no tiene Nodos',
+      (WidgetTester tester) async {
+        int? elegido;
+        await montarApp(
+          tester,
+          Scaffold(
+            bottomNavigationBar: UserNavBar(
+              currentIndex: 0,
+              onSelect: (int i) => elegido = i,
+            ),
           ),
-        ),
-      );
+        );
 
-      for (final String etiqueta in <String>[
-        'Mapa',
-        'Rutas',
-        'Crear',
-        'Eventos',
-        'Nodos',
-        'Perfil',
-      ]) {
-        expect(find.text(etiqueta), findsOneWidget, reason: etiqueta);
-      }
+        for (final String etiqueta in <String>[
+          'Mapa',
+          'Rutas',
+          'Crear',
+          'Eventos',
+          'Perfil',
+        ]) {
+          expect(find.text(etiqueta), findsOneWidget, reason: etiqueta);
+        }
+        expect(find.text('Nodos'), findsNothing);
 
-      await tester.tap(find.text('Nodos'));
-      expect(elegido, 4); // entre Eventos y Perfil
+        await tester.tap(find.text('Eventos'));
+        expect(elegido, 3);
 
-      await tester.tap(find.text('Perfil'));
-      expect(elegido, 5);
-    });
+        await tester.tap(find.text('Perfil'));
+        expect(elegido, 4); // Perfil es la ultima de las cinco
+      },
+    );
 
-    testWidgets('las seis opciones caben en un celular angosto', (
+    testWidgets('las opciones caben en un celular angosto', (
       WidgetTester tester,
     ) async {
       tester.view.physicalSize = const Size(320, 640);

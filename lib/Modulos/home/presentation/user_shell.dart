@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
-import 'package:fit_quest_go/Modulos/empresa/presentation/mis_nodos_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/eventos_screen.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/home_usuario_screen.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/user_nav_bar.dart';
@@ -29,7 +28,6 @@ class _UserShellState extends State<UserShell> {
       const RutasScreen(),
       const PlanificarRutaScreen(),
       const EventosScreen(),
-      const MisNodosScreen(modo: ModoNodos.usuario),
       PerfilScreen(onCerrarSesion: _cerrarSesion),
     ];
 

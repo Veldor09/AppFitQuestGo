@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
@@ -91,6 +92,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _onMapCreated(MapboxMap controller) async {
+    await ocultarAdornos(controller);
     _pines = await controller.annotations.createCircleAnnotationManager();
     _lineas = await controller.annotations.createPolylineAnnotationManager();
     // Mismo criterio que FqLiveMapView: el mapa debe arrancar centrado en la

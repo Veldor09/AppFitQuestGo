@@ -26,6 +26,7 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _seleccion = 0;
   bool _sidebarFijo = false;
+  bool _sidebarMovilAbierto = false;
 
   /// Usuario seleccionado en ADM-02 para visualizarlo en ADM-03.
   ///
@@ -41,19 +42,23 @@ class _AdminShellState extends State<AdminShell> {
 
   /// Abre ADM-03 con el usuario seleccionado.
   void _abrirDetalleUsuario(Usuario usuario) {
-    _usuarioSeleccionado.value = usuario;
-
     if (!mounted) return;
+
+    _usuarioSeleccionado.value = usuario;
 
     setState(() {
       _seleccion = _indiceDetalleUsuario;
+      _sidebarMovilAbierto = false;
     });
   }
 
   /// Regresa a ADM-02 conservando su busqueda, filtros y paginacion.
   void _volverUsuarios() {
+    if (!mounted) return;
+
     setState(() {
       _seleccion = _indiceUsuarios;
+      _sidebarMovilAbierto = false;
     });
   }
 
@@ -85,6 +90,7 @@ class _AdminShellState extends State<AdminShell> {
     );
 
     final AdminSeccion actual = secciones[_seleccion];
+    final bool esMovil = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
       backgroundColor: FqColors.adminBg,
@@ -95,20 +101,24 @@ class _AdminShellState extends State<AdminShell> {
             userInitials: usuario.iniciales,
             onToggleSidebar: () {
               setState(() {
-                _sidebarFijo = !_sidebarFijo;
+                if (esMovil) {
+                  _sidebarMovilAbierto = !_sidebarMovilAbierto;
+                } else {
+                  _sidebarFijo = !_sidebarFijo;
+                }
               });
             },
           ),
           Expanded(
             child: Stack(
               children: <Widget>[
-                // El contenido arranca despues del riel; el sidebar se
-                // despliega por encima sin redimensionarlo.
+                // En dispositivos moviles, el contenido utiliza todo el ancho.
+                // En escritorio, comienza despues del riel lateral.
                 //
                 // RepaintBoundary aisla el contenido de los repintados
                 // del sidebar al animar.
                 Positioned.fill(
-                  left: AdminSidebar.railWidth,
+                  left: esMovil ? 0 : AdminSidebar.railWidth,
                   child: RepaintBoundary(
                     child: ColoredBox(
                       color: FqColors.adminBg,
@@ -125,22 +135,44 @@ class _AdminShellState extends State<AdminShell> {
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  child: AdminSidebar(
-                    secciones: secciones,
-                    selectedIndex: _seleccion,
-                    pinned: _sidebarFijo,
-                    onSelect: (int i) {
-                      setState(() {
-                        _seleccion = i;
-                      });
-                    },
-                    onLogout: _cerrarSesion,
+
+                // Fondo oscuro para cerrar el menu en dispositivos moviles.
+                if (esMovil && _sidebarMovilAbierto)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _sidebarMovilAbierto = false;
+                        });
+                      },
+                      child: Container(color: Colors.black54),
+                    ),
                   ),
-                ),
+
+                // Sidebar responsive: siempre visible en escritorio
+                // y desplegable en dispositivos moviles.
+                if (!esMovil || _sidebarMovilAbierto)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    child: AdminSidebar(
+                      secciones: secciones,
+                      selectedIndex: _seleccion,
+                      pinned: esMovil ? true : _sidebarFijo,
+                      onSelect: (int i) {
+                        setState(() {
+                          _seleccion = i;
+
+                          if (esMovil) {
+                            _sidebarMovilAbierto = false;
+                          }
+                        });
+                      },
+                      onLogout: _cerrarSesion,
+                    ),
+                  ),
               ],
             ),
           ),

@@ -10,6 +10,7 @@ import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/editor_evento_screen.dart';
+import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/mapa_trazos_evento.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
@@ -24,6 +25,7 @@ typedef ConstructorMapaEmpresa =
       List<ZonaEvento> areasOtras,
       List<ZonaEvento> recorridosOtros,
       List<PuntoGeo> pines,
+      void Function(int eventoId) alTocarEvento,
     );
 
 /// Pantalla principal de una cuenta de empresa: el mapa con todos sus eventos
@@ -149,15 +151,15 @@ class _MapaEmpresaScreenState extends State<MapaEmpresaScreen> {
   }
 
   void _recalcular() {
-    _areas = <ZonaEvento>[for (final Evento e in _propios) ...e.areas];
+    _areas = <ZonaEvento>[for (final Evento e in _propios) ...e.areasRotuladas];
     _recorridos = <ZonaEvento>[
-      for (final Evento e in _propios) ...e.recorridos,
+      for (final Evento e in _propios) ...e.recorridosRotulados,
     ];
     _areasOtras = _verOtras
-        ? <ZonaEvento>[for (final Evento e in _otros) ...e.areas]
+        ? <ZonaEvento>[for (final Evento e in _otros) ...e.areasRotuladas]
         : const <ZonaEvento>[];
     _recorridosOtros = _verOtras
-        ? <ZonaEvento>[for (final Evento e in _otros) ...e.recorridos]
+        ? <ZonaEvento>[for (final Evento e in _otros) ...e.recorridosRotulados]
         : const <ZonaEvento>[];
     final int? mio = _miId;
     // Los nodos propios siempre; los de otras empresas solo si se piden.
@@ -166,6 +168,20 @@ class _MapaEmpresaScreenState extends State<MapaEmpresaScreen> {
         if (_verOtras || (mio != null && n.creadoPorId == mio))
           PuntoGeo(lat: n.lat, lng: n.lng),
     ];
+  }
+
+  /// Tocar un area, un recorrido o su pin abre la ficha de ese evento (sea
+  /// propio o de otra empresa).
+  void _abrirEvento(int eventoId) {
+    Evento? evento;
+    for (final Evento e in <Evento>[..._propios, ..._otros]) {
+      if (e.id == eventoId) {
+        evento = e;
+        break;
+      }
+    }
+    if (evento == null || !mounted) return;
+    unawaited(mostrarFichaEvento(context, evento));
   }
 
   Future<void> _nuevoEvento() async {
@@ -209,6 +225,7 @@ class _MapaEmpresaScreenState extends State<MapaEmpresaScreen> {
                   _areasOtras,
                   _recorridosOtros,
                   _pines,
+                  _abrirEvento,
                 )
               : MapaTrazosEvento(
                   areas: _areas,
@@ -216,6 +233,7 @@ class _MapaEmpresaScreenState extends State<MapaEmpresaScreen> {
                   areasSecundarias: _areasOtras,
                   recorridosSecundarios: _recorridosOtros,
                   pines: _pines,
+                  alTocarEvento: _abrirEvento,
                   centrarEnUsuario: true,
                 ),
           SafeArea(

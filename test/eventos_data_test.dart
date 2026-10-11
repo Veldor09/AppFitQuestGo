@@ -86,6 +86,93 @@ void main() {
     });
   });
 
+  group('trazos rotulados con el nombre del evento', () {
+    test(
+      'cada area y cada recorrido lleva el nombre del evento, no el suyo',
+      () {
+        final Evento e = Evento.fromJson(_json());
+        expect(e.areas.single.nombre, 'Salida'); // el interno no cambia
+        expect(e.areasRotuladas.single.nombre, 'Caminata benefica');
+        expect(e.recorridosRotulados.single.nombre, 'Caminata benefica');
+      },
+    );
+
+    test('conservan los puntos y la cantidad de trazos', () {
+      final Evento e = Evento.fromJson(_json());
+      expect(e.areasRotuladas, hasLength(e.areas.length));
+      expect(e.areasRotuladas.single.puntos, e.areas.single.puntos);
+      expect(e.recorridosRotulados.single.puntos, e.recorridos.single.puntos);
+    });
+
+    test('un evento con varios trazos los rotula todos igual', () {
+      final Evento e = Evento.fromJson(
+        _json(<String, dynamic>{
+          'areas': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'nombre': 'A1',
+              'puntos': <Map<String, double>>[
+                <String, double>{'lat': 1, 'lng': 1},
+                <String, double>{'lat': 2, 'lng': 2},
+                <String, double>{'lat': 3, 'lng': 1},
+              ],
+            },
+            <String, dynamic>{
+              'nombre': 'A2',
+              'puntos': <Map<String, double>>[
+                <String, double>{'lat': 5, 'lng': 5},
+                <String, double>{'lat': 6, 'lng': 6},
+                <String, double>{'lat': 7, 'lng': 5},
+              ],
+            },
+          ],
+        }),
+      );
+      expect(e.areasRotuladas.map((z) => z.nombre), <String>[
+        'Caminata benefica',
+        'Caminata benefica',
+      ]);
+    });
+
+    test(
+      'cada trazo rotulado trae el id del evento (para abrirlo al tocarlo)',
+      () {
+        final Evento e = Evento.fromJson(_json());
+        expect(e.areasRotuladas.single.eventoId, 3);
+        expect(e.recorridosRotulados.single.eventoId, 3);
+      },
+    );
+
+    test('el id del evento no viaja al servidor', () {
+      final Evento e = Evento.fromJson(_json());
+      expect(e.areasRotuladas.single.toJson().containsKey('eventoId'), isFalse);
+    });
+
+    test(
+      'un trazo leido del servidor no trae id de evento hasta rotularlo',
+      () {
+        final Evento e = Evento.fromJson(_json());
+        expect(e.areas.single.eventoId, isNull);
+      },
+    );
+
+    test('sin trazos devuelve listas vacias', () {
+      final Evento e = Evento.fromJson(
+        _json(<String, dynamic>{'areas': null, 'recorridos': null}),
+      );
+      expect(e.areasRotuladas, isEmpty);
+      expect(e.recorridosRotulados, isEmpty);
+    });
+
+    test(
+      'devuelve listas nuevas en cada llamada, sin tocar las originales',
+      () {
+        final Evento e = Evento.fromJson(_json());
+        expect(identical(e.areasRotuladas, e.areas), isFalse);
+        expect(e.areas.single.nombre, 'Salida');
+      },
+    );
+  });
+
   group('estado segun la fecha', () {
     final Evento e = Evento.fromJson(_json());
 
