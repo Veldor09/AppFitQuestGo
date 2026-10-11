@@ -24,14 +24,18 @@ class UsuarioModal extends StatefulWidget {
     this.usuario,
     this.api,
     this.miId,
+    this.onVerDetalle,
   });
 
   final ModoUsuarioModal modo;
   final Usuario? usuario;
   final UsuariosApi? api;
 
-  /// Id del usuario en sesion: se usa para impedir que se quite su propio rol.
+  /// Id del usuario en sesion: impide que se quite su propio rol.
   final int? miId;
+
+  /// Permite solicitar la apertura de ADM-03.
+  final ValueChanged<Usuario>? onVerDetalle;
 
   static Future<bool?> abrir(
     BuildContext context, {
@@ -39,18 +43,26 @@ class UsuarioModal extends StatefulWidget {
     Usuario? usuario,
     UsuariosApi? api,
     int? miId,
+    ValueChanged<Usuario>? onVerDetalle,
   }) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     return showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
       barrierLabel: l10n.comunCerrar,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 190),
-      pageBuilder: (_, _, _) =>
-          UsuarioModal(modo: modo, usuario: usuario, api: api, miId: miId),
+      pageBuilder: (_, _, _) => UsuarioModal(
+        modo: modo,
+        usuario: usuario,
+        api: api,
+        miId: miId,
+        onVerDetalle: onVerDetalle,
+      ),
       transitionBuilder: (_, Animation<double> anim, _, Widget child) {
         final double t = Curves.easeOutCubic.transform(anim.value);
+
         return FadeTransition(
           opacity: anim,
           child: BackdropFilter(
@@ -77,10 +89,13 @@ class _UsuarioModalState extends State<UsuarioModal> {
   late final TextEditingController _nombre = TextEditingController(
     text: widget.usuario?.nombreUser ?? '',
   );
+
   late final TextEditingController _email = TextEditingController(
     text: widget.usuario?.emailUser ?? '',
   );
+
   final TextEditingController _password = TextEditingController();
+
   late int _idrol = widget.usuario?.idrol ?? 1;
 
   bool _guardando = false;
@@ -89,12 +104,13 @@ class _UsuarioModalState extends State<UsuarioModal> {
   bool get _esCrear => _modo == ModoUsuarioModal.crear;
   bool get _esVer => _modo == ModoUsuarioModal.ver;
 
-  /// Al editarse a si mismo, un admin no puede cambiar su propio rol.
+  /// Un admin no puede cambiar su propio rol.
   bool get _rolBloqueado =>
       !_esCrear && widget.usuario != null && widget.usuario!.id == widget.miId;
 
   List<Validador> get _reglasPassword {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     return _esCrear
         ? <Validador>[
             requerido(l10n.registroValidacionContrasena),
@@ -113,6 +129,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   String get _titulo {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     switch (_modo) {
       case ModoUsuarioModal.ver:
         return widget.usuario?.nombreUser ?? l10n.rolUsuario;
@@ -123,7 +140,20 @@ class _UsuarioModalState extends State<UsuarioModal> {
     }
   }
 
-  void _cerrar([bool cambio = false]) => Navigator.of(context).pop(cambio);
+  void _cerrar([bool cambio = false]) {
+    Navigator.of(context).pop(cambio);
+  }
+
+  /// Cierra el modal y solicita abrir el detalle del usuario.
+  void _verDetalle() {
+    final Usuario? usuario = widget.usuario;
+    final ValueChanged<Usuario>? callback = widget.onVerDetalle;
+
+    if (usuario == null || callback == null) return;
+
+    _cerrar();
+    callback(usuario);
+  }
 
   void _cancelarEdicion() {
     if (widget.modo == ModoUsuarioModal.ver) {
@@ -150,12 +180,15 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   Future<void> _guardar() async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     if (!_camposValidos()) {
       setState(() => _forzarError = true);
       notificarError(l10n.comunRevisaCampos);
       return;
     }
+
     setState(() => _guardando = true);
+
     try {
       if (_esCrear) {
         await _api.create(
@@ -170,11 +203,14 @@ class _UsuarioModalState extends State<UsuarioModal> {
           'emailUser': _email.text.trim(),
           if (!_rolBloqueado) 'idrol': _idrol,
         };
+
         if (_password.text.isNotEmpty) {
           cambios['passwordUserHash'] = _password.text;
         }
+
         await _api.update(widget.usuario!.id, cambios);
       }
+
       if (!mounted) return;
       _cerrar(true);
     } on ApiException catch (e) {
@@ -186,6 +222,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   void _fallar(String mensaje) {
     if (!mounted) return;
+
     setState(() => _guardando = false);
     notificarError(mensaje);
   }
@@ -193,6 +230,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -226,6 +264,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   Widget _encabezado(AppLocalizations l10n) {
     final Usuario? u = widget.usuario;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -282,6 +321,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
   Widget _cuerpo(AppLocalizations l10n) {
     if (_esVer) {
       final Usuario u = widget.usuario!;
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -322,7 +362,9 @@ class _UsuarioModalState extends State<UsuarioModal> {
         _SelectorRol(
           valor: _idrol,
           bloqueado: _rolBloqueado,
-          onChanged: (int v) => setState(() => _idrol = v),
+          onChanged: (int v) {
+            setState(() => _idrol = v);
+          },
         ),
         if (_esCrear) ...<Widget>[
           const SizedBox(height: FqGap.sm),
@@ -340,17 +382,27 @@ class _UsuarioModalState extends State<UsuarioModal> {
 
   Widget _acciones(AppLocalizations l10n) {
     if (_esVer) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      return Wrap(
+        alignment: WrapAlignment.end,
+        spacing: 8,
+        runSpacing: 8,
         children: <Widget>[
           FqButton.ghost(
             label: l10n.comunCerrar,
             expand: false,
             onPressed: () => _cerrar(),
           ),
+          if (widget.usuario != null && widget.onVerDetalle != null)
+            FqButton.primary(
+              label: 'Ver historial y aportes',
+              icon: Icons.history,
+              expand: false,
+              onPressed: _verDetalle,
+            ),
         ],
       );
     }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
@@ -444,6 +496,7 @@ class _SelectorRol extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -489,7 +542,9 @@ class _SelectorRol extends StatelessWidget {
                   onChanged: bloqueado
                       ? null
                       : (int? v) {
-                          if (v != null) onChanged(v);
+                          if (v != null) {
+                            onChanged(v);
+                          }
                         },
                 ),
               ),

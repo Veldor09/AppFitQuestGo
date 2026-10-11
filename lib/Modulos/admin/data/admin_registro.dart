@@ -9,17 +9,23 @@ import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_sc
 import 'package:fit_quest_go/Modulos/alertas/presentation/alertas_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/nodos_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
+import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
 
 /// Registro unico de las pantallas del panel de administracion (ADM-01..ADM-13).
 ///
-/// El sidebar y el shell se construyen a partir de esta lista. Agregar una
-/// pantalla es agregar una entrada: no hay `switch` que mantener (OCP).
+/// El sidebar y el shell se construyen a partir de esta lista.
+/// Se conserva la estructura original para no afectar otras secciones.
 ///
-/// Es una funcion (no una lista `const`/`final` a nivel de modulo) porque el
-/// texto de cada seccion esta traducido: necesita `AppLocalizations`, que solo
-/// existe con un `BuildContext` a mano, asi que se arma dentro de `build()`.
-List<AdminSeccion> buildAdminSecciones(AppLocalizations l10n) {
+/// [usuarioSeleccionado] y [onVerDetalle] conectan ADM-02 con ADM-03.
+/// Son opcionales para mantener compatibilidad con llamadas existentes.
+List<AdminSeccion> buildAdminSecciones(
+  AppLocalizations l10n, {
+  ValueNotifier<Usuario?>? usuarioSeleccionado,
+  ValueChanged<Usuario>? onVerDetalle,
+  VoidCallback? onVolverUsuarios,
+}) {
   return <AdminSeccion>[
     AdminSeccion(
       code: 'ADM-01',
@@ -35,7 +41,7 @@ List<AdminSeccion> buildAdminSecciones(AppLocalizations l10n) {
       headerTitle: l10n.admNavUsuarios,
       descripcion: l10n.admDescUsuarios,
       icono: Icons.people_outline,
-      builder: (_) => const UsuariosScreen(),
+      builder: (_) => UsuariosScreen(onVerDetalle: onVerDetalle),
     ),
     AdminSeccion(
       code: 'ADM-03',
@@ -43,14 +49,40 @@ List<AdminSeccion> buildAdminSecciones(AppLocalizations l10n) {
       headerTitle: l10n.admDetalleUsuarioNav,
       descripcion: l10n.admDetalleUsuarioDesc,
       icono: Icons.badge_outlined,
-      builder: (_) => FqEmptyState(
-        icon: Icons.person_search_outlined,
-        title: l10n.admDetalleUsuarioVacioTitulo,
-        message: l10n.admDetalleUsuarioVacioMensaje(
-          l10n.admNavUsuarios,
-          l10n.comunVer,
-        ),
-      ),
+      builder: (_) {
+        if (usuarioSeleccionado == null) {
+          return FqEmptyState(
+            icon: Icons.person_search_outlined,
+            title: l10n.admDetalleUsuarioVacioTitulo,
+            message: l10n.admDetalleUsuarioVacioMensaje(
+              l10n.admNavUsuarios,
+              l10n.comunVer,
+            ),
+          );
+        }
+
+        return ValueListenableBuilder<Usuario?>(
+          valueListenable: usuarioSeleccionado,
+          builder: (context, usuario, _) {
+            if (usuario == null) {
+              return FqEmptyState(
+                icon: Icons.person_search_outlined,
+                title: l10n.admDetalleUsuarioVacioTitulo,
+                message: l10n.admDetalleUsuarioVacioMensaje(
+                  l10n.admNavUsuarios,
+                  l10n.comunVer,
+                ),
+              );
+            }
+
+            return UsuarioDetalleScreen(
+              key: ValueKey<int>(usuario.id),
+              usuario: usuario,
+              onVolver: onVolverUsuarios,
+            );
+          },
+        );
+      },
     ),
     AdminSeccion(
       code: 'ADM-04',

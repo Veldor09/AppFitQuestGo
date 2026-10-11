@@ -38,12 +38,30 @@ class UsuariosApi {
     return Usuario.fromJson(data as Map<String, dynamic>);
   }
 
-  /// Baja / alta logica: `PATCH /usuarios/:id/estado`.
+  /// Baja / alta logica: PATCH /usuarios/:id/estado.
   Future<Usuario> cambiarEstado(int id, String estado) async {
     final dynamic data = await _client.patch(
       '/usuarios/$id/estado',
       <String, dynamic>{'estado': estado},
     );
     return Usuario.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// ADM-03: rutas y nodos creados por el usuario.
+  Future<Map<String, dynamic>> obtenerAportes(int id) async {
+    final dynamic data = await _client.get('/usuarios/$id/aportes');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  /// ADM-03: favoritos y votos realizados por el usuario.
+  Future<Map<String, dynamic>> obtenerHistorial(int id) async {
+    final dynamic data = await _client.get('/usuarios/$id/historial');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  /// ADM-03: alertas reportadas por el usuario.
+  Future<Map<String, dynamic>> obtenerReportes(int id) async {
+    final dynamic data = await _client.get('/usuarios/$id/reportes');
+    return Map<String, dynamic>.from(data as Map);
   }
 }

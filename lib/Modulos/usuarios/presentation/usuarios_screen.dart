@@ -18,15 +18,21 @@ import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/paginacion_ba
 import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/usuario_modal.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/usuarios_tabla.dart';
 
-/// ADM-02 · Usuarios. Pantalla **funcional**: consume `GET /usuarios`
+/// ADM-02 · Usuarios. Pantalla funcional: consume GET /usuarios
 /// (protegido por JWT + rol Admin) y permite ver, crear, editar y desactivar
 /// cuentas. Buscador, filtro por rol y paginacion se resuelven en el cliente
-/// sobre la lista real (sin datos "quemados").
+/// sobre la lista real (sin datos quemados).
 class UsuariosScreen extends StatefulWidget {
-  const UsuariosScreen({super.key, this.api});
+  const UsuariosScreen({super.key, this.api, this.onVerDetalle});
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final UsuariosApi? api;
+
+  /// Permite abrir ADM-03 con el usuario seleccionado.
+  ///
+  /// Es opcional para mantener compatibilidad con las pantallas
+  /// y pruebas que ya utilizan UsuariosScreen.
+  final ValueChanged<Usuario>? onVerDetalle;
 
   @override
   State<UsuariosScreen> createState() => _UsuariosScreenState();
@@ -34,6 +40,7 @@ class UsuariosScreen extends StatefulWidget {
 
 class _UsuariosScreenState extends State<UsuariosScreen> {
   late final UsuariosApi _api = widget.api ?? UsuariosApi();
+
   final TextEditingController _busqueda = TextEditingController();
   final GlobalKey _filtrosKey = GlobalKey();
   Timer? _debounceBusqueda;
@@ -47,16 +54,16 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   int _pagina = 0;
   int _filasPorPagina = 5;
+
   static const List<int> _opcionesFilas = <int>[5, 10, 15, 20];
 
-  /// Indice 0 = "todos los roles" (no es un `idrol` real); 1/2/3 son los
-  /// `idrol` de verdad, traducidos con el mismo helper que el resto de la app.
+  /// Indice 0 = todos los roles; 1/2/3 son los idrol reales.
   List<String> _etiquetasRol(AppLocalizations l10n) => <String>[
-        l10n.usuariosFiltroTodos,
-        rolLabel(l10n, 1),
-        rolLabel(l10n, 2),
-        rolLabel(l10n, 3),
-      ];
+    l10n.usuariosFiltroTodos,
+    rolLabel(l10n, 1),
+    rolLabel(l10n, 2),
+    rolLabel(l10n, 3),
+  ];
 
   @override
   void initState() {
@@ -80,18 +87,26 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   List<Usuario> _filtrar(List<Usuario> todos) {
     final String q = _filtroTexto.trim().toLowerCase();
+
     return todos.where((Usuario u) {
       final bool rolOk = _rolFiltro == 0 || u.idrol == _rolFiltro;
-      final bool textoOk = q.isEmpty ||
+
+      final bool textoOk =
+          q.isEmpty ||
           u.nombreUser.toLowerCase().contains(q) ||
           u.emailUser.toLowerCase().contains(q);
+
       return rolOk && textoOk;
     }).toList();
   }
 
   List<Usuario> _paginar(List<Usuario> filtrados) {
     final int inicio = _pagina * _filasPorPagina;
-    if (inicio >= filtrados.length) return const <Usuario>[];
+
+    if (inicio >= filtrados.length) {
+      return const <Usuario>[];
+    }
+
     return filtrados.skip(inicio).take(_filasPorPagina).toList();
   }
 
@@ -99,16 +114,21 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   Future<void> _abrirModal(ModoUsuarioModal modo, [Usuario? usuario]) async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     final bool? cambio = await UsuarioModal.abrir(
       context,
       modo: modo,
       usuario: usuario,
       api: _api,
       miId: _miId,
+      onVerDetalle: widget.onVerDetalle,
     );
+
     if (!mounted) return;
+
     if (cambio == true) {
       _recargar();
+
       notificarExito(
         modo == ModoUsuarioModal.crear
             ? l10n.usuariosCreadoExito
@@ -120,17 +140,24 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   Future<void> _cambiarEstado(Usuario u) async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final bool desactivando = u.activo;
-    final String destino =
-        desactivando ? EstadoUsuario.desactivado : EstadoUsuario.activado;
+
+    final String destino = desactivando
+        ? EstadoUsuario.desactivado
+        : EstadoUsuario.activado;
 
     if (desactivando) {
       final bool? ok = await _confirmarDesactivar(l10n, u);
+
       if (ok != true || !mounted) return;
     }
+
     try {
       await _api.cambiarEstado(u.id, destino);
+
       if (!mounted) return;
+
       _recargar();
+
       notificarExito(
         desactivando
             ? l10n.usuariosDesactivadoExito(u.nombreUser)
@@ -207,6 +234,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       ),
       transitionBuilder: (_, Animation<double> anim, _, Widget child) {
         final double t = Curves.easeOutCubic.transform(anim.value);
+
         return FadeTransition(
           opacity: anim,
           child: BackdropFilter(
@@ -224,10 +252,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   Future<void> _abrirMenuFiltros() async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final List<String> etiquetas = _etiquetasRol(l10n);
+
     final RenderBox boton =
         _filtrosKey.currentContext!.findRenderObject()! as RenderBox;
+
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
+
     final RelativeRect pos = RelativeRect.fromRect(
       Rect.fromPoints(
         boton.localToGlobal(Offset.zero, ancestor: overlay),
@@ -238,6 +269,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       ),
       Offset.zero & overlay.size,
     );
+
     final int? seleccion = await showMenu<int>(
       context: context,
       position: pos,
@@ -263,6 +295,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           ),
       ],
     );
+
     if (seleccion != null && mounted) {
       setState(() {
         _rolFiltro = seleccion;
@@ -274,21 +307,28 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     return FutureBuilder<List<Usuario>>(
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Usuario>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error =
-            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
 
-        final List<Usuario> filtrados =
-            snap.hasData ? _filtrar(snap.data!) : const <Usuario>[];
+        final String? error = snap.hasError
+            ? _mensajeError(l10n, snap.error!)
+            : null;
+
+        final List<Usuario> filtrados = snap.hasData
+            ? _filtrar(snap.data!)
+            : const <Usuario>[];
 
         // Reajusta la pagina si quedo fuera de rango tras filtrar.
         final int totalPaginas = filtrados.isEmpty
             ? 1
             : ((filtrados.length - 1) ~/ _filasPorPagina) + 1;
-        if (_pagina >= totalPaginas) _pagina = totalPaginas - 1;
+
+        if (_pagina >= totalPaginas) {
+          _pagina = totalPaginas - 1;
+        }
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(15),
@@ -386,13 +426,18 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
               controller: _busqueda,
               onChanged: (String v) {
                 _debounceBusqueda?.cancel();
-                _debounceBusqueda = Timer(const Duration(milliseconds: 250), () {
-                  if (!mounted) return;
-                  setState(() {
-                    _filtroTexto = v;
-                    _pagina = 0;
-                  });
-                });
+
+                _debounceBusqueda = Timer(
+                  const Duration(milliseconds: 250),
+                  () {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _filtroTexto = v;
+                      _pagina = 0;
+                    });
+                  },
+                );
               },
               style: const TextStyle(fontSize: 11, color: FqColors.ink),
               decoration: InputDecoration(
@@ -443,8 +488,10 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       if (error.statusCode == 401 || error.statusCode == 403) {
         return l10n.usuariosSinPermiso;
       }
+
       return error.message;
     }
+
     return l10n.rutasErrorConexionGenerico;
   }
 }
