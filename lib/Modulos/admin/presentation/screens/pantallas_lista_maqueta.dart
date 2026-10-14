@@ -1,3 +1,4 @@
+
 import 'package:flutter/widgets.dart';
 
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -50,22 +51,6 @@ class InsigniasScreen extends StatelessWidget {
       searchHint: l10n.admInsigniasSearchHint,
       emptyTitle: l10n.admInsigniasVacioTitulo,
       emptyMessage: l10n.admInsigniasVacioMensaje,
-      nuevoLabel: l10n.comunNuevo,
-    );
-  }
-}
-
-/// ADM-11 · Catalogos.
-class CatalogosScreen extends StatelessWidget {
-  const CatalogosScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return AdminListaMaqueta(
-      searchHint: l10n.admCatalogosSearchHint,
-      emptyTitle: l10n.admCatalogosVacioTitulo,
-      emptyMessage: l10n.admCatalogosVacioMensaje,
       nuevoLabel: l10n.comunNuevo,
     );
   }
