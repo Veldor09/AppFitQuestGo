@@ -535,7 +535,7 @@
   },
   "homeBuscarPlaceholder": "Buscar lugar, ruta o evento",
   "@homeBuscarPlaceholder": {
-    "description": "Placeholder text in the (decorative, not yet wired) search bar on the home map screen."
+    "description": "Placeholder text of the search bar on the home map screen (searches places, routes, alerts and events already loaded)."
   },
   "homeFiltroTodo": "Todo",
   "@homeFiltroTodo": {
@@ -556,14 +556,6 @@
   "homeMantenPresionado": "Manten presionado el mapa para reportar",
   "@homeMantenPresionado": {
     "description": "Hint text in the 'nearby' panel explaining how to report something."
-  },
-  "homeRutaFake": "Ruta · 1,2 km",
-  "@homeRutaFake": {
-    "description": "Placeholder sample tile in the 'nearby' panel (not real data yet). Keep the decimal separator correct per-locale."
-  },
-  "homeAlertaFake": "Alerta · 300 m",
-  "@homeAlertaFake": {
-    "description": "Placeholder sample tile in the 'nearby' panel (not real data yet)."
   },
 
   "rolEmpresa": "Empresa",
@@ -2022,5 +2014,47 @@
   "nodoEstadoObsoleto": "Obsoleto",
   "@nodoEstadoObsoleto": {
     "description": "Status tag of a node the community marked as gone."
+  },
+  "homeBuscarLimpiar": "Borrar busqueda",
+  "@homeBuscarLimpiar": {
+    "description": "Tooltip of the X button that clears the map search box."
+  },
+  "homeBuscarSinResultados": "Sin resultados para \"{consulta}\"",
+  "@homeBuscarSinResultados": {
+    "description": "Row shown under the map search box when nothing matches what was typed.",
+    "placeholders": {
+      "consulta": { "type": "String" }
+    }
+  },
+  "homeNotificaciones": "Notificaciones",
+  "@homeNotificaciones": {
+    "description": "Accessibility label of the bell button on the home map that opens the notification center."
+  },
+  "homeNotificacionesSinLeer": "{cantidad, plural, =1{1 notificacion sin leer} other{{cantidad} notificaciones sin leer}}",
+  "@homeNotificacionesSinLeer": {
+    "description": "Accessibility label of the bell button when there are unread notifications.",
+    "placeholders": {
+      "cantidad": { "type": "int" }
+    }
+  },
+  "homeSinRutasCerca": "Sin rutas cerca",
+  "@homeSinRutasCerca": {
+    "description": "'Near you' panel tile when there is no published route close to the user."
+  },
+  "homeSinAlertasCerca": "Sin alertas cerca",
+  "@homeSinAlertasCerca": {
+    "description": "'Near you' panel tile when there is no active alert close to the user."
+  },
+  "homeBuscandoUbicacion": "Buscando tu ubicacion...",
+  "@homeBuscandoUbicacion": {
+    "description": "'Near you' panel tile while the device has not yet delivered a GPS position."
+  },
+  "homeReportarAqui": "Reportar aqui",
+  "@homeReportarAqui": {
+    "description": "Tooltip of the '+' button in the 'Near you' panel: report something at the user's current position."
+  },
+  "homeSinUbicacionParaReportar": "Todavia no tengo tu ubicacion. Espera unos segundos o manten presionado el mapa.",
+  "@homeSinUbicacionParaReportar": {
+    "description": "Message when the user taps '+' before the GPS position is known."
   }
 }

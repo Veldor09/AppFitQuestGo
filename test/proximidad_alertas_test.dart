@@ -126,6 +126,20 @@ void main() {
       expect(avisos, isEmpty);
     });
 
+    test('expone la posicion actual y avisa cada vez que cambia', () async {
+      final List<PosicionGps?> vistas = <PosicionGps?>[];
+      expect(proximidad.posicion.value, isNull);
+      proximidad.posicion.addListener(
+        () => vistas.add(proximidad.posicion.value),
+      );
+
+      await mover(_alNorte(0.01));
+      await mover(_alNorte(0.02));
+
+      expect(vistas, <PosicionGps>[_alNorte(0.01), _alNorte(0.02)]);
+      expect(proximidad.posicion.value, _alNorte(0.02));
+    });
+
     test('avisa una sola vez al entrar al radio', () async {
       proximidad.actualizarAlertas(<Alerta>[_alerta(tipo: 'Arbol caido')]);
       await mover(_alNorte(0.01));

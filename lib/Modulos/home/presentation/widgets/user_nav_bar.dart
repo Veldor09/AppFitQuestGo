@@ -22,7 +22,6 @@ class UserNavBar extends StatelessWidget {
           (icon: Icons.route_outlined, label: l10n.rutasTitulo),
           (icon: Icons.add_rounded, label: l10n.navCrear),
           (icon: Icons.auto_awesome_outlined, label: l10n.comunEventos),
-          (icon: Icons.place_outlined, label: l10n.navNodos),
           (icon: Icons.person_outline_rounded, label: l10n.navPerfil),
         ];
     return Container(

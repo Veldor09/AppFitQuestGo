@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
+import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/selector_actividades_catalogo.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
-import 'package:fit_quest_go/core/widgets/fq_selector_opciones.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/cronometro_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/metricas_ruta.dart';
@@ -40,6 +41,7 @@ class PlanificarRutaScreen extends StatefulWidget {
   const PlanificarRutaScreen({
     super.key,
     this.api,
+    this.catalogosApi,
     this.posicionStream,
     this.ahora,
     this.accessToken,
@@ -47,6 +49,9 @@ class PlanificarRutaScreen extends StatefulWidget {
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
+
+  /// API de catálogos inyectable para pruebas de ADM-11.
+  final CatalogosApi? catalogosApi;
 
   /// Fabrica del stream de posicion, inyectable para pruebas. En produccion
   /// usa `Geolocator.getPositionStream`.
@@ -91,6 +96,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _onMapCreated(MapboxMap controller) async {
+    await ocultarAdornos(controller);
     _pines = await controller.annotations.createCircleAnnotationManager();
     _lineas = await controller.annotations.createPolylineAnnotationManager();
     // Mismo criterio que FqLiveMapView: el mapa debe arrancar centrado en la
@@ -338,6 +344,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     // Una o varias claves de `actividadesRuta`: se eligen, no se escriben.
     final Set<String> actividades = <String>{};
     String? errorActividades;
+    bool catalogoDisponible = false;
+    List<String> clavesDisponibles = <String>[];
     String dificultad = 'moderada';
     String visibilidad = 'privada';
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -391,14 +399,27 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    FqSelectorOpciones(
-                      opciones: actividadesRuta,
-                      etiqueta: (String clave) => actividadLabel(l10n, clave),
+                    SelectorActividadesCatalogo(
+                      catalogosApi: widget.catalogosApi,
                       seleccion: actividades,
-                      onToggle: (String clave) => setSheetState(() {
-                        if (!actividades.remove(clave)) actividades.add(clave);
-                        errorActividades = null;
-                      }),
+                      onChanged: (Set<String> seleccion) {
+                        setSheetState(() {
+                          actividades
+                            ..clear()
+                            ..addAll(seleccion);
+                          errorActividades = null;
+                        });
+                      },
+                      onEstadoCarga: (bool disponible) {
+                        setSheetState(() {
+                          catalogoDisponible = disponible;
+                        });
+                      },
+                      onActividadesDisponibles: (List<String> claves) {
+                        setSheetState(() {
+                          clavesDisponibles = claves;
+                        });
+                      },
                       errorTexto: errorActividades,
                     ),
                     const SizedBox(height: 14),
@@ -448,7 +469,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: () {
+                      onPressed: !catalogoDisponible ? null : () {
                         final bool formularioOk =
                             formKey.currentState?.validate() ?? false;
                         if (actividades.isEmpty) {
@@ -463,8 +484,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                             nombre: nombre.text.trim(),
                             // En el orden del catalogo, no del orden de toque.
                             actividades: <String>[
-                              for (final OpcionCatalogo o in actividadesRuta)
-                                if (actividades.contains(o.clave)) o.clave,
+                              for (final String clave in clavesDisponibles)
+                                if (actividades.contains(clave)) clave,
                             ],
                             dificultad: dificultad,
                             visibilidad: visibilidad,

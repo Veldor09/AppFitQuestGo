@@ -168,8 +168,6 @@
   "homeFiltroPois": "POIs",
   "homeCercaDeTi": "Near you",
   "homeMantenPresionado": "Press and hold the map to report",
-  "homeRutaFake": "Route · 1.2 km",
-  "homeAlertaFake": "Alert · 300 m",
 
   "rolEmpresa": "Business",
   "rolAdmin": "Admin",
@@ -563,5 +561,14 @@
   "nodoEstadoPendiente": "In review",
   "nodoEstadoAprobado": "Approved",
   "nodoEstadoRechazado": "Rejected",
-  "nodoEstadoObsoleto": "Outdated"
+  "nodoEstadoObsoleto": "Outdated",
+  "homeBuscarLimpiar": "Clear search",
+  "homeBuscarSinResultados": "No results for \"{consulta}\"",
+  "homeNotificaciones": "Notifications",
+  "homeNotificacionesSinLeer": "{cantidad, plural, =1{1 unread notification} other{{cantidad} unread notifications}}",
+  "homeSinRutasCerca": "No routes nearby",
+  "homeSinAlertasCerca": "No alerts nearby",
+  "homeBuscandoUbicacion": "Finding your location...",
+  "homeReportarAqui": "Report here",
+  "homeSinUbicacionParaReportar": "I don't have your location yet. Wait a few seconds or press and hold the map."
 }
