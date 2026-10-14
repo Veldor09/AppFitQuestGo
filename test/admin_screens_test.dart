@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,9 +7,11 @@ import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
 
-/// Cada pantalla de maqueta del panel se pinta en varios tamanos para detectar
-/// en modo debug errores de construccion / overflow que un build de release no
-/// reporta.
+/// Comprueba que las pantallas administrativas existentes se rendericen
+/// correctamente en tamaños de escritorio y pantallas angostas.
+///
+/// ADM-11 tiene una pantalla funcional conectada al backend y se verificara
+/// mediante pruebas independientes con dependencias simuladas.
 void main() {
   final Map<String, Widget> pantallas = <String, Widget>{
     'Dashboard': const DashboardScreen(),
@@ -16,7 +19,6 @@ void main() {
     'Eventos': const EventosScreen(),
     'Patrocinadores': const PatrocinadoresScreen(),
     'Insignias': const InsigniasScreen(),
-    'Catalogos': const CatalogosScreen(),
     'Reportes de contenido': const ReportesContenidoScreen(),
     'Auditoria': const AuditoriaScreen(),
   };
@@ -26,8 +28,7 @@ void main() {
       WidgetTester tester,
     ) async {
       // Entorno de test sin locale real de dispositivo: se fuerza espanol
-      // (ver nota igual en widget_test.dart) para que AppLocalizations.of()
-      // resuelva sin excepcion.
+      // para que AppLocalizations.of() resuelva sin excepcion.
       tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
       tester.platformDispatcher.localeTestValue = const Locale('es');
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -47,8 +48,14 @@ void main() {
             ),
           ),
         );
+
         await tester.pump(const Duration(milliseconds: 50));
-        expect(tester.takeException(), isNull, reason: '${e.key} @ $size');
+
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${e.key} @ $size',
+        );
       }
     });
   }

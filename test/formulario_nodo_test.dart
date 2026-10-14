@@ -1,3 +1,5 @@
+
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -7,19 +9,71 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fit_quest_go/core/fotos/selector_foto.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/admin/data/catalogo_item.dart';
+import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/formulario_nodo.dart';
 
-/// PNG valido de 1x1 px (para que `Image.memory` lo pueda decodificar).
+/// PNG valido de 1x1 px para las pruebas de fotografias.
 final Uint8List _png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
 );
 
+CatalogoItem _categoria(
+  String clave,
+  String nombre, {
+  bool activo = true,
+  int id = 1,
+}) {
+  return CatalogoItem(
+    id: id,
+    catalogo: 'nodos',
+    clave: clave,
+    nombre: nombre,
+    activo: activo,
+  );
+}
+
+List<CatalogoItem> _categoriasIniciales() => <CatalogoItem>[
+  _categoria('agua', 'Agua', id: 1),
+  _categoria('mirador', 'Mirador', id: 2),
+  _categoria('taller', 'Taller', id: 3),
+  _categoria('restaurante', 'Restaurante', id: 4),
+  _categoria('comercio', 'Comercio', id: 5),
+  _categoria('banos', 'Baños', id: 6),
+  _categoria('parqueo', 'Parqueo', id: 7),
+  _categoria('primeros_auxilios', 'Primeros auxilios', id: 8),
+  _categoria('otro', 'Otro', id: 9),
+];
+
+class _CatalogosApiFalsa extends CatalogosApi {
+  List<CatalogoItem> categorias = _categoriasIniciales();
+  Object? error;
+  Completer<List<CatalogoItem>>? pendiente;
+  int consultas = 0;
+  final List<String> catalogosConsultados = <String>[];
+
+  @override
+  Future<List<CatalogoItem>> listarItemsActivos(String catalogo) async {
+    consultas++;
+    catalogosConsultados.add(catalogo);
+
+    if (error != null) throw error!;
+
+    if (pendiente != null) {
+      return pendiente!.future;
+    }
+
+    return categorias;
+  }
+}
+
 class _NodoApiFalsa extends NodoApi {
-  /// Orden de las llamadas: "proponer" y "subirFoto:ID:BYTES".
+  /// Orden de llamadas: proponer y subirFoto:ID:BYTES.
   final List<String> eventos = <String>[];
   final List<Map<String, Object?>> propuestas = <Map<String, Object?>>[];
+
   Uint8List? fotoSubida;
   Object? errorAlProponer;
   Object? errorAlSubirFoto;
@@ -45,6 +99,7 @@ class _NodoApiFalsa extends NodoApi {
     String? beneficio,
   }) async {
     if (errorAlProponer != null) throw errorAlProponer!;
+
     eventos.add('proponer');
     propuestas.add(<String, Object?>{
       'nombre': nombre,
@@ -52,14 +107,17 @@ class _NodoApiFalsa extends NodoApi {
       'categoriaOtro': categoriaOtro,
       'descripcion': descripcion,
     });
+
     return _nodo(nombre, categoria, categoriaOtro);
   }
 
   @override
   Future<Nodo> subirFoto(int id, Uint8List bytes) async {
     if (errorAlSubirFoto != null) throw errorAlSubirFoto!;
+
     eventos.add('subirFoto:$id:${bytes.length}');
     fotoSubida = bytes;
+
     return Nodo(
       id: id,
       nombre: 'x',
@@ -85,13 +143,18 @@ class _SelectorFalso implements SelectorFoto {
 
 class _Escenario {
   final _NodoApiFalsa api = _NodoApiFalsa();
+  final _CatalogosApiFalsa catalogosApi = _CatalogosApiFalsa();
   final _SelectorFalso selector = _SelectorFalso();
+
   Nodo? resultado;
   bool cerrado = false;
 
   Future<void> abrir(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+    tester.platformDispatcher.localesTestValue = const <Locale>[
+      Locale('es'),
+    ];
     tester.platformDispatcher.localeTestValue = const Locale('es');
+
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     addTearDown(tester.platformDispatcher.clearLocaleTestValue);
 
@@ -114,6 +177,7 @@ class _Escenario {
                     lat: 9.93,
                     lng: -84.09,
                     selectorFoto: selector,
+                    catalogosApi: catalogosApi,
                   ),
                 );
                 cerrado = true;
@@ -124,17 +188,28 @@ class _Escenario {
         ),
       ),
     );
+
     await tester.tap(find.text('abrir'));
-    await tester.pumpAndSettle();
+
+    // No usar pumpAndSettle aqui: algunas pruebas dejan
+    // intencionalmente una solicitud pendiente con un spinner.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
   }
 
-  Future<void> escribirNombre(WidgetTester tester, [String nombre = 'Fuente']) async {
-    await tester.enterText(find.widgetWithText(TextFormField, 'Nombre'), nombre);
+  Future<void> escribirNombre(
+    WidgetTester tester, [
+    String nombre = 'Fuente',
+  ]) async {
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Nombre'),
+      nombre,
+    );
   }
 
   Future<void> enviar(WidgetTester tester) async {
-    // El formulario es largo y se desplaza: en pantalla chica el boton queda abajo.
     final Finder boton = find.widgetWithText(FilledButton, 'Enviar');
+
     await tester.ensureVisible(boton);
     await tester.pumpAndSettle();
     await tester.tap(boton);
@@ -162,10 +237,14 @@ void main() {
     ]) {
       expect(find.text(categoria), findsOneWidget, reason: categoria);
     }
+
     expect(find.widgetWithText(TextFormField, 'Categoria'), findsNothing);
+    expect(e.catalogosApi.catalogosConsultados, <String>['nodos']);
   });
 
-  testWidgets('sin categoria avisa y no envia', (WidgetTester tester) async {
+  testWidgets('sin categoria avisa y no envia', (
+    WidgetTester tester,
+  ) async {
     final _Escenario e = _Escenario();
     await e.abrir(tester);
     await e.escribirNombre(tester);
@@ -177,12 +256,14 @@ void main() {
     expect(e.cerrado, isFalse);
   });
 
-  testWidgets('sin nombre avisa y no envia', (WidgetTester tester) async {
+  testWidgets('sin nombre avisa y no envia', (
+    WidgetTester tester,
+  ) async {
     final _Escenario e = _Escenario();
     await e.abrir(tester);
+
     await tester.tap(find.text('Agua'));
     await tester.pump();
-
     await e.enviar(tester);
 
     expect(find.text('Obligatorio'), findsOneWidget);
@@ -195,15 +276,15 @@ void main() {
     final _Escenario e = _Escenario();
     await e.abrir(tester);
     await e.escribirNombre(tester, 'Fuente del parque');
+
     await tester.tap(find.text('Agua'));
     await tester.pump();
-
     await e.enviar(tester);
 
     expect(e.api.propuestas.single['nombre'], 'Fuente del parque');
     expect(e.api.propuestas.single['categoria'], 'agua');
     expect(e.api.propuestas.single['categoriaOtro'], isNull);
-    expect(e.api.eventos, <String>['proponer']); // sin foto, no se sube nada
+    expect(e.api.eventos, <String>['proponer']);
     expect(e.resultado?.id, 42);
   });
 
@@ -224,10 +305,12 @@ void main() {
       final _Escenario e = _Escenario();
       await e.abrir(tester);
       await e.escribirNombre(tester);
+
       await tester.tap(find.text('Otro'));
       await tester.pump();
 
       await e.enviar(tester);
+
       expect(find.text('Obligatorio'), findsOneWidget);
       expect(e.api.propuestas, isEmpty);
 
@@ -247,8 +330,10 @@ void main() {
       final _Escenario e = _Escenario();
       await e.abrir(tester);
       await e.escribirNombre(tester);
+
       await tester.tap(find.text('Otro'));
       await tester.pump();
+
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Que categoria es?'),
         'Zona de picnic',
@@ -294,7 +379,9 @@ void main() {
       expect(find.text('Camara'), findsNothing);
     });
 
-    testWidgets('la camara pide el origen camara', (WidgetTester tester) async {
+    testWidgets('la camara pide el origen camara', (
+      WidgetTester tester,
+    ) async {
       final _Escenario e = _Escenario();
       e.selector.respuesta = _png;
       await e.abrir(tester);
@@ -305,8 +392,10 @@ void main() {
       expect(e.selector.pedidos, <OrigenFoto>[OrigenFoto.camara]);
     });
 
-    testWidgets('cancelar la seleccion no cambia nada', (WidgetTester tester) async {
-      final _Escenario e = _Escenario(); // el selector devuelve null
+    testWidgets('cancelar la seleccion no cambia nada', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
       await e.abrir(tester);
 
       await tester.tap(find.text('Galeria'));
@@ -323,15 +412,18 @@ void main() {
       e.selector.respuesta = _png;
       await e.abrir(tester);
       await e.escribirNombre(tester);
+
       await tester.tap(find.text('Agua'));
       await tester.tap(find.text('Galeria'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Quitar foto'));
       await tester.pumpAndSettle();
+
       expect(find.text('Galeria'), findsOneWidget);
 
       await e.enviar(tester);
+
       expect(e.api.eventos, <String>['proponer']);
     });
 
@@ -342,13 +434,17 @@ void main() {
       e.selector.respuesta = _png;
       await e.abrir(tester);
       await e.escribirNombre(tester);
+
       await tester.tap(find.text('Agua'));
       await tester.tap(find.text('Galeria'));
       await tester.pumpAndSettle();
 
       await e.enviar(tester);
 
-      expect(e.api.eventos, <String>['proponer', 'subirFoto:42:${_png.length}']);
+      expect(
+        e.api.eventos,
+        <String>['proponer', 'subirFoto:42:${_png.length}'],
+      );
       expect(e.api.fotoSubida, _png);
       expect(e.resultado?.conFoto, isTrue);
     });
@@ -361,6 +457,7 @@ void main() {
       e.api.errorAlSubirFoto = StateError('sin red');
       await e.abrir(tester);
       await e.escribirNombre(tester);
+
       await tester.tap(find.text('Agua'));
       await tester.tap(find.text('Galeria'));
       await tester.pumpAndSettle();
@@ -376,26 +473,170 @@ void main() {
     });
   });
 
-  testWidgets('si el servidor rechaza el punto avisa, no sube la foto y deja reintentar', (
-    WidgetTester tester,
-  ) async {
-    final _Escenario e = _Escenario();
-    e.selector.respuesta = _png;
-    e.api.errorAlProponer = StateError('sin red');
-    await e.abrir(tester);
-    await e.escribirNombre(tester);
-    await tester.tap(find.text('Agua'));
-    await tester.tap(find.text('Galeria'));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'si el servidor rechaza el punto avisa, no sube la foto y deja reintentar',
+    (WidgetTester tester) async {
+      final _Escenario e = _Escenario();
+      e.selector.respuesta = _png;
+      e.api.errorAlProponer = StateError('sin red');
+      await e.abrir(tester);
+      await e.escribirNombre(tester);
 
-    await e.enviar(tester);
+      await tester.tap(find.text('Agua'));
+      await tester.tap(find.text('Galeria'));
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('No se pudo enviar'), findsOneWidget);
-    expect(e.cerrado, isFalse);
-    expect(e.api.eventos, isEmpty);
-    expect(
-      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Enviar')).onPressed,
-      isNotNull,
-    );
+      await e.enviar(tester);
+
+      expect(find.textContaining('No se pudo enviar'), findsOneWidget);
+      expect(e.cerrado, isFalse);
+      expect(e.api.eventos, isEmpty);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Enviar'),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
+
+  group('ADM-11 - catalogo dinamico de nodos', () {
+    testWidgets('solo muestra categorias activas', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
+
+      e.catalogosApi.categorias = <CatalogoItem>[
+        _categoria('agua', 'Agua', id: 1),
+        _categoria('taller', 'Taller', activo: false, id: 2),
+        _categoria('mirador', 'Mirador', id: 3),
+      ];
+
+      await e.abrir(tester);
+
+      expect(find.text('Agua'), findsOneWidget);
+      expect(find.text('Mirador'), findsOneWidget);
+      expect(find.text('Taller'), findsNothing);
+      expect(e.catalogosApi.consultas, 1);
+    });
+
+    testWidgets('muestra una categoria nueva y envia su clave', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
+
+      e.catalogosApi.categorias = <CatalogoItem>[
+        _categoria('zona_picnic', 'Zona de picnic', id: 10),
+      ];
+
+      await e.abrir(tester);
+
+      expect(find.text('Zona de picnic'), findsOneWidget);
+
+      await e.escribirNombre(tester);
+      await tester.tap(find.text('Zona de picnic'));
+      await tester.pump();
+      await e.enviar(tester);
+
+      expect(e.api.propuestas.single['categoria'], 'zona_picnic');
+      expect(e.api.propuestas.single['categoriaOtro'], isNull);
+    });
+
+    testWidgets('no permite enviar mientras carga las categorias', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
+      e.catalogosApi.pendiente = Completer<List<CatalogoItem>>();
+
+      await e.abrir(tester);
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Enviar'),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(e.api.propuestas, isEmpty);
+    });
+
+    testWidgets('si falla la carga muestra reintentar y bloquea el envio', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
+      e.catalogosApi.error = StateError('sin conexion');
+
+      await e.abrir(tester);
+
+      expect(
+        find.text('No se pudieron cargar las categorías.'),
+        findsOneWidget,
+      );
+      expect(find.text('Reintentar'), findsOneWidget);
+
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Enviar'),
+            )
+            .onPressed,
+        isNull,
+      );
+
+      e.catalogosApi.error = null;
+
+      await tester.tap(find.text('Reintentar'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(e.catalogosApi.consultas, 2);
+      expect(find.text('Agua'), findsOneWidget);
+      expect(find.text('Reintentar'), findsNothing);
+    });
+
+    testWidgets('sin categorias activas no permite enviar', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
+      e.catalogosApi.categorias = <CatalogoItem>[];
+
+      await e.abrir(tester);
+
+      expect(
+        find.text('No hay categorías disponibles actualmente.'),
+        findsOneWidget,
+      );
+
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Enviar'),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(e.api.propuestas, isEmpty);
+    });
+
+    testWidgets('no muestra Otro cuando esta desactivado', (
+      WidgetTester tester,
+    ) async {
+      final _Escenario e = _Escenario();
+
+      e.catalogosApi.categorias = <CatalogoItem>[
+        _categoria('agua', 'Agua', id: 1),
+        _categoria('otro', 'Otro', activo: false, id: 9),
+      ];
+
+      await e.abrir(tester);
+
+      expect(find.text('Agua'), findsOneWidget);
+      expect(find.text('Otro'), findsNothing);
+      expect(find.text('Que categoria es?'), findsNothing);
+    });
   });
 }

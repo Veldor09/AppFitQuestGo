@@ -1,8 +1,10 @@
+
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/catalogos_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
