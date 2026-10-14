@@ -9,6 +9,7 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_sidebar.da
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_top_bar.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
+import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 
 /// Contenedor del panel de administracion: barra superior + sidebar con hover +
 /// area de contenido conmutable.
@@ -27,8 +28,48 @@ class _AdminShellState extends State<AdminShell> {
   bool _sidebarFijo = false;
   bool _sidebarMovilAbierto = false;
 
+  /// Usuario seleccionado en ADM-02 para visualizarlo en ADM-03.
+  ///
+  /// ValueNotifier permite actualizar el detalle incluso cuando ADM-03
+  /// ya fue visitado y su widget permanece dentro de _LazyIndexedStack.
+  final ValueNotifier<Usuario?> _usuarioSeleccionado = ValueNotifier<Usuario?>(
+    null,
+  );
+
+  /// Indices de las secciones dentro del registro administrativo.
+  static const int _indiceUsuarios = 1;
+  static const int _indiceDetalleUsuario = 2;
+
+  /// Abre ADM-03 con el usuario seleccionado.
+  void _abrirDetalleUsuario(Usuario usuario) {
+    if (!mounted) return;
+
+    _usuarioSeleccionado.value = usuario;
+
+    setState(() {
+      _seleccion = _indiceDetalleUsuario;
+      _sidebarMovilAbierto = false;
+    });
+  }
+
+  /// Regresa a ADM-02 conservando su busqueda, filtros y paginacion.
+  void _volverUsuarios() {
+    if (!mounted) return;
+
+    setState(() {
+      _seleccion = _indiceUsuarios;
+      _sidebarMovilAbierto = false;
+    });
+  }
+
   Future<void> _cerrarSesion() async {
     await AuthScope.read(context).cerrarSesion();
+  }
+
+  @override
+  void dispose() {
+    _usuarioSeleccionado.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,7 +81,14 @@ class _AdminShellState extends State<AdminShell> {
     }
 
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    final List<AdminSeccion> secciones = buildAdminSecciones(l10n);
+
+    final List<AdminSeccion> secciones = buildAdminSecciones(
+      l10n,
+      usuarioSeleccionado: _usuarioSeleccionado,
+      onVerDetalle: _abrirDetalleUsuario,
+      onVolverUsuarios: _volverUsuarios,
+    );
+
     final AdminSeccion actual = secciones[_seleccion];
     final bool esMovil = MediaQuery.sizeOf(context).width < 600;
 
@@ -64,9 +112,11 @@ class _AdminShellState extends State<AdminShell> {
           Expanded(
             child: Stack(
               children: <Widget>[
-                // El contenido arranca despues del riel; el sidebar se
-                // despliega por encima sin redimensionarlo. El RepaintBoundary
-                // aisla el contenido de los repintados del sidebar al animar.
+                // En dispositivos moviles, el contenido utiliza todo el ancho.
+                // En escritorio, comienza despues del riel lateral.
+                //
+                // RepaintBoundary aisla el contenido de los repintados
+                // del sidebar al animar.
                 Positioned.fill(
                   left: esMovil ? 0 : AdminSidebar.railWidth,
                   child: RepaintBoundary(
@@ -75,15 +125,18 @@ class _AdminShellState extends State<AdminShell> {
                       child: _LazyIndexedStack(
                         index: _seleccion,
                         itemCount: secciones.length,
-                        itemBuilder: (BuildContext context, int i) =>
-                            KeyedSubtree(
-                              key: ValueKey<String>(secciones[i].code),
-                              child: Builder(builder: secciones[i].builder),
-                            ),
+                        itemBuilder: (BuildContext context, int i) {
+                          return KeyedSubtree(
+                            key: ValueKey<String>(secciones[i].code),
+                            child: Builder(builder: secciones[i].builder),
+                          );
+                        },
                       ),
                     ),
                   ),
                 ),
+
+                // Fondo oscuro para cerrar el menu en dispositivos moviles.
                 if (esMovil && _sidebarMovilAbierto)
                   Positioned.fill(
                     child: GestureDetector(
@@ -96,6 +149,9 @@ class _AdminShellState extends State<AdminShell> {
                       child: Container(color: Colors.black54),
                     ),
                   ),
+
+                // Sidebar responsive: siempre visible en escritorio
+                // y desplegable en dispositivos moviles.
                 if (!esMovil || _sidebarMovilAbierto)
                   Positioned(
                     top: 0,
@@ -108,6 +164,7 @@ class _AdminShellState extends State<AdminShell> {
                       onSelect: (int i) {
                         setState(() {
                           _seleccion = i;
+
                           if (esMovil) {
                             _sidebarMovilAbierto = false;
                           }
@@ -125,9 +182,14 @@ class _AdminShellState extends State<AdminShell> {
   }
 }
 
-/// `IndexedStack` que solo construye las secciones ya visitadas y las mantiene
-/// vivas despues. Cambiar de seccion es instantaneo (no hay reconstruccion ni
-/// nuevas llamadas de red: p. ej. la lista de "Usuarios" conserva sus datos).
+/// IndexedStack que solo construye las secciones ya visitadas y las mantiene
+/// vivas despues.
+///
+/// Cambiar de seccion es instantaneo: la lista de Usuarios conserva sus
+/// datos, filtros y paginacion.
+///
+/// ADM-03 escucha el ValueNotifier del usuario seleccionado, por lo que
+/// puede mostrar otro usuario sin reconstruir todo el panel.
 class _LazyIndexedStack extends StatefulWidget {
   const _LazyIndexedStack({
     required this.index,
@@ -164,7 +226,10 @@ class _LazyIndexedStackState extends State<_LazyIndexedStack> {
       index: widget.index,
       sizing: StackFit.expand,
       children: List<Widget>.generate(widget.itemCount, (int i) {
-        if (!_visitadas.contains(i)) return const SizedBox.shrink();
+        if (!_visitadas.contains(i)) {
+          return const SizedBox.shrink();
+        }
+
         return widget.itemBuilder(context, i);
       }),
     );
@@ -179,6 +244,7 @@ class _AccesoDenegado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: FqColors.adminBg,
       body: FqEmptyState(
