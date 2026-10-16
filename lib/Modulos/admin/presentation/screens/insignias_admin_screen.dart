@@ -1,4 +1,4 @@
-﻿
+
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -34,6 +34,8 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
   String _busqueda = '';
   int _filtroEstado = 0;
+  static const int _insigniasPorPagina = 8;
+  int _paginaActual = 0;
   int _versionCarga = 0;
 
   bool _cargando = false;
@@ -139,8 +141,20 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
+    final List<InsigniaAdminItem> filtradas = _insigniasFiltradas;
+    final int totalPaginas =
+        (filtradas.length / _insigniasPorPagina).ceil();
+    final int paginaVisible = totalPaginas == 0
+        ? 0
+        : _paginaActual.clamp(0, totalPaginas - 1);
+    final int inicio = paginaVisible * _insigniasPorPagina;
+    final int fin = (inicio + _insigniasPorPagina).clamp(
+      0,
+      filtradas.length,
+    );
+
     final List<AdminRow> filas =
-        _insigniasFiltradas.map((InsigniaAdminItem insignia) {
+        filtradas.sublist(inicio, fin).map((InsigniaAdminItem insignia) {
       final String descripcion =
           '${insignia.codigo} · ${insignia.metrica ?? "Sin métrica"}'
           ' · Meta: ${_formatearMeta(insignia.meta)}';
@@ -170,12 +184,12 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       searchHint: l10n.admInsigniasSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {
-        setState(() => _busqueda = valor);
+        setState(() { _busqueda = valor; _paginaActual = 0; });
       },
       tabs: const <String>['Todas', 'Activas', 'Inactivas'],
       tabIndex: _filtroEstado,
       onTab: (int indice) {
-        setState(() => _filtroEstado = indice);
+        setState(() { _filtroEstado = indice; _paginaActual = 0; });
       },
       toolbarTrailing: FqButton.primary(
         label: l10n.comunNuevo,
@@ -184,13 +198,45 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
         dense: true,
         onPressed: () => _abrirFormulario(),
       ),
-      child: AdminDataTable(
-        rows: filas,
-        loading: _cargando,
-        error: _error,
-        onRetry: _cargarInsignias,
-        emptyTitle: l10n.admInsigniasVacioTitulo,
-        emptyMessage: l10n.admInsigniasVacioMensaje,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          AdminDataTable(
+            rows: filas,
+            loading: _cargando,
+            error: _error,
+            onRetry: _cargarInsignias,
+            emptyTitle: l10n.admInsigniasVacioTitulo,
+            emptyMessage: l10n.admInsigniasVacioMensaje,
+          ),
+          if (!_cargando && _error == null && totalPaginas > 1) ...<Widget>[
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
+              children: <Widget>[
+                OutlinedButton.icon(
+                  onPressed: paginaVisible > 0
+                      ? () => setState(() => _paginaActual = paginaVisible - 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_left),
+                  label: const Text('Anterior'),
+                ),
+                Text('Página ${paginaVisible + 1} de $totalPaginas'),
+                OutlinedButton.icon(
+                  onPressed: paginaVisible < totalPaginas - 1
+                      ? () => setState(() => _paginaActual = paginaVisible + 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                  label: const Text('Siguiente'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ],
       ),
     );
   }
@@ -418,7 +464,18 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Theme(
+      data: Theme.of(context).copyWith(
+        inputDecorationTheme: const InputDecorationTheme(
+          labelStyle: TextStyle(color: Color(0xFF757575)),
+          floatingLabelStyle: TextStyle(color: Color(0xFF424242)),
+          hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF616161), width: 1.5),
+          ),
+        ),
+      ),
+      child: AlertDialog(
       title: Text(
         _creando ? 'Nueva insignia' : 'Editar insignia',
       ),
@@ -585,6 +642,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
       ),
       actions: <Widget>[
         TextButton(
+          style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
           onPressed: _guardando
               ? null
               : () => Navigator.of(context).pop(false),
@@ -607,6 +665,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 ),
         ),
       ],
+      ),
     );
   }
 }
