@@ -6,6 +6,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/catalogos_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/insignias_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/reportes_contenido_screen.dart'
     as reportes;
@@ -17,7 +18,7 @@ import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
 
-/// Registro unico de las pantallas del panel de administracion (ADM-01..ADM-13).
+/// Registro único de las pantallas del panel de administración (ADM-01..ADM-13).
 ///
 /// El sidebar y el shell se construyen a partir de esta lista.
 /// Se conserva la estructura original para no afectar otras secciones.
@@ -142,7 +143,7 @@ List<AdminSeccion> buildAdminSecciones(
       headerTitle: l10n.perfilInsignias,
       descripcion: l10n.admDescGestionInsignias,
       icono: Icons.military_tech_outlined,
-      builder: (_) => const InsigniasScreen(),
+      builder: (_) => const InsigniasAdminScreen(),
     ),
     AdminSeccion(
       code: 'ADM-11',
