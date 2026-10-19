@@ -16,13 +16,24 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   final ReporteContenidoApi _api = ReporteContenidoApi();
   final TextEditingController _busquedaController = TextEditingController();
 
+  static const Color _fondo = Color(0xFFEAEADF);
+  static const Color _verde = Color(0xFFB4F52B);
+  static const Color _texto = Color(0xFF26302D);
+  static const Color _secundario = Color(0xFF68716B);
+  static const Color _borde = Color(0xFFCACDC1);
+
+  // Estilo exclusivo del botón Cerrar.
+  static const Color _rojoFondo = Color(0xFFFCE4E4);
+  static const Color _rojoTexto = Color(0xFFB42332);
+
+  static const List<String> _estados = ['pendiente', 'resuelta', 'archivada'];
+
   List<Map<String, dynamic>> _reportes = [];
   bool _cargando = true;
+  bool _actualizando = false;
   String? _error;
   String _busqueda = '';
   int _tab = 0;
-
-  static const List<String> _estados = ['pendiente', 'resuelta', 'archivada'];
 
   @override
   void initState() {
@@ -37,6 +48,8 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   }
 
   Future<void> _cargarReportes() async {
+    if (!mounted) return;
+
     setState(() {
       _cargando = true;
       _error = null;
@@ -45,12 +58,14 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     try {
       final reportes = await _api.listar();
       if (!mounted) return;
+
       setState(() {
         _reportes = reportes;
         _cargando = false;
       });
     } catch (error) {
       if (!mounted) return;
+
       setState(() {
         _error = error.toString();
         _cargando = false;
@@ -61,6 +76,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   List<Map<String, dynamic>> get _reportesFiltrados {
     return _reportes.where((reporte) {
       final estado = reporte['estado']?.toString() ?? '';
+
       if (estado != _estados[_tab]) return false;
 
       final texto = [
@@ -75,91 +91,270 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     }).toList();
   }
 
+  String _nombreEstado(String estado) {
+    switch (estado) {
+      case 'pendiente':
+        return 'Pendiente';
+      case 'resuelta':
+        return 'Resuelta';
+      case 'archivada':
+        return 'Archivada';
+      default:
+        return estado;
+    }
+  }
+
+  String _nombreTipo(String tipo) {
+    switch (tipo) {
+      case 'ruta':
+        return 'Ruta';
+      case 'nodo':
+        return 'Nodo';
+      case 'alerta':
+        return 'Alerta';
+      default:
+        return tipo;
+    }
+  }
+
+  ShapeBorder get _formaDialogo =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(30));
+
+  Widget _etiqueta(String texto) {
+    return Text(
+      texto,
+      style: const TextStyle(
+        color: _secundario,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  Widget _valor(String texto) {
+    return Text(
+      texto,
+      style: const TextStyle(color: _texto, fontSize: 15, height: 1.45),
+    );
+  }
+
+  Widget _campoDetalle({required String etiqueta, required String valor}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [_etiqueta(etiqueta), const SizedBox(height: 5), _valor(valor)],
+    );
+  }
+
+  Widget _botonPrincipal({
+    required String texto,
+    required VoidCallback onPressed,
+  }) {
+    return FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: _verde,
+        foregroundColor: _texto,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+        shape: const StadiumBorder(),
+      ),
+      child: Text(texto),
+    );
+  }
+
+  Widget _botonSecundario({
+    required String texto,
+    required VoidCallback onPressed,
+  }) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: _texto,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+      child: Text(texto),
+    );
+  }
+
+  // Botón rojo únicamente para cerrar el detalle.
+  Widget _botonCerrar({required VoidCallback onPressed}) {
+    return FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: _rojoFondo,
+        foregroundColor: _rojoTexto,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+        shape: const StadiumBorder(),
+      ),
+      child: const Text(
+        'Cerrar',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
   Future<void> _cambiarEstado(int id, String estado) async {
+    if (_actualizando) return;
+
+    final accion = estado == 'resuelta' ? 'resolver' : 'archivar';
+
     final bool? confirmado = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Confirmar accion'),
-        content: Text('¿Deseas cambiar el reporte #$id a $estado?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
+        backgroundColor: _fondo,
+        surfaceTintColor: Colors.transparent,
+        shape: _formaDialogo,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        titlePadding: const EdgeInsets.fromLTRB(26, 26, 26, 8),
+        contentPadding: const EdgeInsets.fromLTRB(26, 8, 26, 12),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        title: const Text(
+          'Confirmar acción',
+          style: TextStyle(
+            color: _texto,
+            fontSize: 23,
+            fontWeight: FontWeight.w500,
           ),
-          FilledButton(
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 430),
+          child: Text(
+            '¿Deseas $accion el reporte #$id?\n\n'
+            'Esta acción actualizará el estado del reporte.',
+            style: const TextStyle(color: _texto, fontSize: 15, height: 1.5),
+          ),
+        ),
+        actions: [
+          _botonSecundario(
+            texto: 'Cancelar',
+            onPressed: () => Navigator.pop(dialogContext, false),
+          ),
+          _botonPrincipal(
+            texto: 'Confirmar',
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Confirmar'),
           ),
         ],
       ),
     );
 
-    if (confirmado != true || !mounted) return;
+    if (confirmado != true || !mounted || _actualizando) return;
+
+    setState(() => _actualizando = true);
 
     try {
       await _api.cambiarEstado(id, estado);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reporte #$id actualizado a $estado')),
+        SnackBar(
+          content: Text(
+            'Reporte #$id actualizado a ${_nombreEstado(estado).toLowerCase()}',
+          ),
+        ),
       );
 
       await _cargarReportes();
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo actualizar el reporte: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _actualizando = false);
+      }
     }
   }
 
   Future<void> _mostrarDetalle(Map<String, dynamic> reporte) async {
     final int id = reporte['id'] as int;
     final String estado = reporte['estado']?.toString() ?? '';
+    final String tipo = reporte['tipoContenido']?.toString() ?? '';
     final String motivo = reporte['motivo']?.toString() ?? 'Sin motivo';
     final String descripcion =
-        reporte['descripcion']?.toString() ?? 'Sin descripcion';
+        reporte['descripcion']?.toString() ?? 'Sin descripción';
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Reporte #$id'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Tipo: ${reporte['tipoContenido']}'),
-              Text('Contenido ID: ${reporte['contenidoId']}'),
-              Text('Estado: $estado'),
-              const SizedBox(height: 12),
-              Text('Motivo: $motivo'),
-              const SizedBox(height: 8),
-              Text('Descripcion: $descripcion'),
-            ],
+        backgroundColor: _fondo,
+        surfaceTintColor: Colors.transparent,
+        shape: _formaDialogo,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        titlePadding: const EdgeInsets.fromLTRB(26, 26, 26, 6),
+        contentPadding: const EdgeInsets.fromLTRB(26, 12, 26, 18),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        title: Text(
+          'Reporte #$id',
+          style: const TextStyle(
+            color: _texto,
+            fontSize: 24,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Información del reporte',
+                  style: TextStyle(
+                    color: _secundario,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Wrap(
+                  spacing: 32,
+                  runSpacing: 18,
+                  children: [
+                    _campoDetalle(
+                      etiqueta: 'Tipo de contenido',
+                      valor: _nombreTipo(tipo),
+                    ),
+                    _campoDetalle(
+                      etiqueta: 'ID del contenido',
+                      valor: '${reporte['contenidoId']}',
+                    ),
+                    _campoDetalle(
+                      etiqueta: 'Estado',
+                      valor: _nombreEstado(estado),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                const Divider(color: _borde),
+                const SizedBox(height: 18),
+                _campoDetalle(etiqueta: 'Motivo', valor: motivo),
+                const SizedBox(height: 18),
+                _campoDetalle(etiqueta: 'Descripción', valor: descripcion),
+              ],
+            ),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cerrar'),
-          ),
+          _botonCerrar(onPressed: () => Navigator.pop(dialogContext)),
           if (estado != 'resuelta')
-            TextButton(
+            _botonSecundario(
+              texto: 'Resolver',
               onPressed: () {
                 Navigator.pop(dialogContext);
                 _cambiarEstado(id, 'resuelta');
               },
-              child: const Text('Resolver'),
             ),
           if (estado != 'archivada')
-            FilledButton(
+            _botonPrincipal(
+              texto: 'Archivar',
               onPressed: () {
                 Navigator.pop(dialogContext);
                 _cambiarEstado(id, 'archivada');
               },
-              child: const Text('Archivar'),
             ),
         ],
       ),
@@ -175,9 +370,9 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
 
       return AdminRow(
         icon: Icons.flag_outlined,
-        title: '$tipo #${reporte['contenidoId']} - $motivo',
+        title: '${_nombreTipo(tipo)} #${reporte['contenidoId']} - $motivo',
         subtitle: 'Reporte #${reporte['id']}',
-        trailing: Chip(label: Text(estado)),
+        trailing: Chip(label: Text(_nombreEstado(estado))),
         onTap: () => _mostrarDetalle(reporte),
       );
     }).toList();
