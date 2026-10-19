@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -60,9 +59,7 @@ void main() {
   }
 
   test('convierte correctamente un elemento JSON', () {
-    final CatalogoItem item = CatalogoItem.fromJson(
-      elemento(activo: false),
-    );
+    final CatalogoItem item = CatalogoItem.fromJson(elemento(activo: false));
 
     expect(item.id, 1);
     expect(item.catalogo, 'alertas');
@@ -75,25 +72,15 @@ void main() {
     final CatalogosApi api = crearApi((http.Request request) async {
       expect(request.method, 'GET');
       expect(request.url.path, '/catalogos');
-      expect(
-        request.headers['authorization'],
-        'Bearer token-de-prueba',
-      );
+      expect(request.headers['authorization'], 'Bearer token-de-prueba');
 
       return respuesta(<Map<String, dynamic>>[
-        <String, dynamic>{
-          'catalogo': 'alertas',
-          'total': 10,
-        },
-        <String, dynamic>{
-          'catalogo': 'nodos',
-          'total': 9,
-        },
+        <String, dynamic>{'catalogo': 'alertas', 'total': 10},
+        <String, dynamic>{'catalogo': 'nodos', 'total': 9},
       ]);
     });
 
-    final List<Map<String, dynamic>> catalogos =
-        await api.listarCatalogos();
+    final List<Map<String, dynamic>> catalogos = await api.listarCatalogos();
 
     expect(catalogos, hasLength(2));
     expect(catalogos.first['catalogo'], 'alertas');
@@ -106,12 +93,7 @@ void main() {
 
       return respuesta(<Map<String, dynamic>>[
         elemento(),
-        elemento(
-          id: 2,
-          clave: 'derrumbe',
-          nombre: 'Derrumbe',
-          activo: false,
-        ),
+        elemento(id: 2, clave: 'derrumbe', nombre: 'Derrumbe', activo: false),
       ]);
     });
 
@@ -127,13 +109,10 @@ void main() {
       expect(request.method, 'GET');
       expect(request.url.path, '/catalogos/alertas/activos');
 
-      return respuesta(<Map<String, dynamic>>[
-        elemento(),
-      ]);
+      return respuesta(<Map<String, dynamic>>[elemento()]);
     });
 
-    final List<CatalogoItem> items =
-        await api.listarItemsActivos('alertas');
+    final List<CatalogoItem> items = await api.listarItemsActivos('alertas');
 
     expect(items, hasLength(1));
     expect(items.single.activo, isTrue);
@@ -151,11 +130,7 @@ void main() {
       expect(cuerpo['nombre'], 'Nuevo tipo');
 
       return respuesta(
-        elemento(
-          id: 30,
-          clave: 'nuevo_tipo',
-          nombre: 'Nuevo tipo',
-        ),
+        elemento(id: 30, clave: 'nuevo_tipo', nombre: 'Nuevo tipo'),
         201,
       );
     });
@@ -183,11 +158,7 @@ void main() {
       expect(cuerpo['activo'], isFalse);
 
       return respuesta(
-        elemento(
-          id: 5,
-          nombre: 'Nombre actualizado',
-          activo: false,
-        ),
+        elemento(id: 5, nombre: 'Nombre actualizado', activo: false),
       );
     });
 
@@ -217,17 +188,10 @@ void main() {
       expect(cuerpo['nombre'], 'Accidente');
       expect(cuerpo['activo'], isFalse);
 
-      return respuesta(
-        elemento(
-          id: 8,
-          nombre: 'Accidente',
-          activo: false,
-        ),
-      );
+      return respuesta(elemento(id: 8, nombre: 'Accidente', activo: false));
     });
 
-    final CatalogoItem actualizado =
-        await api.cambiarEstado(original);
+    final CatalogoItem actualizado = await api.cambiarEstado(original);
 
     expect(actualizado.activo, isFalse);
   });
@@ -248,31 +212,23 @@ void main() {
       return respuesta(elemento(id: 9, activo: true));
     });
 
-    final CatalogoItem actualizado =
-        await api.cambiarEstado(original);
+    final CatalogoItem actualizado = await api.cambiarEstado(original);
 
     expect(actualizado.activo, isTrue);
   });
 
   test('propaga los errores HTTP del backend', () async {
     final CatalogosApi api = crearApi((http.Request request) async {
-      return respuesta(
-        <String, dynamic>{
-          'message': 'No tienes permiso para este recurso',
-        },
-        403,
-      );
+      return respuesta(<String, dynamic>{
+        'message': 'No tienes permiso para este recurso',
+      }, 403);
     });
 
     expect(
       () => api.listarItems('alertas'),
       throwsA(
         isA<ApiException>()
-            .having(
-              (ApiException error) => error.statusCode,
-              'statusCode',
-              403,
-            )
+            .having((ApiException error) => error.statusCode, 'statusCode', 403)
             .having(
               (ApiException error) => error.message,
               'message',
@@ -280,5 +236,40 @@ void main() {
             ),
       ),
     );
+  });
+
+  test('conserva tildes y caracteres UTF-8 al enviar y recibir JSON', () async {
+    const String texto = 'Información, Ubicación, Descripción, ñ y ü';
+
+    final ApiClient cliente = ApiClient(
+      client: MockClient((http.Request request) async {
+        expect(request.method, 'POST');
+        expect(request.url.path, '/prueba-utf8');
+
+        final Map<String, dynamic> cuerpo =
+            jsonDecode(utf8.decode(request.bodyBytes)) as Map<String, dynamic>;
+
+        expect(cuerpo['texto'], texto);
+        expect(request.bodyBytes, contains(0xC3));
+
+        return http.Response.bytes(
+          utf8.encode(jsonEncode(<String, dynamic>{'texto': texto})),
+          200,
+          headers: <String, String>{
+            'content-type': 'application/json; charset=utf-8',
+          },
+        );
+      }),
+      baseUrl: baseUrl,
+      tokens: AlmacenTokensPrueba(),
+    );
+
+    final dynamic resultado = await cliente.post(
+      '/prueba-utf8',
+      <String, dynamic>{'texto': texto},
+    );
+
+    expect(resultado['texto'], texto);
+    cliente.close();
   });
 }
