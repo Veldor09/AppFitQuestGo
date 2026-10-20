@@ -8,8 +8,11 @@ import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
+import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/rutas_pendientes_banner.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/insignias_screen.dart';
+import 'package:fit_quest_go/Modulos/perfil/presentation/mapas_offline_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/preferencias_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/actividades_modal.dart';
@@ -212,6 +215,7 @@ class _PerfilContenido extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
             child: Column(
               children: <Widget>[
+                RutasPendientesBanner(alSincronizar: onRecargar),
                 _SeccionActividades(
                   actividades: usuario.actividades,
                   onGestionar: onGestionarActividades,
@@ -259,7 +263,9 @@ class _PerfilContenido extends StatelessWidget {
                 _MenuFila(
                   icono: Icons.download_outlined,
                   texto: l10n.perfilMapasOffline,
-                  onTap: () => notificarInfo('Mapas offline: disponible próximamente'),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const MapasOfflineScreen()),
+                  ),
                 ),
                 _MenuFila(
                   icono: Icons.tune_rounded,
@@ -362,7 +368,7 @@ class _Hero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _MetricasEjemplo(api: api),
+                _MetricasEjemplo(api: api, usuario: usuario),
               ],
             ),
           ),
@@ -443,60 +449,94 @@ class _Avatar extends StatelessWidget {
 
 /// Tira blanca de 3 métricas reales (PRF-01 / NAV-07).
 class _MetricasEjemplo extends StatefulWidget {
-  const _MetricasEjemplo({required this.api});
+  const _MetricasEjemplo({required this.api, required this.usuario});
 
   final PerfilApi api;
+  final Usuario usuario;
 
   @override
   State<_MetricasEjemplo> createState() => _MetricasEjemploState();
 }
 
+/// Muestra primero las ultimas metricas guardadas en SQLite (al instante, y
+/// tambien sin red) y las reemplaza por las del backend cuando llegan.
 class _MetricasEjemploState extends State<_MetricasEjemplo> {
-  late final Future<Map<String, dynamic>> _stats =
-      widget.api.estadisticasPropias();
+  final PerfilCacheDao _cache = PerfilCacheDao();
+  MetricasCache? _enCache;
+  Map<String, dynamic>? _remotas;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    final MetricasCache? guardadas = await _cache.leer(widget.usuario.id);
+    if (mounted && _remotas == null && guardadas != null) {
+      setState(() => _enCache = guardadas);
+    }
+    try {
+      final Map<String, dynamic> datos = await widget.api.estadisticasPropias();
+      if (mounted) setState(() => _remotas = datos);
+      await _cache.guardar(
+        idUsuario: widget.usuario.id,
+        nombreUser: widget.usuario.nombreUser,
+        emailUser: widget.usuario.emailUser,
+        km: (datos['kmRecorridos'] as num? ?? 0).toDouble(),
+        rutas: (datos['rutasCompletadas'] as num? ?? 0).toInt(),
+        insignias: (datos['insignias'] as num? ?? 0).toInt(),
+      );
+    } catch (_) {
+      // Sin red o error del servidor: se queda lo que hubiera en caché.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _stats,
-      builder: (BuildContext ctx, AsyncSnapshot<Map<String, dynamic>> snap) {
-        final String km = snap.hasData
-            ? (snap.data!['kmRecorridos'] as num? ?? 0).toStringAsFixed(0)
+    final Map<String, dynamic>? r = _remotas;
+    final MetricasCache? c = _enCache;
+    final String km = r != null
+        ? (r['kmRecorridos'] as num? ?? 0).toStringAsFixed(0)
+        : c != null
+            ? c.km.toStringAsFixed(0)
             : '—';
-        final String rutas = snap.hasData
-            ? '${(snap.data!['rutasCompletadas'] as int?) ?? 0}'
+    final String rutas = r != null
+        ? '${(r['rutasCompletadas'] as num?)?.toInt() ?? 0}'
+        : c != null
+            ? '${c.rutas}'
             : '—';
-        final String insignias = snap.hasData
-            ? '${(snap.data!['insignias'] as int?) ?? 0}'
+    final String insignias = r != null
+        ? '${(r['insignias'] as num?)?.toInt() ?? 0}'
+        : c != null
+            ? '${c.insignias}'
             : '—';
-        return Container(
-          decoration: BoxDecoration(
-            color: FqColors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: FqColors.border),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x10000000),
-                blurRadius: 6,
-                offset: Offset(0, 2),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: FqColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FqColors.border),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              children: <Widget>[
-                Expanded(child: _Metrica(valor: km, etiqueta: l10n.perfilKm)),
-                Container(width: 1, color: FqColors.border),
-                Expanded(child: _Metrica(valor: rutas, etiqueta: l10n.perfilMetricaRutas)),
-                Container(width: 1, color: FqColors.border),
-                Expanded(child: _Metrica(valor: insignias, etiqueta: l10n.perfilMetricaInsignias)),
-              ],
-            ),
-          ),
-        );
-      },
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          children: <Widget>[
+            Expanded(child: _Metrica(valor: km, etiqueta: l10n.perfilKm)),
+            Container(width: 1, color: FqColors.border),
+            Expanded(child: _Metrica(valor: rutas, etiqueta: l10n.perfilMetricaRutas)),
+            Container(width: 1, color: FqColors.border),
+            Expanded(child: _Metrica(valor: insignias, etiqueta: l10n.perfilMetricaInsignias)),
+          ],
+        ),
+      ),
     );
   }
 }

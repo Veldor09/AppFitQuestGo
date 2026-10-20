@@ -8,6 +8,7 @@ import 'package:fit_quest_go/Modulos/home/presentation/widgets/user_nav_bar.dart
 import 'package:fit_quest_go/Modulos/perfil/presentation/perfil_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/planificar_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/application/sync_rutas_service.dart';
 
 class UserShell extends StatefulWidget {
   const UserShell({super.key});
@@ -18,6 +19,13 @@ class UserShell extends StatefulWidget {
 
 class _UserShellState extends State<UserShell> {
   int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sube en silencio las rutas guardadas sin conexion en sesiones anteriores.
+    SyncRutasService.instancia.sincronizar();
+  }
 
   Future<void> _cerrarSesion() => AuthScope.read(context).cerrarSesion();
 

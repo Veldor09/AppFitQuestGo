@@ -24,9 +24,10 @@ class CronometroRuta {
     return _acumulado;
   }
 
-  /// Arranca una sesion nueva desde cero.
-  void iniciar() {
-    _acumulado = Duration.zero;
+  /// Arranca una sesion nueva (desde cero, o desde [inicial] al retomar una
+  /// grabacion interrumpida).
+  void iniciar({Duration inicial = Duration.zero}) {
+    _acumulado = inicial;
     _tramoDesde = _ahora();
     _estado = EstadoCronometro.corriendo;
   }

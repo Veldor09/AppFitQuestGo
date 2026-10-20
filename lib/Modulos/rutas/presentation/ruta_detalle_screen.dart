@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
+import 'package:fit_quest_go/core/mapa/mapas_offline_servicio.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
@@ -37,6 +39,10 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   bool _enviando = false;
   bool _esFavorita = false;
+  final RutasOfflineDao _offlineDao = RutasOfflineDao();
+  bool _guardadaOffline = false;
+  bool _descargando = false;
+  double _progresoDescarga = 0;
 
   bool get _esPrivada => widget.ruta.estado == 'Privada';
   bool get _sePuedeEnviar =>
@@ -50,6 +56,62 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
         setState(() => _esFavorita = ids.contains(widget.ruta.id));
       }
     }).catchError((_) {});
+    _offlineDao.estaGuardada(widget.ruta.id).then((bool g) {
+      if (mounted) setState(() => _guardadaOffline = g);
+    });
+  }
+
+  /// Guarda (o quita) la ruta para verla sin conexion: datos en SQLite y
+  /// teselas del mapa de la zona en el almacen de Mapbox.
+  Future<void> _toggleOffline() async {
+    if (_descargando) return;
+    if (_guardadaOffline) {
+      await _offlineDao.eliminar(widget.ruta.id);
+      await MapasOfflineServicio.instancia.eliminarZonaDeRuta(widget.ruta.id);
+      if (!mounted) return;
+      setState(() => _guardadaOffline = false);
+      notificarExito('Ruta eliminada del uso offline');
+      return;
+    }
+
+    // Tope de seguridad: maximo 3 rutas offline simultaneas (protege almacenamiento y cuota gratuita)
+    final List<Ruta> guardadas = await _offlineDao.listar();
+    if (guardadas.length >= 3) {
+      if (!mounted) return;
+      notificarInfo('Límite de 3 rutas offline alcanzado. Elimina una para descargar otra.');
+      return;
+    }
+
+    setState(() {
+      _descargando = true;
+      _progresoDescarga = 0;
+    });
+    final bool datosOk = await _offlineDao.guardar(widget.ruta);
+    if (!datosOk) {
+      if (!mounted) return;
+      setState(() => _descargando = false);
+      notificarError('No se pudo guardar la ruta en el teléfono');
+      return;
+    }
+    final bool mapaOk = await MapasOfflineServicio.instancia.descargarZonaDeRuta(
+      widget.ruta,
+      alProgresar: (double p) {
+        if (mounted) setState(() => _progresoDescarga = p);
+      },
+    );
+    if (!mounted) return;
+    setState(() {
+      _descargando = false;
+      _guardadaOffline = true;
+    });
+    if (mapaOk) {
+      notificarExito('Ruta y mapa guardados para uso offline');
+    } else {
+      notificarInfo(
+        'Ruta guardada, pero no se pudo descargar el mapa. '
+        'Inténtalo de nuevo con conexión.',
+      );
+    }
   }
 
   Future<void> _toggleFavorita() async {
@@ -427,6 +489,52 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      side: BorderSide(
+                        color: _guardadaOffline
+                            ? const Color(0xFF0D9488)
+                            : FqColors.border,
+                      ),
+                    ),
+                    icon: _descargando
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              value: _progresoDescarga > 0 ? _progresoDescarga : null,
+                            ),
+                          )
+                        : Icon(
+                            _guardadaOffline
+                                ? Icons.download_done_rounded
+                                : Icons.download_outlined,
+                            size: 16,
+                            color: _guardadaOffline
+                                ? const Color(0xFF0D9488)
+                                : FqColors.ink,
+                          ),
+                    label: Text(
+                      _descargando
+                          ? 'Descargando… ${(_progresoDescarga * 100).round()}%'
+                          : (_guardadaOffline
+                              ? 'Disponible offline · Quitar'
+                              : 'Guardar para uso offline'),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: FqColors.ink,
+                      ),
+                    ),
+                    onPressed: _descargando ? null : _toggleOffline,
                   ),
 
                   // Enviar a revisión (si aplica)

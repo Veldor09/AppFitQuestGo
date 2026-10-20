@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:fit_quest_go/core/almacen_tokens.dart';
+import 'package:fit_quest_go/core/db/app_database.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 
@@ -96,6 +97,9 @@ class AuthRepositorio extends ChangeNotifier {
       await _api.cerrarSesion(refresh);
     } catch (_) {}
     await _tokens.limpiar();
+    try {
+      await AppDatabase.instancia.limpiarDatosUsuario();
+    } catch (_) {}
     _usuario = null;
     notifyListeners();
   }
