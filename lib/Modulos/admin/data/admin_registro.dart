@@ -17,7 +17,7 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart'
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
-
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
 /// Registro único de las pantallas del panel de administración (ADM-01..ADM-13).
 ///
 /// El sidebar y el shell se construyen a partir de esta lista.
@@ -127,7 +127,7 @@ List<AdminSeccion> buildAdminSecciones(
       headerTitle: l10n.comunEventos,
       descripcion: l10n.admDescGestionEventos,
       icono: Icons.event_outlined,
-      builder: (_) => const EventosScreen(),
+      builder: (_) => const EventosAdminScreen(),
     ),
     AdminSeccion(
       code: 'ADM-09',
