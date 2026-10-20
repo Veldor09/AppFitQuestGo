@@ -41,6 +41,46 @@ List<String> _titulos(List<ResultadoBusqueda> r) =>
     r.map((ResultadoBusqueda e) => e.titulo).toList();
 
 void main() {
+  group('buscarEnMapa · destacados primero', () {
+    test('a igual coincidencia, el destacado sale primero aunque este mas lejos', () {
+      final List<ResultadoBusqueda> r = _buscar(
+        'Fuente',
+        nodos: <Nodo>[
+          nodoDePrueba(id: 1, nombre: 'Fuente b', lat: latBase + 0.001),
+          nodoDePrueba(id: 2, nombre: 'Fuente a', lat: latBase + 0.05, destacado: true),
+        ],
+        posicion: (lat: latBase, lng: lngBase),
+      );
+
+      expect(_titulos(r), <String>['Fuente a', 'Fuente b']);
+      expect(r.first.destacado, isTrue);
+      expect(r.last.destacado, isFalse);
+    });
+
+    test('sin destacados manda el mas cercano', () {
+      final List<ResultadoBusqueda> r = _buscar(
+        'Fuente',
+        nodos: <Nodo>[
+          nodoDePrueba(id: 1, nombre: 'Fuente lejos', lat: latBase + 0.05),
+          nodoDePrueba(id: 2, nombre: 'Fuente cerca', lat: latBase + 0.001),
+        ],
+        posicion: (lat: latBase, lng: lngBase),
+      );
+      expect(_titulos(r), <String>['Fuente cerca', 'Fuente lejos']);
+    });
+
+    test('el puntaje de la coincidencia sigue mandando sobre el destacado', () {
+      final List<ResultadoBusqueda> r = _buscar(
+        'Fuente',
+        nodos: <Nodo>[
+          nodoDePrueba(id: 1, nombre: 'Gran Fuente', destacado: true),
+          nodoDePrueba(id: 2, nombre: 'Fuente chica'),
+        ],
+      );
+      expect(_titulos(r), <String>['Fuente chica', 'Gran Fuente']);
+    });
+  });
+
   group('buscarEnMapa · que coincide', () {
     test('una consulta vacia o de puros espacios no devuelve nada', () {
       final List<Nodo> nodos = <Nodo>[nodoDePrueba(nombre: 'Fuente')];

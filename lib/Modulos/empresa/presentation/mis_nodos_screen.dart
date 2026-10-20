@@ -11,6 +11,8 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/empresa/presentation/formulario_nodo_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/interruptor_destacar.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
 
 /// Quien usa el panel de nodos. El panel es el mismo; cambia lo que se puede
@@ -208,6 +210,16 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
                         nodo: nodos[i],
                         esEmpresa: _esEmpresa,
                         onTap: () => _abrirNodo(nodos[i]),
+                        interruptor: nodoDestacable(nodos[i])
+                            ? InterruptorDestacar(
+                                activado: nodos[i].destacarActivado,
+                                alCambiar: (bool destacar) async =>
+                                    (await _api.destacar(
+                                      nodos[i].id,
+                                      destacar: destacar,
+                                    )).destacarActivado,
+                              )
+                            : null,
                         onEliminar: _esEmpresa
                             ? () => _eliminar(nodos[i])
                             : null,
@@ -230,6 +242,7 @@ class _TarjetaNodo extends StatelessWidget {
     required this.esEmpresa,
     required this.onTap,
     required this.onEliminar,
+    this.interruptor,
   });
 
   final Nodo nodo;
@@ -238,6 +251,9 @@ class _TarjetaNodo extends StatelessWidget {
 
   /// Null cuando quien mira no puede dar de baja el nodo.
   final VoidCallback? onEliminar;
+
+  /// El interruptor "Destacar" (null si el punto no se puede destacar).
+  final Widget? interruptor;
 
   @override
   Widget build(BuildContext context) {
@@ -331,6 +347,10 @@ class _TarjetaNodo extends StatelessWidget {
                     ],
                     const SizedBox(height: 8),
                     _etiquetaEstado(l10n),
+                    if (interruptor != null) ...<Widget>[
+                      const SizedBox(height: 6),
+                      interruptor!,
+                    ],
                   ],
                 ),
               ),

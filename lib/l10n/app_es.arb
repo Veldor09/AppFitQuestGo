@@ -2056,5 +2056,33 @@
   "homeSinUbicacionParaReportar": "Todavia no tengo tu ubicacion. Espera unos segundos o manten presionado el mapa.",
   "@homeSinUbicacionParaReportar": {
     "description": "Message when the user taps '+' before the GPS position is known."
+  },
+  "patrocinioDestacar": "Destacar en el mapa",
+  "@patrocinioDestacar": {
+    "description": "Switch on a commerce or event page to feature it on the map."
+  },
+  "patrocinioDestacado": "Destacado",
+  "@patrocinioDestacado": {
+    "description": "Badge shown on content that is currently featured (paid sponsorship)."
+  },
+  "patrocinioSinPlan": "Necesitas un plan de patrocinio vigente para destacar.",
+  "@patrocinioSinPlan": {
+    "description": "Error: the account has no active sponsorship plan."
+  },
+  "patrocinioTope": "Llegaste al maximo de destacados activos. Apaga alguno para destacar este.",
+  "@patrocinioTope": {
+    "description": "Error: the per-account cap of featured items is reached."
+  },
+  "patrocinioNoElegible": "Este contenido no se puede destacar.",
+  "@patrocinioNoElegible": {
+    "description": "Error: this content is not eligible to be featured."
+  },
+  "patrocinioErrorDestacar": "No se pudo cambiar el destacado.",
+  "@patrocinioErrorDestacar": {
+    "description": "Generic error when switching the featured status fails."
+  },
+  "patrocinioCercaTitulo": "Destacado cerca de ti",
+  "@patrocinioCercaTitulo": {
+    "description": "Title of the banner and card shown when a featured place is within 1 km."
   }
 }

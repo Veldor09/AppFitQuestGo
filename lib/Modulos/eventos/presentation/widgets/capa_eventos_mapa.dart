@@ -96,6 +96,7 @@ class CapaEventosMapa {
     List<ZonaEvento> areasSecundarias = const <ZonaEvento>[],
     List<ZonaEvento> recorridosSecundarios = const <ZonaEvento>[],
     List<PuntoGeo> pines = const <PuntoGeo>[],
+    Set<int> eventosDestacados = const <int>{},
   }) async {
     await poligonos.deleteAll();
     await lineas.deleteAll();
@@ -118,7 +119,15 @@ class CapaEventosMapa {
 
     final _Pines pinesDe = _Pines();
     await _pinesDeZonas(pinesDe, aSec, rSec, true, densidad);
-    await _pinesDeZonas(pinesDe, a, r, false, densidad, etiquetaZonas);
+    await _pinesDeZonas(
+      pinesDe,
+      a,
+      r,
+      false,
+      densidad,
+      etiquetaZonas,
+      eventosDestacados,
+    );
     for (final PuntoGeo punto in p) {
       pinesDe.agregar(
         opcionesDePin(
@@ -204,12 +213,13 @@ class CapaEventosMapa {
     bool secundario,
     double densidad, [
     String? etiquetaFija,
+    Set<int> destacados = const <int>{},
   ]) async {
     for (final ZonaEvento z in areas) {
       if (z.puntos.length < 3) continue;
       final PuntoGeo centro = centroideDe(z.puntos);
       final Uint8List imagen = await imagenPin(
-        TipoPin.area,
+        destacados.contains(z.eventoId) ? TipoPin.destacado : TipoPin.area,
         secundario: secundario,
       );
       destino.agregar(
@@ -231,7 +241,9 @@ class CapaEventosMapa {
           lat: z.puntos.first.lat,
           lng: z.puntos.first.lng,
           imagen: await imagenPin(
-            TipoPin.recorridoInicio,
+            destacados.contains(z.eventoId)
+                ? TipoPin.destacado
+                : TipoPin.recorridoInicio,
             secundario: secundario,
           ),
           densidad: densidad,

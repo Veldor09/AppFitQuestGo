@@ -27,6 +27,7 @@ class ResultadoBusqueda {
     required this.lat,
     required this.lng,
     this.metros,
+    this.destacado = false,
   });
 
   final TipoResultado tipo;
@@ -46,6 +47,9 @@ class ResultadoBusqueda {
   /// A cuantos metros esta de quien busca (al punto mas cercano, si es una
   /// ruta o un evento); null si no se conoce su posicion.
   final double? metros;
+
+  /// Es un punto o evento destacado (pagado): a igual coincidencia sale primero.
+  final bool destacado;
 }
 
 const Map<String, String> _sinTilde = <String, String>{
@@ -103,6 +107,7 @@ List<ResultadoBusqueda> buscarEnMapa({
     required double lat,
     required double lng,
     required double? metros,
+    bool destacado = false,
   }) {
     final int? puntaje = _puntaje(buscada, terminos, titulo, otrosCampos);
     if (puntaje == null) return;
@@ -118,6 +123,7 @@ List<ResultadoBusqueda> buscarEnMapa({
           lat: lat,
           lng: lng,
           metros: metros,
+          destacado: destacado,
         ),
       ),
     );
@@ -141,6 +147,7 @@ List<ResultadoBusqueda> buscarEnMapa({
         lat: n.lat,
         lng: n.lng,
         metros: desde(n.lat, n.lng),
+        destacado: n.destacado,
       );
     }
   }
@@ -216,6 +223,7 @@ List<ResultadoBusqueda> buscarEnMapa({
         lat: puntos.first.lat,
         lng: puntos.first.lng,
         metros: menor,
+        destacado: e.destacado,
       );
     }
   }
@@ -223,6 +231,9 @@ List<ResultadoBusqueda> buscarEnMapa({
   candidatos.sort((_Candidato a, _Candidato b) {
     final int porPuntaje = a.puntaje.compareTo(b.puntaje);
     if (porPuntaje != 0) return porPuntaje;
+    if (a.resultado.destacado != b.resultado.destacado) {
+      return a.resultado.destacado ? -1 : 1;
+    }
     final int porDistancia = (a.resultado.metros ?? double.infinity).compareTo(
       b.resultado.metros ?? double.infinity,
     );

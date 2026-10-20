@@ -26,12 +26,13 @@ class Notificacion {
     );
   }
 
-  /// Categorías válidas: rutas, alertas, insignias, eventos.
+  /// Categorías válidas: rutas, alertas, insignias, eventos, patrocinio.
   static const List<String> categorias = <String>[
     'rutas',
     'alertas',
     'insignias',
     'eventos',
+    'patrocinio',
   ];
 
   final int id;

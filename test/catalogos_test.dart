@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
+import 'package:fit_quest_go/core/catalogos/monedas.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -55,6 +56,18 @@ void main() {
           'parqueo',
           'primeros_auxilios',
           'otro',
+        ],
+      );
+    });
+
+    // La misma lista esta en `catalogos-contrato.spec.ts` del backend.
+    test('monedas (codigo, simbolo, decimales)', () {
+      expect(
+        monedas.map((Moneda m) => (m.codigo, m.simbolo, m.decimales)).toList(),
+        <(String, String, int)>[
+          ('CRC', '₡', 0),
+          ('USD', 'US\$', 2),
+          ('EUR', '€', 2),
         ],
       );
     });

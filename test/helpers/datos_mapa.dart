@@ -17,6 +17,7 @@ Nodo nodoDePrueba({
   String? descripcion,
   String? categoriaOtro,
   String estado = 'Aprobado',
+  bool destacado = false,
 }) {
   return Nodo(
     id: id,
@@ -25,6 +26,7 @@ Nodo nodoDePrueba({
     lat: lat,
     lng: lng,
     estado: estado,
+    destacado: destacado,
     descripcion: descripcion,
     categoriaOtro: categoriaOtro,
   );
@@ -87,6 +89,7 @@ Evento eventoDePrueba({
   String? empresa,
   List<ZonaEvento>? areas,
   List<ZonaEvento>? recorridos,
+  bool destacado = false,
 }) {
   return Evento(
     id: id,
@@ -96,6 +99,7 @@ Evento eventoDePrueba({
     creadoPorNombre: empresa,
     fechaInicio: DateTime(2026, 10, 20, 8),
     fechaFin: DateTime(2026, 10, 20, 12),
+    destacado: destacado,
     areas: areas ?? const <ZonaEvento>[],
     recorridos:
         recorridos ??

@@ -197,6 +197,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                           'alertas': 'Alertas',
                           'insignias': 'Insignias',
                           'eventos': 'Eventos',
+                          'patrocinio': 'Patrocinio',
                         }.entries) ...<Widget>[
                           const SizedBox(width: 8),
                           _FiltroPill(
@@ -320,6 +321,13 @@ _EstiloCategoria _estiloDe(Notificacion n) {
         Color(0xFFB45309),
         Color(0xFFFEF3C7),
         'Ver insignias',
+      );
+    case 'patrocinio':
+      return const _EstiloCategoria(
+        Icons.campaign_rounded,
+        FqColors.purple,
+        Color(0xFFEFEBFB),
+        null,
       );
     default:
       return const _EstiloCategoria(

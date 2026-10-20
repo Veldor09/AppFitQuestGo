@@ -6,6 +6,7 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/home/application/cercanos.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/decoracion_flotante.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/proximidad_destacados.dart';
 
 /// El cuadro "Cerca de ti" de abajo del mapa: la ruta y la alerta mas cercanas
 /// con la distancia a cada una, y el boton "+" para reportar algo donde estas.
@@ -22,6 +23,8 @@ class PanelCercano extends StatelessWidget {
     required this.onRuta,
     required this.onAlerta,
     required this.onAgregar,
+    this.destacado,
+    this.onDestacado,
   });
 
   final bool hayUbicacion;
@@ -30,6 +33,10 @@ class PanelCercano extends StatelessWidget {
   final VoidCallback onRuta;
   final VoidCallback onAlerta;
   final VoidCallback onAgregar;
+
+  /// El destacado mas cercano: una tarjeta dorada sobre las casillas de ruta y alerta.
+  final DestacadoCercano? destacado;
+  final VoidCallback? onDestacado;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +73,15 @@ class PanelCercano extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 11),
+          if (destacado != null) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.only(right: 10, bottom: 8),
+              child: _TarjetaDestacado(
+                destacado: destacado!,
+                onTap: onDestacado,
+              ),
+            ),
+          ],
           Row(
             children: <Widget>[
               Expanded(
@@ -124,6 +140,76 @@ class PanelCercano extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// La tarjeta dorada del destacado mas cercano.
+class _TarjetaDestacado extends StatelessWidget {
+  const _TarjetaDestacado({required this.destacado, required this.onTap});
+
+  final DestacadoCercano destacado;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final String idioma = Localizations.localeOf(context).toString();
+    return GestureDetector(
+      key: const ValueKey<String>('cerca-destacado'),
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: FqColors.amber.withValues(alpha: .18),
+          border: Border.all(color: FqColors.amber),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.star_rounded, size: 20, color: FqColors.amber),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    destacado.nombre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Text(
+                        l10n.patrocinioDestacado,
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: FqColors.muted,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        formatearDistancia(destacado.metros, locale: idioma),
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          color: FqColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

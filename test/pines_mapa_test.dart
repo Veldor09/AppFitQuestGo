@@ -49,6 +49,13 @@ void main() {
       expect(firmas, hasLength(TipoPin.values.length));
     });
 
+    test('el destacado es una estrella dorada con el icono en azul noche', () {
+      final EstiloPin e = estiloPin(TipoPin.destacado);
+      expect(e.icono, Icons.star_rounded);
+      expect(e.fondo, FqColors.amber);
+      expect(e.colorIcono, FqColors.night);
+    });
+
     test('el local de una empresa es una tienda', () {
       expect(estiloPin(TipoPin.local).icono, Icons.storefront_rounded);
     });

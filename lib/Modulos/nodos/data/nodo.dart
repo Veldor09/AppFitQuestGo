@@ -16,6 +16,8 @@ class Nodo {
     this.miVoto,
     this.beneficio,
     this.patrocinado = false,
+    this.destacado = false,
+    this.destacarActivado = false,
   });
 
   factory Nodo.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,8 @@ class Nodo {
       miVoto: json['miVoto'] as String?,
       beneficio: json['beneficio'] as String?,
       patrocinado: json['patrocinado'] as bool? ?? false,
+      destacado: json['destacado'] as bool? ?? false,
+      destacarActivado: json['destacarActivado'] as bool? ?? false,
     );
   }
 
@@ -73,4 +77,36 @@ class Nodo {
 
   /// Nodo de Abastecimiento de una empresa: sale al mapa sin moderacion.
   final bool patrocinado;
+
+  /// Sale destacado en el mapa AHORA: el dueno lo tiene encendido, tiene un plan
+  /// vigente y el punto es elegible (lo calcula el servidor al leer).
+  final bool destacado;
+
+  /// El interruptor "Destacar" del dueno (solo viene en sus listas y en lo que
+  /// responde el servidor al cambiarlo); puede estar encendido sin plan vigente.
+  final bool destacarActivado;
+
+  /// Este mismo punto con otro estado de destacado (tras encender o apagar).
+  Nodo conDestacado({required bool destacarActivado, required bool destacado}) {
+    return Nodo(
+      id: id,
+      nombre: nombre,
+      categoria: categoria,
+      lat: lat,
+      lng: lng,
+      estado: estado,
+      descripcion: descripcion,
+      creadoPorNombre: creadoPorNombre,
+      categoriaOtro: categoriaOtro,
+      conFoto: conFoto,
+      creadoPorId: creadoPorId,
+      confirmaciones: confirmaciones,
+      obsoletos: obsoletos,
+      miVoto: miVoto,
+      beneficio: beneficio,
+      patrocinado: patrocinado,
+      destacado: destacado,
+      destacarActivado: destacarActivado,
+    );
+  }
 }

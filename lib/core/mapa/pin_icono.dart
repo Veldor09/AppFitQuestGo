@@ -24,6 +24,9 @@ enum TipoPin {
   /// Donde sale y donde termina una ruta de un deportista.
   rutaInicio,
   rutaFin,
+
+  /// Algo destacado (pagado) por su dueno: una estrella dorada.
+  destacado,
 }
 
 /// Como se ve un pin: el icono, su color y el color del icono.
@@ -67,6 +70,11 @@ EstiloPin estiloPin(TipoPin tipo, {bool secundario = false}) {
     TipoPin.rutaFin => const EstiloPin(
       icono: Icons.sports_score_rounded,
       fondo: FqColors.risk,
+    ),
+    TipoPin.destacado => const EstiloPin(
+      icono: Icons.star_rounded,
+      fondo: FqColors.amber,
+      colorIcono: FqColors.night,
     ),
   };
   if (!secundario) return base;

@@ -570,5 +570,12 @@
   "homeSinAlertasCerca": "No alerts nearby",
   "homeBuscandoUbicacion": "Finding your location...",
   "homeReportarAqui": "Report here",
-  "homeSinUbicacionParaReportar": "I don't have your location yet. Wait a few seconds or press and hold the map."
+  "homeSinUbicacionParaReportar": "I don't have your location yet. Wait a few seconds or press and hold the map.",
+  "patrocinioDestacar": "Feature on the map",
+  "patrocinioDestacado": "Featured",
+  "patrocinioSinPlan": "You need an active sponsorship plan to feature this.",
+  "patrocinioTope": "You reached the maximum of active featured items. Turn one off to feature this one.",
+  "patrocinioNoElegible": "This item cannot be featured.",
+  "patrocinioErrorDestacar": "The featured status could not be changed.",
+  "patrocinioCercaTitulo": "Featured near you"
 }

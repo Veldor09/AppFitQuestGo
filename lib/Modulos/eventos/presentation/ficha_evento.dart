@@ -6,6 +6,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/formato_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/etiqueta_destacado.dart';
 
 /// Abre la ficha de un evento desde abajo (al tocar su area, su recorrido o su
 /// pin en el mapa): todo lo que hay que saber de el sin salir del mapa.
@@ -85,7 +86,16 @@ class FichaEvento extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                EtiquetaEstadoEvento(evento: evento, ahora: ahoraActual),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    EtiquetaEstadoEvento(evento: evento, ahora: ahoraActual),
+                    if (evento.destacado) ...<Widget>[
+                      const SizedBox(height: 6),
+                      const EtiquetaDestacado(),
+                    ],
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 14),
