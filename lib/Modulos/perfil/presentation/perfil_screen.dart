@@ -788,8 +788,8 @@ class _HojaAjustes extends StatelessWidget {
             const SizedBox(height: 16),
             _OpcionAjusteTile(
               icono: Icons.edit_outlined,
-              titulo: 'Editar información del perfil',
-              subtitulo: 'Modificar datos personales, deportes e intereses',
+              titulo: l10n.perfilEditarInfo,
+              subtitulo: l10n.perfilModificarSubtitulo,
               onTap: () {
                 Navigator.of(context).pop();
                 onEditar();
@@ -941,6 +941,7 @@ class _SeccionIntereses extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -960,10 +961,10 @@ class _SeccionIntereses extends StatelessWidget {
                 color: Color(0xFF0F766E),
               ),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'MIS INTERESES',
-                  style: TextStyle(
+                  l10n.perfilMisInteresesHeader,
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
@@ -978,12 +979,12 @@ class _SeccionIntereses extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const <Widget>[
-                      Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0F766E)),
-                      SizedBox(width: 4),
+                    children: <Widget>[
+                      const Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0F766E)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Editar',
-                        style: TextStyle(
+                        l10n.perfilEditar,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F766E),
@@ -1009,13 +1010,13 @@ class _SeccionIntereses extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFE2E8DE)),
                 ),
                 child: Row(
-                  children: const <Widget>[
-                    Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
-                    SizedBox(width: 8),
+                  children: <Widget>[
+                    const Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Selecciona tus intereses favoritos',
-                        style: TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
+                        l10n.perfilInteresesVacio,
+                        style: const TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -1064,6 +1065,7 @@ class _SeccionActividades extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -1083,10 +1085,10 @@ class _SeccionActividades extends StatelessWidget {
                 color: Color(0xFF0369A1),
               ),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'MIS ACTIVIDADES FAVORITAS',
-                  style: TextStyle(
+                  l10n.perfilMisActividadesHeader,
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
@@ -1101,12 +1103,12 @@ class _SeccionActividades extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const <Widget>[
-                      Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0369A1)),
-                      SizedBox(width: 4),
+                    children: <Widget>[
+                      const Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0369A1)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Editar',
-                        style: TextStyle(
+                        l10n.perfilEditar,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0369A1),
@@ -1132,13 +1134,13 @@ class _SeccionActividades extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFBAE6FD)),
                 ),
                 child: Row(
-                  children: const <Widget>[
-                    Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
-                    SizedBox(width: 8),
+                  children: <Widget>[
+                    const Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Selecciona tus deportes favoritos',
-                        style: TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
+                        l10n.perfilActividadesVacio,
+                        style: const TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],

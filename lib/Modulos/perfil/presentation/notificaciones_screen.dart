@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificacion.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
@@ -43,10 +44,11 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      final AppLocalizations? l10n = AppLocalizations.of(context);
       setState(() {
         _error = e is ApiException
             ? e.message
-            : 'No se pudieron cargar tus notificaciones.';
+            : (l10n?.notificacionesErrorCarga ?? 'No se pudieron cargar tus notificaciones.');
       });
     }
   }
@@ -62,6 +64,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       .length;
 
   Future<void> _marcarTodasLeidas() async {
+    final AppLocalizations? l10n = AppLocalizations.of(context);
     final List<Notificacion> pendientes =
         (_items ?? <Notificacion>[]).where((Notificacion n) => !n.leida).toList();
     setState(() {
@@ -71,7 +74,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     });
     try {
       await _api.marcarTodasLeidas();
-      notificarInfo('Todas las notificaciones marcadas como leídas');
+      notificarInfo(l10n?.notificacionesTodasMarcadas ?? 'Todas las notificaciones marcadas como leídas');
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -79,7 +82,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
           n.leida = false;
         }
       });
-      notificarError('No se pudieron marcar como leídas');
+      notificarError(l10n?.notificacionesErrorMarcar ?? 'No se pudieron marcar como leídas');
     }
   }
 
@@ -111,12 +114,16 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
         return const InsigniasScreen();
       case 'alerta':
       case 'alertas':
-        return const AportesScreen();
+        return const AportesScreen(initialTab: 1);
+      case 'nodo':
+      case 'nodos':
+        return const AportesScreen(initialTab: 2);
     }
     return null;
   }
 
   Future<void> _eliminar(Notificacion n) async {
+    final AppLocalizations? l10n = AppLocalizations.of(context);
     final List<Notificacion> lista = _items!;
     final int indice = lista.indexOf(n);
     setState(() => lista.remove(n));
@@ -125,12 +132,13 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => lista.insert(indice.clamp(0, lista.length), n));
-      notificarError('No se pudo eliminar la notificación');
+      notificarError(l10n?.notificacionesErrorEliminar ?? 'No se pudo eliminar la notificación');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double top = MediaQuery.of(context).padding.top;
     final List<Notificacion> lista = _itemsFiltrados;
     final int noLeidas =
@@ -153,10 +161,10 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                       icon: const Icon(Icons.arrow_back_rounded, color: FqColors.white),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Centro de notificaciones',
-                        style: TextStyle(
+                        l10n.notificacionesTitulo,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: FqColors.white,
@@ -168,9 +176,9 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                       TextButton.icon(
                         onPressed: _marcarTodasLeidas,
                         icon: const Icon(Icons.done_all_rounded, size: 16, color: FqColors.volt),
-                        label: const Text(
-                          'Leídas',
-                          style: TextStyle(
+                        label: Text(
+                          l10n.notificacionesMarcarLeidas,
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: FqColors.volt,
@@ -187,16 +195,16 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                     child: Row(
                       children: <Widget>[
                         _FiltroPill(
-                          label: 'Todas',
+                          label: l10n.notificacionesFiltroTodas,
                           activo: _filtro == 'todas',
                           contador: _items?.length ?? 0,
                           onTap: () => setState(() => _filtro = 'todas'),
                         ),
-                        for (final MapEntry<String, String> c in const <String, String>{
-                          'rutas': 'Rutas',
-                          'alertas': 'Alertas',
-                          'insignias': 'Insignias',
-                          'eventos': 'Eventos',
+                        for (final MapEntry<String, String> c in <String, String>{
+                          'rutas': l10n.rutasTitulo,
+                          'alertas': l10n.homeFiltroAlertas,
+                          'insignias': l10n.perfilInsignias,
+                          'eventos': l10n.comunEventos,
                         }.entries) ...<Widget>[
                           const SizedBox(width: 8),
                           _FiltroPill(
@@ -214,27 +222,27 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
             ),
           ),
           // ── Lista de notificaciones o estado vacío ─────────────────────────
-          Expanded(child: _cuerpo(lista)),
+          Expanded(child: _cuerpo(lista, l10n)),
         ],
       ),
     );
   }
 
-  Widget _cuerpo(List<Notificacion> lista) {
+  Widget _cuerpo(List<Notificacion> lista, AppLocalizations l10n) {
     if (_items == null && _error == null) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
     if (_items == null) {
       return FqEmptyState(
         icon: Icons.cloud_off_rounded,
-        title: 'No se pudieron cargar las notificaciones',
+        title: l10n.notificacionesErrorCarga,
         message: _error!,
         action: TextButton(
           onPressed: () {
             setState(() => _error = null);
             _cargar();
           },
-          child: const Text('Reintentar'),
+          child: Text(l10n.comunReintentar),
         ),
       );
     }
@@ -248,14 +256,14 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                   height: 360,
                   child: FqEmptyState(
                     icon: Icons.notifications_off_outlined,
-                    title: 'No hay notificaciones',
+                    title: l10n.notificacionesVacioTitulo,
                     message: _filtro == 'todas'
-                        ? 'Estás al día. Te avisaremos cuando ocurra algo importante.'
-                        : 'No tienes notificaciones en esta categoría.',
+                        ? l10n.notificacionesVacioAlDia
+                        : l10n.notificacionesVacioCategoria,
                     action: _filtro != 'todas'
                         ? TextButton(
                             onPressed: () => setState(() => _filtro = 'todas'),
-                            child: const Text('Ver todas las notificaciones'),
+                            child: Text(l10n.notificacionesVerTodas),
                           )
                         : null,
                   ),
@@ -266,7 +274,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               itemCount: lista.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (BuildContext context, int index) {
                 final Notificacion item = lista[index];
                 return Dismissible(
@@ -282,7 +290,11 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                     ),
                     child: const Icon(Icons.delete_outline_rounded, color: FqColors.white),
                   ),
-                  child: _NotificacionCard(item: item, onTap: () => _abrir(item)),
+                  child: _NotificacionCard(
+                    item: item,
+                    l10n: l10n,
+                    onTap: () => _abrir(item),
+                  ),
                 );
               },
             ),
@@ -298,28 +310,28 @@ class _EstiloCategoria {
   final String? accion;
 }
 
-_EstiloCategoria _estiloDe(Notificacion n) {
+_EstiloCategoria _estiloDe(Notificacion n, AppLocalizations l10n) {
   switch (n.categoria) {
     case 'rutas':
-      return const _EstiloCategoria(
+      return _EstiloCategoria(
         Icons.route_rounded,
-        Color(0xFF057A71),
-        Color(0xFFE6F5F2),
-        'Ver mis rutas',
+        const Color(0xFF057A71),
+        const Color(0xFFE6F5F2),
+        l10n.notificacionesAccionRutas,
       );
     case 'alertas':
-      return const _EstiloCategoria(
+      return _EstiloCategoria(
         Icons.warning_amber_rounded,
         FqColors.risk,
-        Color(0xFFFEECE9),
-        'Ver mis aportes',
+        const Color(0xFFFEECE9),
+        l10n.notificacionesAccionAportes,
       );
     case 'insignias':
-      return const _EstiloCategoria(
+      return _EstiloCategoria(
         Icons.military_tech_rounded,
-        Color(0xFFB45309),
-        Color(0xFFFEF3C7),
-        'Ver insignias',
+        const Color(0xFFB45309),
+        const Color(0xFFFEF3C7),
+        l10n.notificacionesAccionInsignias,
       );
     default:
       return const _EstiloCategoria(
@@ -397,15 +409,17 @@ class _FiltroPill extends StatelessWidget {
 class _NotificacionCard extends StatelessWidget {
   const _NotificacionCard({
     required this.item,
+    required this.l10n,
     required this.onTap,
   });
 
   final Notificacion item;
+  final AppLocalizations l10n;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final _EstiloCategoria estilo = _estiloDe(item);
+    final _EstiloCategoria estilo = _estiloDe(item, l10n);
     return Material(
       color: item.leida ? FqColors.white : const Color(0xFFF9FDF7),
       borderRadius: BorderRadius.circular(16),

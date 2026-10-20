@@ -48,6 +48,7 @@ class PlanificarRutaScreen extends StatefulWidget {
     this.posicionStream,
     this.ahora,
     this.accessToken,
+    this.permitirFallbackActividades = true,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -55,6 +56,9 @@ class PlanificarRutaScreen extends StatefulWidget {
 
   /// API de catálogos inyectable para pruebas de ADM-11.
   final CatalogosApi? catalogosApi;
+
+  /// Permite usar actividades de respaldo si falla la red al planificar offline.
+  final bool permitirFallbackActividades;
 
   /// Fabrica del stream de posicion, inyectable para pruebas. En produccion
   /// usa `Geolocator.getPositionStream`.
@@ -106,28 +110,28 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   Future<void> _revisarSesionInterrumpida() async {
     final SesionTrackingGuardada? sesion = await _tracking.recuperar();
     if (sesion == null || !mounted || _grabando) return;
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final String km = sesion.distanciaKm.toStringAsFixed(2);
     final String? decision = await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Grabación interrumpida'),
+        title: Text(l10n.rutasGrabacionInterrumpidaTitulo),
         content: Text(
-          'Se detectó una ruta sin terminar de $km km '
-          '(${sesion.puntos.length} puntos). ¿Qué quieres hacer?',
+          l10n.rutasGrabacionInterrumpidaMsg(km, sesion.puntos.length),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(ctx).pop('descartar'),
-            child: const Text('Descartar'),
+            child: Text(l10n.resumenGrabacionDescartar),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop('guardar'),
-            child: const Text('Guardar lo grabado'),
+            child: Text(l10n.rutasGuardarLoGrabado),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop('reanudar'),
-            child: const Text('Reanudar'),
+            child: Text(l10n.recorridoReanudar),
           ),
         ],
       ),
@@ -421,10 +425,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         );
         if (idLocal == null) rethrow;
         if (!mounted) return;
-        notificarInfo(
-          'Sin conexión a internet. Tu ruta se guardó en el teléfono y se '
-          'subirá automáticamente cuando tengas red.',
-        );
+        notificarInfo(l10n.rutasGuardadaOfflineAviso);
       }
       unawaited(_tracking.limpiar());
       setState(() {
@@ -501,6 +502,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     const SizedBox(height: 8),
                     SelectorActividadesCatalogo(
                       catalogosApi: widget.catalogosApi,
+                      permitirFallbackOffline:
+                          widget.permitirFallbackActividades,
                       seleccion: actividades,
                       onChanged: (Set<String> seleccion) {
                         setSheetState(() {
@@ -546,22 +549,22 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       initialValue: visibilidad,
-                      decoration: const InputDecoration(
-                        labelText: 'Visibilidad de la ruta (RTE-08)',
-                        helperText: 'Pública la envía a revisión comunitaria',
+                      decoration: InputDecoration(
+                        labelText: l10n.rutasVisibilidadLabel,
+                        helperText: l10n.rutasVisibilidadHelper,
                       ),
-                      items: const <DropdownMenuItem<String>>[
+                      items: <DropdownMenuItem<String>>[
                         DropdownMenuItem<String>(
                           value: 'privada',
-                          child: Text('🔒 Privada (Solo tú)'),
+                          child: Text(l10n.rutasVisibilidadPrivada),
                         ),
                         DropdownMenuItem<String>(
                           value: 'amigos',
-                          child: Text('👥 Solo amigos'),
+                          child: Text(l10n.rutasVisibilidadAmigos),
                         ),
                         DropdownMenuItem<String>(
                           value: 'publica',
-                          child: Text('🌍 Pública (Comunidad)'),
+                          child: Text(l10n.rutasVisibilidadPublica),
                         ),
                       ],
                       onChanged: (String? v) =>

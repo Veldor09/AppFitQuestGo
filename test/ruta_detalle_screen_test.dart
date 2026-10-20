@@ -57,6 +57,7 @@ Future<void> _abrir(
   _RutaApiFalsa? api,
   bool puedeEnviarARevision = false,
   VoidCallback? onCambio,
+  Widget Function(BuildContext, Ruta)? recorridoBuilder,
 }) async {
   tester.view.physicalSize = const Size(800, 1200);
   tester.view.devicePixelRatio = 1.0;
@@ -87,6 +88,7 @@ Future<void> _abrir(
                   api: apiInstancia,
                   puedeEnviarARevision: puedeEnviarARevision,
                   onCambio: onCambio,
+                  recorridoBuilder: recorridoBuilder,
                 ),
               ),
             ),
@@ -180,6 +182,56 @@ void main() {
         tester.widget<FqButton>(find.widgetWithText(FqButton, 'Enviar a revision')).onPressed,
         isNotNull,
       );
+    });
+  });
+
+  group('Iniciar recorrido', () {
+    testWidgets('con puntos insuficientes avisa y no abre navegacion', (
+      WidgetTester tester,
+    ) async {
+      await _abrir(tester, _ruta(puntos: const <PuntoRuta>[]));
+
+      await tester.tap(find.text('Iniciar recorrido'));
+      await tester.pump();
+
+      expect(
+        find.textContaining('no tiene un trazo con puntos suficientes'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('con trazo valido abre pantalla de recorrido y propaga guardado', (
+      WidgetTester tester,
+    ) async {
+      int cambios = 0;
+      bool builderLlamado = false;
+      await _abrir(
+        tester,
+        _ruta(),
+        onCambio: () => cambios++,
+        recorridoBuilder: (BuildContext ctx, Ruta r) {
+          builderLlamado = true;
+          return Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Simular Guardado'),
+              ),
+            ),
+          );
+        },
+      );
+
+      await tester.tap(find.text('Iniciar recorrido'));
+      await tester.pumpAndSettle();
+
+      expect(builderLlamado, isTrue);
+      expect(find.text('Simular Guardado'), findsOneWidget);
+
+      await tester.tap(find.text('Simular Guardado'));
+      await tester.pumpAndSettle();
+
+      expect(cambios, 1);
     });
   });
 }

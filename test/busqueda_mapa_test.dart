@@ -238,6 +238,10 @@ void main() {
       expect(tipos(FiltroMapa.pois), <TipoResultado>{TipoResultado.poi});
       expect(tipos(FiltroMapa.eventos), <TipoResultado>{TipoResultado.evento});
     });
+
+    test('con Nada no busca en ninguna capa', () {
+      expect(tipos(FiltroMapa.nada), isEmpty);
+    });
   });
 
   group('buscarEnMapa · orden y distancia', () {

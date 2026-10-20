@@ -12,7 +12,7 @@ class AppDatabase {
   static final AppDatabase instancia = AppDatabase._();
 
   static const String _nombre = 'fitquestgo_local.db';
-  static const int _version = 1;
+  static const int _version = 2;
 
   Database? _db;
   Future<Database?>? _abriendo;
@@ -34,6 +34,10 @@ class AppDatabase {
             await db.execute(sql);
           }
         },
+        onUpgrade: (Database db, int anterior, int nueva) async {
+          // v2: recorridos de rutas terminados, pendientes de subir.
+          if (anterior < 2) await db.execute(_ddlActividadesPendientes);
+        },
       );
       return _db;
     } catch (_) {
@@ -50,6 +54,7 @@ class AppDatabase {
       'puntos_tracking_temp',
       'sesion_tracking_temp',
       'rutas_pendientes_sync',
+      'actividades_pendientes_sync',
       'rutas_offline',
       'perfil_cache',
     ]) {
@@ -57,7 +62,22 @@ class AppDatabase {
     }
   }
 
+  static const String _ddlActividadesPendientes = '''
+CREATE TABLE actividades_pendientes_sync (
+  id_local INTEGER PRIMARY KEY AUTOINCREMENT,
+  id_ruta INTEGER NOT NULL,
+  distancia_km REAL NOT NULL,
+  duracion_segundos INTEGER NOT NULL,
+  iniciado_en TEXT NOT NULL,
+  finalizado_en TEXT NOT NULL,
+  puntos_json TEXT NOT NULL,
+  estado_sync TEXT NOT NULL DEFAULT 'pendiente',
+  intentos INTEGER NOT NULL DEFAULT 0,
+  ultimo_error TEXT
+)''';
+
   static const List<String> _ddl = <String>[
+    _ddlActividadesPendientes,
     '''
 CREATE TABLE sesion_tracking_temp (
   id INTEGER PRIMARY KEY CHECK (id = 1),

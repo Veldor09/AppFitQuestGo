@@ -18,11 +18,13 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_
 class AportesScreen extends StatefulWidget {
   const AportesScreen({
     super.key,
+    this.initialTab = 0,
     this.rutaApi,
     this.alertaApi,
     this.nodoApi,
   });
 
+  final int initialTab;
   final RutaApi? rutaApi;
   final AlertaApi? alertaApi;
   final NodoApi? nodoApi;
@@ -33,7 +35,11 @@ class AportesScreen extends StatefulWidget {
 
 class _AportesScreenState extends State<AportesScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 3, vsync: this);
+  late final TabController _tabs = TabController(
+    length: 3,
+    vsync: this,
+    initialIndex: widget.initialTab.clamp(0, 2),
+  );
   late final RutaApi _rutaApi = widget.rutaApi ?? RutaApi();
   late final AlertaApi _alertaApi = widget.alertaApi ?? AlertaApi();
   late final NodoApi _nodoApi = widget.nodoApi ?? NodoApi();
@@ -53,6 +59,7 @@ class _AportesScreenState extends State<AportesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double top = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: FqColors.paper,
@@ -72,10 +79,10 @@ class _AportesScreenState extends State<AportesScreen>
                             color: FqColors.white),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Mis aportes',
-                          style: TextStyle(
+                          l10n.perfilMisAportes,
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: FqColors.white,
@@ -92,10 +99,10 @@ class _AportesScreenState extends State<AportesScreen>
                   unselectedLabelColor: FqColors.stone,
                   labelStyle: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700),
-                  tabs: const <Tab>[
-                    Tab(text: 'Rutas'),
-                    Tab(text: 'Alertas'),
-                    Tab(text: 'Puntos / Nodos'),
+                  tabs: <Tab>[
+                    Tab(text: l10n.rutasTitulo),
+                    Tab(text: l10n.homeFiltroAlertas),
+                    Tab(text: l10n.aportesTabNodos),
                   ],
                 ),
               ],
@@ -136,6 +143,7 @@ class _TabMisRutas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Ruta>>(
       future: rutaApi.misRutas(),
       builder: (BuildContext ctx, AsyncSnapshot<List<Ruta>> snap) {
@@ -145,16 +153,16 @@ class _TabMisRutas extends StatelessWidget {
         if (snap.hasError) {
           return FqEmptyState(
             icon: Icons.error_outline,
-            title: 'Error al cargar rutas',
+            title: l10n.aportesErrorRutas,
             message: snap.error.toString(),
           );
         }
         final List<Ruta> rutas = snap.data ?? <Ruta>[];
         if (rutas.isEmpty) {
-          return const FqEmptyState(
+          return FqEmptyState(
             icon: Icons.route_outlined,
-            title: 'Aún no has creado rutas',
-            message: 'Diseña tu primera ruta trazándola en el mapa.',
+            title: l10n.aportesSinRutasTitulo,
+            message: l10n.aportesSinRutasMsg,
           );
         }
         return ListView.separated(
@@ -264,6 +272,7 @@ class _TabMisAlertas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Alerta>>(
       future: alertaApi.misAlertas(),
       builder: (BuildContext ctx, AsyncSnapshot<List<Alerta>> snap) {
@@ -273,17 +282,16 @@ class _TabMisAlertas extends StatelessWidget {
         if (snap.hasError) {
           return FqEmptyState(
             icon: Icons.error_outline,
-            title: 'Error al cargar alertas',
+            title: l10n.aportesErrorAlertas,
             message: snap.error.toString(),
           );
         }
         final List<Alerta> alertas = snap.data ?? <Alerta>[];
         if (alertas.isEmpty) {
-          return const FqEmptyState(
+          return FqEmptyState(
             icon: Icons.warning_amber_rounded,
-            title: 'No has reportado alertas',
-            message:
-                'Reporta incidencias en el camino (baches, árboles, etc.) para ayudar a la comunidad.',
+            title: l10n.aportesSinAlertasTitulo,
+            message: l10n.aportesSinAlertasMsg,
           );
         }
         return ListView.separated(
@@ -314,6 +322,7 @@ class _AlertaFila extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -348,7 +357,7 @@ class _AlertaFila extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  alerta.descripcion ?? 'Sin descripción adicional',
+                  alerta.descripcion ?? l10n.aportesSinDescripcion,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 10, color: FqColors.muted),
@@ -386,6 +395,7 @@ class _TabMisNodos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Nodo>>(
       future: nodoApi.misNodos(),
       builder: (BuildContext ctx, AsyncSnapshot<List<Nodo>> snap) {
@@ -395,17 +405,16 @@ class _TabMisNodos extends StatelessWidget {
         if (snap.hasError) {
           return FqEmptyState(
             icon: Icons.error_outline,
-            title: 'Error al cargar puntos de interés',
+            title: l10n.aportesErrorNodos,
             message: snap.error.toString(),
           );
         }
         final List<Nodo> nodos = snap.data ?? <Nodo>[];
         if (nodos.isEmpty) {
-          return const FqEmptyState(
+          return FqEmptyState(
             icon: Icons.location_on_outlined,
-            title: 'Aún no has propuesto puntos de interés',
-            message:
-                'Propón fuentes de agua, miradores o talleres en el mapa para compartirlos.',
+            title: l10n.aportesSinNodosTitulo,
+            message: l10n.aportesSinNodosMsg,
           );
         }
         return ListView.separated(

@@ -29,8 +29,14 @@ void main() {
       }
     });
 
-    test('hay un filtro por cada capa, mas Todo', () {
-      expect(FiltroMapa.values, hasLength(CapaMapa.values.length + 1));
+    test('Nada no deja ver ninguna capa del mapa', () {
+      for (final CapaMapa capa in CapaMapa.values) {
+        expect(FiltroMapa.nada.muestra(capa), isFalse, reason: '$capa');
+      }
+    });
+
+    test('hay un filtro por cada capa, mas Todo y Nada', () {
+      expect(FiltroMapa.values, hasLength(CapaMapa.values.length + 2));
     });
   });
 }

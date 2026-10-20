@@ -4,8 +4,8 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/home/application/filtro_mapa.dart';
 
-/// Los chips de arriba del mapa: Todo, Rutas, Alertas, POIs y Eventos. El
-/// seleccionado va oscuro; tocar otro avisa con [onCambio]. Es solo
+/// Los chips de arriba del mapa: Todo, Rutas, Alertas, POIs, Eventos y Nada.
+/// El seleccionado va oscuro; tocar otro avisa con [onCambio]. Es solo
 /// presentacion: quien la usa decide que cambia en el mapa.
 ///
 /// Si no caben en una linea (pantalla angosta, textos largos en portugues) pasan
@@ -28,6 +28,7 @@ class FiltrosMapa extends StatelessWidget {
       FiltroMapa.alertas => l10n.homeFiltroAlertas,
       FiltroMapa.pois => l10n.homeFiltroPois,
       FiltroMapa.eventos => l10n.comunEventos,
+      FiltroMapa.nada => l10n.homeFiltroNada,
     };
   }
 

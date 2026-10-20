@@ -10,6 +10,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/recorrido_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/mapa_trazo_ruta.dart';
 
@@ -24,12 +25,14 @@ class RutaDetalleScreen extends StatefulWidget {
     this.api,
     this.puedeEnviarARevision = false,
     this.onCambio,
+    this.recorridoBuilder,
   });
 
   final Ruta ruta;
   final RutaApi? api;
   final bool puedeEnviarARevision;
   final VoidCallback? onCambio;
+  final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
   @override
   State<RutaDetalleScreen> createState() => _RutaDetalleScreenState();
@@ -64,13 +67,14 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   /// Guarda (o quita) la ruta para verla sin conexion: datos en SQLite y
   /// teselas del mapa de la zona en el almacen de Mapbox.
   Future<void> _toggleOffline() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     if (_descargando) return;
     if (_guardadaOffline) {
       await _offlineDao.eliminar(widget.ruta.id);
       await MapasOfflineServicio.instancia.eliminarZonaDeRuta(widget.ruta.id);
       if (!mounted) return;
       setState(() => _guardadaOffline = false);
-      notificarExito('Ruta eliminada del uso offline');
+      notificarExito(l10n.mapasOfflineRutaEliminada);
       return;
     }
 
@@ -78,7 +82,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
     final List<Ruta> guardadas = await _offlineDao.listar();
     if (guardadas.length >= 3) {
       if (!mounted) return;
-      notificarInfo('Límite de 3 rutas offline alcanzado. Elimina una para descargar otra.');
+      notificarInfo(l10n.rutaDetalleLimiteOffline);
       return;
     }
 
@@ -90,7 +94,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
     if (!datosOk) {
       if (!mounted) return;
       setState(() => _descargando = false);
-      notificarError('No se pudo guardar la ruta en el teléfono');
+      notificarError(l10n.rutaDetalleErrorGuardarOffline);
       return;
     }
     final bool mapaOk = await MapasOfflineServicio.instancia.descargarZonaDeRuta(
@@ -105,24 +109,22 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       _guardadaOffline = true;
     });
     if (mapaOk) {
-      notificarExito('Ruta y mapa guardados para uso offline');
+      notificarExito(l10n.rutaDetalleOfflineGuardadoExito);
     } else {
-      notificarInfo(
-        'Ruta guardada, pero no se pudo descargar el mapa. '
-        'Inténtalo de nuevo con conexión.',
-      );
+      notificarInfo(l10n.rutaDetalleOfflineSinMapa);
     }
   }
 
   Future<void> _toggleFavorita() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final bool nueva = await _api.toggleFavorita(widget.ruta.id);
     if (!mounted) return;
     setState(() => _esFavorita = nueva);
     widget.onCambio?.call();
     notificarExito(
       nueva
-          ? 'Ruta guardada en tus favoritas'
-          : 'Ruta eliminada de tus guardadas',
+          ? l10n.rutaDetalleFavoritaGuardada
+          : l10n.rutaDetalleFavoritaEliminada,
     );
   }
 
@@ -139,6 +141,26 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       if (!mounted) return;
       setState(() => _enviando = false);
       notificarError(l10n.rutasNoSePudoEnviarRuta);
+    }
+  }
+
+  Future<void> _iniciarRecorrido() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    if (widget.ruta.puntos.length < 2) {
+      notificarInfo(
+        l10n.rutaDetalleSinPuntosSuficientes,
+      );
+      return;
+    }
+    final bool? guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext ctx) =>
+            widget.recorridoBuilder?.call(ctx, widget.ruta) ??
+            RecorridoRutaScreen(ruta: widget.ruta),
+      ),
+    );
+    if (guardado == true && mounted) {
+      widget.onCambio?.call();
     }
   }
 
@@ -343,7 +365,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           child: _MetricaDetalle(
                             valor: ruta.distanciaKm.toStringAsFixed(1),
                             unidad: 'km',
-                            subtitulo: 'Distancia',
+                            subtitulo: l10n.rutasDistancia,
                             icono: Icons.straighten_rounded,
                           ),
                         ),
@@ -351,7 +373,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                         Expanded(
                           child: _MetricaDetalle(
                             valor: '$desnivelEstimadoM',
-                            unidad: 'm elev.',
+                            unidad: l10n.rutaDetalleElevacion,
                             subtitulo: dificultadLabel(l10n, ruta.dificultad),
                             icono: Icons.terrain_rounded,
                           ),
@@ -361,7 +383,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           child: _MetricaDetalle(
                             valor: '$tiempoEstimadoMin',
                             unidad: 'min',
-                            subtitulo: 'Estimado',
+                            subtitulo: l10n.rutaDetalleEstimado,
                             icono: Icons.timer_outlined,
                           ),
                         ),
@@ -391,8 +413,8 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                         Expanded(
                           child: Text(
                             ruta.estado == 'Publicada'
-                                ? 'Ruta verificada por la comunidad · Apta para entrenar'
-                                : 'Ruta propia creada por ti · Lista para recorrer o editar',
+                                ? l10n.rutaDetalleVerificadaComunidad
+                                : l10n.rutaDetallePropia,
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -440,20 +462,20 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           ),
                           label: Text(
                             _esPrivada
-                                ? 'Editar'
-                                : (_esFavorita ? 'Guardada' : 'Guardar'),
+                                ? l10n.perfilEditar
+                                : (_esFavorita ? l10n.rutaDetalleGuardada : l10n.rutaDetalleGuardar),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: !_esPrivada && _esFavorita
-                                  ? const Color(0xFF0D9488)
-                                  : FqColors.ink,
+                                    ? const Color(0xFF0D9488)
+                                    : FqColors.ink,
                             ),
                           ),
                           onPressed: () {
                             if (_esPrivada) {
                               notificarInfo(
-                                  'Editar ruta: función disponible próximamente');
+                                  l10n.rutaDetalleEditarPronto);
                             } else {
                               _toggleFavorita();
                             }
@@ -475,17 +497,15 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                             elevation: 0,
                           ),
                           icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                          label: const Text(
-                            'Iniciar recorrido',
-                            style: TextStyle(
+                          label: Text(
+                            l10n.rutaDetalleIniciarRecorrido,
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.2,
                             ),
                           ),
-                          onPressed: () {
-                            notificarInfo('Iniciar recorrido: función disponible próximamente');
-                          },
+                          onPressed: _iniciarRecorrido,
                         ),
                       ),
                     ],
@@ -524,10 +544,10 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           ),
                     label: Text(
                       _descargando
-                          ? 'Descargando… ${(_progresoDescarga * 100).round()}%'
+                          ? l10n.rutaDetalleDescargando((_progresoDescarga * 100).round())
                           : (_guardadaOffline
-                              ? 'Disponible offline · Quitar'
-                              : 'Guardar para uso offline'),
+                              ? l10n.rutaDetalleDisponibleOfflineQuitar
+                              : l10n.rutaDetalleGuardarOffline),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

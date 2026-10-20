@@ -62,4 +62,20 @@ class PerfilCacheDao {
       return null;
     }
   }
+
+  /// Suma un recorrido terminado sin conexion a las metricas guardadas, para
+  /// que el perfil lo refleje al instante. No hace nada si aun no hay cache.
+  Future<void> sumarRecorrido(int idUsuario, double km) async {
+    try {
+      final Database? db = await _db.abrir();
+      if (db == null) return;
+      await db.rawUpdate(
+        'UPDATE perfil_cache SET km_recorridos = km_recorridos + ?, '
+        'rutas_completadas = rutas_completadas + 1, actualizado_en = ? '
+        'WHERE id_usuario = ?',
+        <Object?>[km, DateTime.now().toIso8601String(), idUsuario],
+      );
+    } catch (_) {}
+  }
 }
+
