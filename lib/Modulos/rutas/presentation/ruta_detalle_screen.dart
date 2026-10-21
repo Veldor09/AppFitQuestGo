@@ -5,8 +5,13 @@ import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
 import 'package:fit_quest_go/core/mapa/mapas_offline_servicio.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
+import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
+import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
@@ -26,6 +31,8 @@ class RutaDetalleScreen extends StatefulWidget {
     this.puedeEnviarARevision = false,
     this.onCambio,
     this.recorridoBuilder,
+    this.calificaciones,
+    this.abrirUrl,
   });
 
   final Ruta ruta;
@@ -34,12 +41,23 @@ class RutaDetalleScreen extends StatefulWidget {
   final VoidCallback? onCambio;
   final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
+  /// Pulgares de la ruta, inyectable para pruebas.
+  final CalificacionApi? calificaciones;
+
+  /// Abre "Como llegar"; por defecto lanza la app de mapas (inyectable para pruebas).
+  final Future<bool> Function(Uri uri)? abrirUrl;
+
   @override
   State<RutaDetalleScreen> createState() => _RutaDetalleScreenState();
 }
 
 class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
+  late final CalificacionApi _calificaciones =
+      widget.calificaciones ?? CalificacionApi.predeterminada();
+
+  /// Pulgares de la ruta; null mientras carga (la pantalla funciona sin ellos).
+  ResumenCalificacion? _resumen;
   bool _enviando = false;
   bool _esFavorita = false;
   final RutasOfflineDao _offlineDao = RutasOfflineDao();
@@ -58,6 +76,11 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       if (mounted) {
         setState(() => _esFavorita = ids.contains(widget.ruta.id));
       }
+    }).catchError((_) {});
+    _calificaciones
+        .resumen(TipoCalificable.ruta, widget.ruta.id)
+        .then((ResumenCalificacion r) {
+      if (mounted) setState(() => _resumen = r);
     }).catchError((_) {});
     _offlineDao.estaGuardada(widget.ruta.id).then((bool g) {
       if (mounted) setState(() => _guardadaOffline = g);
@@ -299,32 +322,10 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           ],
                         ),
                       ),
-                      // Score / Rating
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFDE68A)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const <Widget>[
-                            Text(
-                              '4.8',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF92400E),
-                              ),
-                            ),
-                            SizedBox(width: 3),
-                            Icon(Icons.star_rounded,
-                                size: 14, color: Color(0xFFD97706)),
-                          ],
-                        ),
-                      ),
+                      if (_resumen != null) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Pulgares(resumen: _resumen!, compacto: true),
+                      ],
                     ],
                   ),
 
@@ -341,6 +342,25 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                     ),
                   ],
 
+                  const SizedBox(height: 14),
+                  FilaAccionesFicha(
+                    acciones: <Widget>[
+                      AccionFicha(
+                        key: const ValueKey<String>('ruta-como-llegar'),
+                        icono: Icons.directions_rounded,
+                        etiqueta: l10n.fichaComoLlegar,
+                        principal: true,
+                        onTap: ruta.puntos.isEmpty
+                            ? null
+                            : () => abrirComoLlegar(
+                                context,
+                                lat: ruta.puntos.first.lat,
+                                lng: ruta.puntos.first.lng,
+                                abrir: widget.abrirUrl,
+                              ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
 
                   // Cuadrícula de 3 Métricas clave
@@ -375,6 +395,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                             valor: '$desnivelEstimadoM',
                             unidad: l10n.rutaDetalleElevacion,
                             subtitulo: dificultadLabel(l10n, ruta.dificultad),
+                            dificultad: ruta.dificultad,
                             icono: Icons.terrain_rounded,
                           ),
                         ),
@@ -425,6 +446,21 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                       ],
                     ),
                   ),
+
+                  if (_resumen != null) ...<Widget>[
+                    const SizedBox(height: 16),
+                    SeccionFicha(
+                      titulo: l10n.calificarPregunta,
+                      hijo: PulgaresObjeto(
+                        tipo: TipoCalificable.ruta,
+                        id: ruta.id,
+                        api: _calificaciones,
+                        resumenInicial: _resumen,
+                        alCambiar: (ResumenCalificacion r) =>
+                            setState(() => _resumen = r),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 20),
 
@@ -584,8 +620,11 @@ class _MetricaDetalle extends StatelessWidget {
     required this.unidad,
     required this.subtitulo,
     required this.icono,
+    this.dificultad,
   });
 
+  /// Si se da, el subtitulo lleva la carita de esa dificultad.
+  final String? dificultad;
   final String valor;
   final String unidad;
   final String subtitulo;
@@ -621,13 +660,22 @@ class _MetricaDetalle extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
-        Text(
-          subtitulo,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: FqColors.muted,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (dificultad != null) ...<Widget>[
+              IconoDificultad(dificultad: dificultad!, size: 15),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              subtitulo,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: FqColors.muted,
+              ),
+            ),
+          ],
         ),
       ],
     );

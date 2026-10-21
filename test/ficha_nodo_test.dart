@@ -10,6 +10,7 @@ import 'package:fit_quest_go/core/geo/posicion_gps.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'helpers/calificacion_falsa.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
@@ -113,7 +114,12 @@ Future<void> _abrir(WidgetTester tester, Nodo nodo, NodoApi api) async {
       home: Scaffold(
         body: Builder(
           builder: (BuildContext context) => TextButton(
-            onPressed: () => mostrarFichaNodo(context, nodo, api),
+            onPressed: () => mostrarFichaNodo(
+              context,
+              nodo,
+              api,
+              calificaciones: CalificacionApiFalsa(),
+            ),
             child: const Text('abrir'),
           ),
         ),
@@ -191,7 +197,13 @@ void main() {
         locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: FichaNodo(nodo: _nodo(conFoto: true), api: api)),
+        home: Scaffold(
+          body: FichaNodo(
+            nodo: _nodo(conFoto: true),
+            api: api,
+            calificaciones: CalificacionApiFalsa(),
+          ),
+        ),
       ),
     );
     await tester.pump();
@@ -251,6 +263,7 @@ void main() {
                   posicionActual: posicion,
                   usuarioId: usuarioId,
                   alVotar: alVotar,
+                  calificaciones: CalificacionApiFalsa(),
                 ),
                 child: const Text('abrir'),
               ),

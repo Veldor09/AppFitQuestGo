@@ -15,7 +15,9 @@ import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 
-/// Formulario para proponer un punto de interes.
+/// Formulario para proponer un punto de interes o, con [editar], para
+/// corregir uno propio (nombre, categoria, descripcion y foto; el lugar se
+/// queda donde estaba). Al editar se guarda directo, sin volver a moderacion.
 ///
 /// Las categorias disponibles se consultan al catalogo administrable ADM-11.
 /// La foto es opcional: primero se crea el nodo y despues se sube la foto.
@@ -27,11 +29,15 @@ class FormularioNodo extends StatefulWidget {
     required this.lng,
     this.selectorFoto,
     this.catalogosApi,
+    this.editar,
   });
 
   final NodoApi api;
   final double lat;
   final double lng;
+
+  /// El punto propio que se edita; null para proponer uno nuevo.
+  final Nodo? editar;
 
   /// Inyectable para pruebas; en produccion usa image_picker.
   final SelectorFoto? selectorFoto;
@@ -64,9 +70,18 @@ class _FormularioNodoState extends State<FormularioNodo> {
   bool _faltaCategoria = false;
   bool _enviando = false;
 
+  bool get _editando => widget.editar != null;
+
   @override
   void initState() {
     super.initState();
+    final Nodo? nodo = widget.editar;
+    if (nodo != null) {
+      _nombre.text = nodo.nombre;
+      _descripcion.text = nodo.descripcion ?? '';
+      _categoria = nodo.categoria;
+      _categoriaOtro.text = nodo.categoriaOtro ?? '';
+    }
     _cargarCategorias();
   }
 
@@ -180,15 +195,28 @@ class _FormularioNodoState extends State<FormularioNodo> {
     Nodo nodo;
 
     try {
-      nodo = await widget.api.proponer(
-        nombre: _nombre.text.trim(),
-        categoria: _categoria!,
-        categoriaOtro:
-            _categoria == claveOtro ? _categoriaOtro.text : null,
-        lat: widget.lat,
-        lng: widget.lng,
-        descripcion: _descripcion.text,
-      );
+      final Nodo? previo = widget.editar;
+      nodo = previo == null
+          ? await widget.api.proponer(
+              nombre: _nombre.text.trim(),
+              categoria: _categoria!,
+              categoriaOtro:
+                  _categoria == claveOtro ? _categoriaOtro.text : null,
+              lat: widget.lat,
+              lng: widget.lng,
+              descripcion: _descripcion.text,
+            )
+          : await widget.api.actualizar(
+              previo.id,
+              nombre: _nombre.text.trim(),
+              categoria: _categoria!,
+              categoriaOtro:
+                  _categoria == claveOtro ? _categoriaOtro.text : null,
+              lat: widget.lat,
+              lng: widget.lng,
+              descripcion: _descripcion.text,
+              beneficio: previo.beneficio,
+            );
     } catch (e) {
       if (!mounted) return;
 
@@ -237,7 +265,7 @@ class _FormularioNodoState extends State<FormularioNodo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                l10n.homeProponerPunto,
+                _editando ? l10n.aportesEditarNodoTitulo : l10n.homeProponerPunto,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -305,7 +333,7 @@ class _FormularioNodoState extends State<FormularioNodo> {
                 child: Text(
                   _enviando
                       ? l10n.comunEnviando
-                      : l10n.comunEnviar,
+                      : (_editando ? l10n.comunGuardar : l10n.comunEnviar),
                 ),
               ),
             ],

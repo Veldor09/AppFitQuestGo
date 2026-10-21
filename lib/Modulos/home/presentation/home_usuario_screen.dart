@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
+import 'package:fit_quest_go/core/mapa/control_ubicacion.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
@@ -977,6 +978,15 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
               ),
               const Spacer(),
               if (!escribiendo) ...<Widget>[
+                // Como el de Google Maps: te trae a tu posicion y, ya centrado,
+                // inclina el mapa.
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 10, 8),
+                    child: BotonMiUbicacion(mapa: () => _mapa),
+                  ),
+                ),
                 ListenableBuilder(
                   listenable: _proximidad,
                   builder: (BuildContext context, Widget? _) {

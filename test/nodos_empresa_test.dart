@@ -7,6 +7,7 @@ import 'package:fit_quest_go/Modulos/empresa/presentation/mis_nodos_screen.dart'
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/montar.dart';
 
@@ -189,6 +190,8 @@ Future<void> _guardar(WidgetTester tester) async {
 }
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('Nodo y NodoApi (modulo 5)', () {
     test('Nodo.fromJson lee el beneficio y si es patrocinado', () {
       final Nodo n = Nodo.fromJson(_json());

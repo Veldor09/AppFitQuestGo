@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -419,10 +420,23 @@ class _TarjetaRuta extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km · '
-                    '${dificultadLabel(l10n, ruta.dificultad)}',
-                    style: const TextStyle(fontSize: 10, color: FqColors.muted),
+                  Row(
+                    children: <Widget>[
+                      IconoDificultad(dificultad: ruta.dificultad, size: 15),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km · '
+                          '${dificultadLabel(l10n, ruta.dificultad)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: FqColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

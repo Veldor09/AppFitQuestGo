@@ -8,6 +8,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/nodos_admin_screen.dart';
+import 'helpers/calificacion_falsa.dart';
 
 final Uint8List _png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -63,6 +64,8 @@ Nodo _nodo(int id, String categoria, {String? otro, bool conFoto = false}) {
 }
 
 void main() {
+  usarCalificacionesFalsas();
+
   testWidgets('muestra la categoria traducida (no la clave) de cada propuesta', (
     WidgetTester tester,
   ) async {

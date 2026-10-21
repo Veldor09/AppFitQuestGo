@@ -7,6 +7,7 @@ import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/evento_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/eventos_screen.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/montar.dart';
 
@@ -118,6 +119,8 @@ class _EventoApiFalsa extends EventoApi {
 Widget _mapaFalso(BuildContext _) => const Text('mapa-falso');
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('EventosScreen (deportista)', () {
     testWidgets(
       'separa los que estan en curso de los proximos y oculta los terminados',
@@ -215,6 +218,11 @@ void main() {
         areas: 2,
         recorridos: 1,
       );
+      // Con los pulgares la lista es mas alta: una pantalla de telefono grande
+      // para que las areas y los recorridos queden a la vista.
+      tester.view.physicalSize = const Size(900, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await montarApp(
         tester,
         EventoDetalleScreen(

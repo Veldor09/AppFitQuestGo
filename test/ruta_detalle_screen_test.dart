@@ -8,6 +8,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'helpers/calificacion_falsa.dart';
 
 const List<PuntoRuta> _tresPuntos = <PuntoRuta>[
   PuntoRuta(lat: 9.9281, lng: -84.0907),
@@ -89,6 +90,7 @@ Future<void> _abrir(
                   puedeEnviarARevision: puedeEnviarARevision,
                   onCambio: onCambio,
                   recorridoBuilder: recorridoBuilder,
+                  calificaciones: CalificacionApiFalsa(),
                 ),
               ),
             ),

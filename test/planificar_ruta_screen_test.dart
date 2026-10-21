@@ -246,7 +246,7 @@ void main() {
       expect(find.text('Dibujar'), findsOneWidget);
       expect(find.text('Grabar GPS'), findsOneWidget);
       expect(
-        find.text('Toca el mapa para trazar tu ruta, punto por punto.'),
+        find.text('Arrastra el dedo sobre el mapa para trazar tu ruta.'),
         findsOneWidget,
       );
     });
