@@ -12,7 +12,7 @@ class AppDatabase {
   static final AppDatabase instancia = AppDatabase._();
 
   static const String _nombre = 'fitquestgo_local.db';
-  static const int _version = 2;
+  static const int _version = 3;
 
   Database? _db;
   Future<Database?>? _abriendo;
@@ -37,6 +37,10 @@ class AppDatabase {
         onUpgrade: (Database db, int anterior, int nueva) async {
           // v2: recorridos de rutas terminados, pendientes de subir.
           if (anterior < 2) await db.execute(_ddlActividadesPendientes);
+          // v3: perfil completo serializado para acceso offline al perfil.
+          if (anterior < 3) {
+            await db.execute('ALTER TABLE perfil_cache ADD COLUMN perfil_json TEXT');
+          }
         },
       );
       return _db;
@@ -128,7 +132,8 @@ CREATE TABLE perfil_cache (
   km_recorridos REAL NOT NULL DEFAULT 0.0,
   rutas_completadas INTEGER NOT NULL DEFAULT 0,
   insignias INTEGER NOT NULL DEFAULT 0,
-  actualizado_en TEXT NOT NULL
+  actualizado_en TEXT NOT NULL,
+  perfil_json TEXT
 )''',
   ];
 }

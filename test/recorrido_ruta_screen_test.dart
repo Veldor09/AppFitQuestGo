@@ -157,6 +157,128 @@ void main() {
     },
   );
 
+  testWidgets(
+    'al desviarse a otra calle antes de iniciar, reconstruye la ruta vial',
+    (WidgetTester tester) async {
+      final StreamController<PosicionGps> gps =
+          StreamController<PosicionGps>.broadcast();
+      final _VozFalsa voz = _VozFalsa();
+      final _DirectionsFalso directions = _DirectionsFalso();
+      final _ServicioFalso servicio = _ServicioFalso();
+      DateTime reloj = DateTime(2026, 1, 1, 8);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecorridoRutaScreen(
+            ruta: _ruta,
+            accessToken: '',
+            posiciones: () => gps.stream,
+            directions: directions,
+            voz: voz,
+            servicio: servicio,
+            ahora: () => reloj,
+            idUsuario: 1,
+          ),
+        ),
+      );
+
+      // Posición 1 lejos: se solicita la ruta inicial por calles.
+      gps.add((lat: 10.0, lng: -85.10));
+      await tester.pump();
+      expect(directions.llamadas, 1);
+
+      // Posición 2: avanza sobre la misma calle/línea. No debe pedir otra vez.
+      gps.add((lat: 10.0, lng: -85.09));
+      await tester.pump();
+      expect(directions.llamadas, 1);
+
+      // Posición 3: entra a otra calle (se desvía > 30m del trazo vial previo).
+      // Simulamos que pasan 5 segundos para superar el intervalo mínimo de repedir.
+      reloj = reloj.add(const Duration(seconds: 5));
+      gps.add((lat: 10.002, lng: -85.09));
+      await tester.pump();
+
+      // Debe haber pedido una nueva ruta para reconstruir el camino desde la nueva calle
+      expect(directions.llamadas, 2);
+
+      await gps.close();
+    },
+  );
+
+  testWidgets(
+    'cuando la carretera termina antes del inicio o no hay carretera, proyecta guia hacia el inicio',
+    (WidgetTester tester) async {
+      final StreamController<PosicionGps> gps =
+          StreamController<PosicionGps>.broadcast();
+      final _VozFalsa voz = _VozFalsa();
+      final _DirectionsFalso directions = _DirectionsFalso();
+      final _ServicioFalso servicio = _ServicioFalso();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecorridoRutaScreen(
+            ruta: _ruta,
+            accessToken: '',
+            posiciones: () => gps.stream,
+            directions: directions,
+            voz: voz,
+            servicio: servicio,
+            idUsuario: 1,
+          ),
+        ),
+      );
+
+      // El usuario está a 150m del inicio
+      gps.add((lat: 10.001, lng: -85.000));
+      await tester.pump();
+
+      expect(find.textContaining('Rumbo al inicio'), findsOneWidget);
+      expect(find.text('Empezar aquí'), findsOneWidget);
+
+      await gps.close();
+    },
+  );
+
+  testWidgets(
+    'al meterse a una casa mientras avanza, el trazo vial se mantiene en el asfalto y se guía con puntitos',
+    (WidgetTester tester) async {
+      final StreamController<PosicionGps> gps =
+          StreamController<PosicionGps>.broadcast();
+      final _VozFalsa voz = _VozFalsa();
+      final _DirectionsFalso directions = _DirectionsFalso();
+      final _ServicioFalso servicio = _ServicioFalso();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecorridoRutaScreen(
+            ruta: _ruta,
+            accessToken: '',
+            posiciones: () => gps.stream,
+            directions: directions,
+            voz: voz,
+            servicio: servicio,
+            idUsuario: 1,
+          ),
+        ),
+      );
+
+      // Posición 1 sobre la carretera (lat 10.0, lng -85.10)
+      gps.add((lat: 10.0, lng: -85.10));
+      await tester.pump();
+      expect(directions.llamadas, 1);
+
+      // Posición 2: se mete a una casa a 15m al norte del asfalto (lat 10.000135, lng -85.09)
+      gps.add((lat: 10.000135, lng: -85.09));
+      await tester.pump();
+
+      // No dispara petición innecesaria porque está dentro del umbral vial (< 30m)
+      expect(directions.llamadas, 1);
+      expect(find.textContaining('Rumbo al inicio'), findsOneWidget);
+
+      await gps.close();
+    },
+  );
+
   testWidgets('sin posiciones muestra que busca la ubicacion', (
     WidgetTester tester,
   ) async {
@@ -216,6 +338,52 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(llamadasGps, 2);
+    await tester.pumpWidget(const SizedBox());
+    await gps.close();
+  });
+
+  testWidgets('tocar Empezar aquí inicia inmediatamente la ruta y muestra Pausar y Finalizar', (
+    WidgetTester tester,
+  ) async {
+    final StreamController<PosicionGps> gps = StreamController<PosicionGps>.broadcast();
+    final _VozFalsa voz = _VozFalsa();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RecorridoRutaScreen(
+          ruta: _ruta,
+          accessToken: '',
+          posiciones: () => gps.stream,
+          directions: _DirectionsFalso(),
+          voz: voz,
+          servicio: _ServicioFalso(),
+        ),
+      ),
+    );
+
+    // Usuario lejos del inicio
+    gps.add((lat: 10.0, lng: -85.10));
+    await tester.pump();
+    expect(find.text('Empezar aquí'), findsOneWidget);
+    expect(find.text('Pausar'), findsNothing);
+
+    // Toca "Empezar aquí"
+    await tester.tap(find.text('Empezar aquí'));
+    await tester.pump();
+
+    // Muestra los controles de sesión activa pero mantiene la indicación vial
+    expect(find.text('Pausar'), findsOneWidget);
+    expect(find.text('Finalizar'), findsOneWidget);
+    expect(find.text('Empezar aquí'), findsNothing);
+    expect(find.text('Sigue la línea verde hasta el inicio de la ruta'), findsOneWidget);
+    expect(voz.dichas.last, contains('Comienza el recorrido'));
+
+    // Al llegar al inicio de la ruta, avisa la llegada y oculta la guía vial
+    gps.add((lat: 10.0, lng: -85.0001));
+    await tester.pump();
+    expect(find.text('Sigue la línea verde hasta el inicio de la ruta'), findsNothing);
+    expect(voz.dichas.last, contains('Has llegado al inicio'));
+
     await tester.pumpWidget(const SizedBox());
     await gps.close();
   });

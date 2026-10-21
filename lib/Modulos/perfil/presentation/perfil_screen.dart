@@ -17,6 +17,8 @@ import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.d
 import 'package:fit_quest_go/Modulos/perfil/presentation/preferencias_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/actividades_modal.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/editar_perfil_modal.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/intereses_modal.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
@@ -27,11 +29,13 @@ class PerfilScreen extends StatefulWidget {
     super.key,
     this.api,
     this.notificacionesApi,
+    this.cacheDao,
     this.onCerrarSesion,
   });
 
   final PerfilApi? api;
   final NotificacionesApi? notificacionesApi;
+  final PerfilCacheDao? cacheDao;
   final Future<void> Function()? onCerrarSesion;
 
   @override
@@ -42,13 +46,84 @@ class _PerfilScreenState extends State<PerfilScreen> {
   late final PerfilApi _api = widget.api ?? PerfilApi();
   late final NotificacionesApi _notifApi =
       widget.notificacionesApi ?? NotificacionesApi();
-  late Future<Usuario> _futuro = _api.miPerfil();
+  late final PerfilCacheDao _cacheDao = widget.cacheDao ?? PerfilCacheDao();
+
+  Usuario? _usuario;
+  bool _cargando = true;
+  bool _esOffline = false;
+  String? _errorMensaje;
   int _noLeidas = 0;
+  bool _inicializado = false;
 
   @override
   void initState() {
     super.initState();
     _cargarNoLeidas();
+    _refrescarDesdeApi();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_inicializado) {
+      _inicializado = true;
+      final UsuarioSesion? sesion = AuthScope.maybeOf(context)?.usuario;
+      if (sesion != null && _usuario == null) {
+        _usuario = Usuario(
+          id: sesion.id,
+          nombreUser: sesion.nombre.isNotEmpty
+              ? sesion.nombre
+              : sesion.email.split('@').first,
+          emailUser: sesion.email,
+          idrol: sesion.rol,
+        );
+        _cargando = false;
+      }
+      _cargarDesdeCache();
+    }
+  }
+
+  Future<void> _cargarDesdeCache() async {
+    final UsuarioSesion? sesion = AuthScope.maybeOf(context)?.usuario;
+
+    final Usuario? enCache = sesion != null
+        ? await _cacheDao.leerUsuario(sesion.id)
+        : await _cacheDao.leerUltimoUsuario();
+
+    if (mounted && enCache != null) {
+      setState(() {
+        _usuario = enCache;
+        _cargando = false;
+      });
+    }
+  }
+
+  Future<void> _refrescarDesdeApi() async {
+    try {
+      final Usuario remoto = await _api.miPerfil();
+      if (!mounted) return;
+      setState(() {
+        _usuario = remoto;
+        _cargando = false;
+        _esOffline = false;
+        _errorMensaje = null;
+      });
+      await _cacheDao.guardarUsuario(remoto);
+    } catch (e) {
+      if (!mounted) return;
+      if (_usuario == null) {
+        await _cargarDesdeCache();
+      }
+      if (!mounted) return;
+      setState(() {
+        _cargando = false;
+        if (_usuario != null) {
+          _esOffline = true;
+        } else {
+          _errorMensaje = e is ApiException ? e.message : null;
+        }
+      });
+    }
   }
 
   /// Contador del buzón; si falla simplemente no se muestra el indicador.
@@ -70,8 +145,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   void _recargar() {
     setState(() {
-      _futuro = _api.miPerfil();
+      _esOffline = false;
     });
+    _refrescarDesdeApi();
     _cargarNoLeidas();
   }
 
@@ -122,36 +198,40 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+    if (_cargando && _usuario == null) {
+      return const ColoredBox(
+        color: FqColors.paper,
+        child: _PerfilCargando(),
+      );
+    }
+
+    if (_usuario == null) {
+      return ColoredBox(
+        color: FqColors.paper,
+        child: _PerfilError(
+          mensaje: _errorMensaje ?? l10n.perfilErrorGenerico,
+          onReintentar: () {
+            setState(() => _cargando = true);
+            _recargar();
+          },
+        ),
+      );
+    }
+
     return ColoredBox(
       color: FqColors.paper,
-      child: FutureBuilder<Usuario>(
-        future: _futuro,
-        builder: (BuildContext context, AsyncSnapshot<Usuario> snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const _PerfilCargando();
-          }
-          if (snap.hasError || !snap.hasData) {
-            return _PerfilError(
-              mensaje: snap.error is ApiException
-                  ? (snap.error! as ApiException).message
-                  : l10n.perfilErrorGenerico,
-              onReintentar: _recargar,
-            );
-          }
-          final Usuario usuario = snap.data!;
-          return _PerfilContenido(
-            usuario: usuario,
-            api: _api,
-            onAjustes: () => _abrirAjustes(usuario),
-            onEditar: () => _editarPerfil(usuario),
-            onGestionarActividades: () => _gestionarActividades(usuario),
-            onGestionarIntereses: () => _gestionarIntereses(usuario),
-            onPreferencias: () => _abrirPreferencias(usuario),
-            onNotificaciones: _abrirNotificaciones,
-            noLeidas: _noLeidas,
-            onRecargar: _recargar,
-          );
-        },
+      child: _PerfilContenido(
+        usuario: _usuario!,
+        api: _api,
+        esOffline: _esOffline,
+        onAjustes: () => _abrirAjustes(_usuario!),
+        onEditar: () => _editarPerfil(_usuario!),
+        onGestionarActividades: () => _gestionarActividades(_usuario!),
+        onGestionarIntereses: () => _gestionarIntereses(_usuario!),
+        onPreferencias: () => _abrirPreferencias(_usuario!),
+        onNotificaciones: _abrirNotificaciones,
+        noLeidas: _noLeidas,
+        onRecargar: _recargar,
       ),
     );
   }
@@ -185,6 +265,7 @@ class _PerfilContenido extends StatelessWidget {
     required this.onNotificaciones,
     required this.noLeidas,
     required this.onRecargar,
+    this.esOffline = false,
   });
 
   final Usuario usuario;
@@ -197,6 +278,7 @@ class _PerfilContenido extends StatelessWidget {
   final VoidCallback onNotificaciones;
   final int noLeidas;
   final VoidCallback onRecargar;
+  final bool esOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +297,44 @@ class _PerfilContenido extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
             child: Column(
               children: <Widget>[
+                if (esOffline) ...<Widget>[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.wifi_off_rounded,
+                          size: 18,
+                          color: Color(0xFF92400E),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Modo sin conexión: mostrando datos guardados. Tus rutas descargadas siguen disponibles.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF92400E)),
+                          onPressed: onRecargar,
+                          tooltip: 'Reintentar',
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 RutasPendientesBanner(alSincronizar: onRecargar),
                 _SeccionActividades(
                   actividades: usuario.actividades,

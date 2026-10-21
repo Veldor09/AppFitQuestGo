@@ -36,8 +36,8 @@ class MapboxDirectionsService {
   final http.Client _client;
   final String _token;
 
-  /// Debajo de esta distancia no se llama a la API: ya estas en el inicio.
-  static const double umbralCercaniaMetros = 100;
+  /// Debajo de esta distancia no se llama a la API: ya estas practicamente en el inicio.
+  static const double umbralCercaniaMetros = 30;
   static const Duration _tiempoMaximo = Duration(seconds: 8);
 
   /// Devuelve null si el origen ya esta a menos de [umbralCercaniaMetros] del

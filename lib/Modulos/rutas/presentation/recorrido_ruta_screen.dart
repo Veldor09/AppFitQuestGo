@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -83,6 +84,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   /// A cuantos metros del final se avisa que terminaste la ruta.
   static const double _radioFinalM = 30;
 
+  /// Distancia maxima en metros para considerar que el usuario sigue sobre el camino vial de aproximacion.
+  static const double _umbralDesviacionCaminoM = 30;
+
+  /// Intervalo minimo entre solicitudes sucesivas a Directions para reconstruir la ruta de aproximacion.
+  static const Duration _intervaloMinimoRepedir = Duration(seconds: 4);
+
   static const Locale _idiomaVoz = Locale('es');
 
   String get _token => widget.accessToken ?? kMapboxAccessToken;
@@ -98,6 +105,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
 
   MapboxMap? _mapa;
   PolylineAnnotationManager? _lineasAcercamiento;
+  CircleAnnotationManager? _puntosAcercamiento;
   PolylineAnnotationManager? _lineasRuta;
   PolylineAnnotationManager? _lineasRecorrido;
 
@@ -114,7 +122,8 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   bool _silenciado = false;
   bool _finalizando = false;
   bool _llegoAlFinal = false;
-  bool _caminoPedido = false;
+  bool _pidiendoCamino = false;
+  DateTime? _ultimoPedidoCamino;
   bool _sinGps = false;
   bool _alcanzoRuta = false;
 
@@ -199,32 +208,38 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (!_enRuta) {
       final double aInicio =
           distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
-      if (aInicio <= _radioLlegadaM) {
+      final double distRuta = distanciaATrazoM(p, widget.ruta.puntos);
+      if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
         await _comenzarRecorrido(avisar: true);
       } else {
         _actualizarGuia(p);
       }
     } else if (!_pausado) {
-      _registrarPunto(p);
       final double aInicio =
           distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
+      final double distRuta = distanciaATrazoM(p, widget.ruta.puntos);
       if (!_alcanzoRuta) {
-        if (aInicio <= _radioLlegadaM) {
+        if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
           _alcanzoRuta = true;
           _camino = null;
           await _lineasAcercamiento?.deleteAll();
+          await _puntosAcercamiento?.deleteAll();
           final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
           _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
+          _registrarPunto(p);
+          _evaluarRuta(p);
         } else {
           _actualizarGuia(p);
         }
       } else {
+        _registrarPunto(p);
         _evaluarRuta(p);
         if (_detector.desviado) {
           _actualizarGuiaRetorno(p);
         } else if (_camino != null) {
           _camino = null;
           unawaited(_lineasAcercamiento?.deleteAll());
+          unawaited(_puntosAcercamiento?.deleteAll());
         }
       }
     }
@@ -234,39 +249,69 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   }
 
   void _actualizarGuia(PosicionGps p) {
-    if (!_caminoPedido) {
-      _caminoPedido = true;
-      unawaited(_pedirCamino(p));
-    } else if (_camino != null && _camino!.puntos.length >= 2) {
-      int indiceCercano = 0;
-      double minDist = double.infinity;
-      for (int i = 0; i < _camino!.puntos.length; i++) {
-        final double d = distanciaMetros(p.lat, p.lng, _camino!.puntos[i].lat, _camino!.puntos[i].lng);
-        if (d < minDist) {
-          minDist = d;
-          indiceCercano = i;
-        }
+    final DateTime ahora = (widget.ahora ?? DateTime.now)();
+    final bool puedePedir = !_pidiendoCamino &&
+        (_ultimoPedidoCamino == null ||
+            ahora.difference(_ultimoPedidoCamino!) >= _intervaloMinimoRepedir);
+
+    // Si aún no tenemos camino o es una línea directa previa y ya podemos pedir:
+    if (_camino == null || _camino!.puntos.length < 2 || _camino!.esLineaRecta) {
+      if (puedePedir) {
+        unawaited(_pedirCamino(p));
+      } else if (_camino == null || _camino!.puntos.length < 2) {
+        _camino = RutaVial(
+          puntos: <PosicionGps>[p, (lat: _inicio.lat, lng: _inicio.lng)],
+          distanciaMetros: distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng),
+          duracionSegundos: 0,
+          esLineaRecta: true,
+        );
+        unawaited(_dibujarCamino());
       }
+      return;
+    }
+
+    final ({
+      double distanciaMinima,
+      int indiceSegmento,
+      PosicionGps puntoProyectado,
+    }) infoCamino = _distanciaYMasCercanoAlCamino(p, _camino!.puntos);
+
+    if (infoCamino.distanciaMinima > _umbralDesviacionCaminoM) {
+      // El usuario se salió mucho del camino vial (por ejemplo, entró a otra calle o callejón).
+      // Se reconstruye la ruta por calles desde su nueva ubicación hacia el inicio.
+      if (puedePedir) {
+        unawaited(_pedirCamino(p));
+      }
+    } else {
+      // El usuario avanza siguiendo el camino vial: recortamos los tramos ya
+      // recorridos y proyectamos su posición sobre el asfalto (no dentro de la casa).
+      final int seg = infoCamino.indiceSegmento;
       final List<PosicionGps> puntosRestantes = <PosicionGps>[
-        p,
-        ..._camino!.puntos.skip(indiceCercano + 1),
+        infoCamino.puntoProyectado,
+        ..._camino!.puntos.sublist(seg + 1),
       ];
       final List<PosicionGps> puntosActualizados = puntosRestantes.length >= 2
           ? puntosRestantes
-          : <PosicionGps>[p, _camino!.puntos.last];
+          : <PosicionGps>[infoCamino.puntoProyectado, _camino!.puntos.last];
+
+      final double distVial = _distanciaPolilineaMetros(puntosActualizados);
+      final double distOffRoadInicio =
+          infoCamino.distanciaMinima > 5 ? infoCamino.distanciaMinima : 0;
+      final double distOffRoadFin = distanciaMetros(
+        puntosActualizados.last.lat,
+        puntosActualizados.last.lng,
+        _inicio.lat,
+        _inicio.lng,
+      );
+      final double distTotal = distVial +
+          distOffRoadInicio +
+          (distOffRoadFin > 8 ? distOffRoadFin : 0);
+
       _camino = RutaVial(
         puntos: puntosActualizados,
-        distanciaMetros: distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng),
+        distanciaMetros: distTotal,
         duracionSegundos: _camino!.duracionSegundos,
-        esLineaRecta: _camino!.esLineaRecta,
-      );
-      unawaited(_dibujarCamino());
-    } else {
-      _camino = RutaVial(
-        puntos: <PosicionGps>[p, (lat: _inicio.lat, lng: _inicio.lng)],
-        distanciaMetros: distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng),
-        duracionSegundos: 0,
-        esLineaRecta: true,
+        esLineaRecta: false,
       );
       unawaited(_dibujarCamino());
     }
@@ -321,26 +366,137 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   // ───────────────────────── Fases ─────────────────────────
 
   Future<void> _pedirCamino(PosicionGps origen) async {
-    final PosicionGps destino = (lat: _inicio.lat, lng: _inicio.lng);
-    RutaVial? camino = await _directions.rutaHastaInicio(
-      origen: origen,
-      destino: destino,
-      perfil: 'walking',
-    );
-    // Null = ya estas a menos de 100 m: una linea corta hasta el inicio.
-    camino ??= RutaVial(
-      puntos: <PosicionGps>[origen, destino],
-      distanciaMetros:
-          distanciaMetros(origen.lat, origen.lng, destino.lat, destino.lng),
-      duracionSegundos: 0,
-      esLineaRecta: true,
-    );
-    if (!mounted) return;
-    setState(() => _camino = camino);
-    await _dibujarCamino();
+    if (_pidiendoCamino) return;
+    _pidiendoCamino = true;
+    _ultimoPedidoCamino = (widget.ahora ?? DateTime.now)();
+    try {
+      final PosicionGps destino = (lat: _inicio.lat, lng: _inicio.lng);
+      RutaVial? camino = await _directions.rutaHastaInicio(
+        origen: origen,
+        destino: destino,
+        perfil: 'walking',
+      );
+      // Null = ya estás a menos de 30 m: trazo directo hasta el pin.
+      camino ??= RutaVial(
+        puntos: <PosicionGps>[origen, destino],
+        distanciaMetros:
+            distanciaMetros(origen.lat, origen.lng, destino.lat, destino.lng),
+        duracionSegundos: 0,
+        esLineaRecta: true,
+      );
+      if (!mounted) return;
+      setState(() => _camino = camino);
+      await _dibujarCamino();
+    } finally {
+      _pidiendoCamino = false;
+    }
   }
 
-  Future<void> _comenzarRecorrido({required bool avisar}) async {
+
+  static PosicionGps _puntoMasCercanoEnSegmentoGps(
+    PosicionGps p,
+    PosicionGps a,
+    PosicionGps b,
+  ) {
+    final double lat0 = p.lat * math.pi / 180;
+    final double kx = 6371000 * math.cos(lat0) * math.pi / 180;
+    final double ky = 6371000 * math.pi / 180;
+
+    final double ax = (a.lng - p.lng) * kx, ay = (a.lat - p.lat) * ky;
+    final double bx = (b.lng - p.lng) * kx, by = (b.lat - p.lat) * ky;
+    final double dx = bx - ax, dy = by - ay;
+    final double largo2 = dx * dx + dy * dy;
+
+    if (largo2 == 0) return a;
+
+    final double t = (-(ax * dx + ay * dy) / largo2).clamp(0.0, 1.0);
+    return (
+      lat: a.lat + t * (b.lat - a.lat),
+      lng: a.lng + t * (b.lng - a.lng),
+    );
+  }
+
+  static ({
+    double distanciaMinima,
+    int indiceSegmento,
+    PosicionGps puntoProyectado,
+  }) _distanciaYMasCercanoAlCamino(
+    PosicionGps p,
+    List<PosicionGps> puntos,
+  ) {
+    if (puntos.length < 2) {
+      if (puntos.isEmpty) {
+        return (
+          distanciaMinima: double.infinity,
+          indiceSegmento: 0,
+          puntoProyectado: p,
+        );
+      }
+      return (
+        distanciaMinima:
+            distanciaMetros(p.lat, p.lng, puntos.first.lat, puntos.first.lng),
+        indiceSegmento: 0,
+        puntoProyectado: puntos.first,
+      );
+    }
+    double minDist = double.infinity;
+    int segMin = 0;
+    PosicionGps proyMin = puntos.first;
+
+    for (int i = 0; i < puntos.length - 1; i++) {
+      final PosicionGps proy =
+          _puntoMasCercanoEnSegmentoGps(p, puntos[i], puntos[i + 1]);
+      final double d = distanciaMetros(p.lat, p.lng, proy.lat, proy.lng);
+      if (d < minDist) {
+        minDist = d;
+        segMin = i;
+        proyMin = proy;
+      }
+    }
+    return (
+      distanciaMinima: minDist,
+      indiceSegmento: segMin,
+      puntoProyectado: proyMin,
+    );
+  }
+
+  static double _distanciaPolilineaMetros(List<PosicionGps> puntos) {
+    if (puntos.length < 2) return 0;
+    double total = 0;
+    for (int i = 0; i < puntos.length - 1; i++) {
+      total += distanciaMetros(
+        puntos[i].lat,
+        puntos[i].lng,
+        puntos[i + 1].lat,
+        puntos[i + 1].lng,
+      );
+    }
+    return total;
+  }
+
+  static List<PosicionGps> _generarPuntitos(
+    PosicionGps desde,
+    PosicionGps hasta, {
+    double espaciadoM = 7.0,
+  }) {
+    final double dist =
+        distanciaMetros(desde.lat, desde.lng, hasta.lat, hasta.lng);
+    if (dist < 4.0) return <PosicionGps>[];
+    final int pasos = (dist / espaciadoM).round().clamp(1, 100);
+    final List<PosicionGps> puntos = <PosicionGps>[];
+    for (int i = 1; i <= pasos; i++) {
+      final double t = i / (pasos + 1);
+      puntos.add((
+        lat: desde.lat + t * (hasta.lat - desde.lat),
+        lng: desde.lng + t * (hasta.lng - desde.lng),
+      ));
+    }
+    return puntos;
+  }
+
+  Future<void> _comenzarRecorrido({
+    required bool avisar,
+  }) async {
     if (_enRuta) return;
     _enRuta = true;
     _iniciadoEn = (widget.ahora ?? DateTime.now)();
@@ -348,31 +504,38 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     _reloj = Timer.periodic(const Duration(seconds: 1), (Timer _) {
       if (mounted) setState(() {});
     });
-    if (avisar) {
-      final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
-      _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
-    } else {
-      final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
-      _decir(l10n?.recorridoVozComienza ?? 'Comienza el recorrido');
-    }
+
     final PosicionGps? p = _ultima;
     final double aInicio = p != null
         ? distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng)
         : double.infinity;
-    if (aInicio <= _radioLlegadaM) {
+    final double distRuta = p != null
+        ? distanciaATrazoM(p, widget.ruta.puntos)
+        : double.infinity;
+
+    final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
+    if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
       _alcanzoRuta = true;
-    }
-    if (p != null) {
-      _registrarPunto(p);
-      if (_alcanzoRuta) {
+      if (avisar) {
+        _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
+      } else {
+        _decir(l10n?.recorridoVozComienza ?? 'Comienza el recorrido');
+      }
+      if (p != null) {
+        _registrarPunto(p);
         _evaluarRuta(p);
       }
-    }
-    if (_alcanzoRuta) {
       _camino = null;
       await _lineasAcercamiento?.deleteAll();
-    } else if (p != null) {
-      _actualizarGuia(p);
+      await _puntosAcercamiento?.deleteAll();
+    } else {
+      // Inicia el cronómetro de la sesión, pero mantiene la guía vial verde
+      // hacia la ruta y no empieza a trazar la línea azul hasta alcanzarla.
+      _alcanzoRuta = false;
+      _decir(l10n?.recorridoVozComienza ?? 'Comienza el recorrido');
+      if (p != null) {
+        _actualizarGuia(p);
+      }
     }
     if (mounted) setState(() {});
   }
@@ -409,6 +572,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
       );
     } catch (_) {}
     _lineasAcercamiento = await mapa.annotations.createPolylineAnnotationManager();
+    _puntosAcercamiento = await mapa.annotations.createCircleAnnotationManager();
     _lineasRuta = await mapa.annotations.createPolylineAnnotationManager();
     _lineasRecorrido = await mapa.annotations.createPolylineAnnotationManager();
     final PointAnnotationManager iconos =
@@ -456,23 +620,107 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     ]);
   }
 
-  /// Camino de guia en verde lima hacia la ruta (al inicio o de retorno si esta desviado).
+  /// Camino de guía en verde lima hacia la ruta (al inicio o de retorno si está desviado).
+  /// Sigue la carretera con trazo sólido y proyecta "puntitos" estilo Google Maps
+  /// en tramos fuera de la red vial hasta el inicio real de la ruta.
   Future<void> _dibujarCamino() async {
     final RutaVial? camino = _camino;
     final PolylineAnnotationManager? lineas = _lineasAcercamiento;
-    if (lineas == null || camino == null) return;
-    await lineas.deleteAll();
-    await lineas.create(
-      PolylineAnnotationOptions(
-        geometry: LineString(
-          coordinates: <Position>[
-            for (final PosicionGps p in camino.puntos) Position(p.lng, p.lat),
-          ],
+    final CircleAnnotationManager? puntosCirculo = _puntosAcercamiento;
+    if (lineas == null && puntosCirculo == null) return;
+    await lineas?.deleteAll();
+    await puntosCirculo?.deleteAll();
+    if (camino == null) return;
+
+    final PosicionGps? usuario = _ultima;
+    final PosicionGps destino = (lat: _inicio.lat, lng: _inicio.lng);
+
+    if (camino.esLineaRecta) {
+      // No hay carretera disponible o se está muy cerca: dibujar los puntitos
+      // desde la posición actual del usuario hasta el inicio de la ruta (estilo Google Maps).
+      final PosicionGps desde = usuario ?? camino.puntos.first;
+      final List<PosicionGps> dots = _generarPuntitos(desde, destino);
+      if (puntosCirculo != null && dots.isNotEmpty) {
+        await puntosCirculo.createMulti(<CircleAnnotationOptions>[
+          for (final PosicionGps pt in dots)
+            CircleAnnotationOptions(
+              geometry: Point(coordinates: Position(pt.lng, pt.lat)),
+              circleColor: FqColors.volt.toARGB32(),
+              circleRadius: 4.5,
+              circleStrokeColor: FqColors.night.toARGB32(),
+              circleStrokeWidth: 1.5,
+            ),
+        ]);
+      }
+      return;
+    }
+
+    // Hay carretera (camino vial de Mapbox):
+    // 1. Trazado sólido verde sobre la carretera
+    final List<PosicionGps> caminoCarretera = camino.puntos;
+    if (caminoCarretera.length >= 2 && lineas != null) {
+      await lineas.create(
+        PolylineAnnotationOptions(
+          geometry: LineString(
+            coordinates: <Position>[
+              for (final PosicionGps p in caminoCarretera) Position(p.lng, p.lat),
+            ],
+          ),
+          lineColor: FqColors.volt.toARGB32(),
+          lineWidth: 6,
         ),
-        lineColor: FqColors.volt.toARGB32(),
-        lineWidth: 6,
-      ),
-    );
+      );
+    }
+
+    // 2. Puntitos desde el final de la carretera hasta el inicio de la ruta
+    // cuando la ruta comienza fuera de la red vial (en un parque, sendero, etc.).
+    final List<CircleAnnotationOptions> opcionesCirculos = <CircleAnnotationOptions>[];
+    final PosicionGps finCarretera = caminoCarretera.last;
+    final double distFinAInicio =
+        distanciaMetros(finCarretera.lat, finCarretera.lng, destino.lat, destino.lng);
+
+    if (distFinAInicio > 8) {
+      final List<PosicionGps> dots = _generarPuntitos(finCarretera, destino);
+      for (final PosicionGps pt in dots) {
+        opcionesCirculos.add(
+          CircleAnnotationOptions(
+            geometry: Point(coordinates: Position(pt.lng, pt.lat)),
+            circleColor: FqColors.volt.toARGB32(),
+            circleRadius: 4.5,
+            circleStrokeColor: FqColors.night.toARGB32(),
+            circleStrokeWidth: 1.5,
+          ),
+        );
+      }
+    }
+
+    // 3. Si el usuario está fuera de la carretera (> 5m del asfalto, ej. metido
+    // en una casa de un familiar, predio o acera), proyectamos puntitos desde su
+    // posición exacta hasta la calle más cercana (inicioCarretera).
+    if (usuario != null) {
+      final PosicionGps inicioCarretera = caminoCarretera.first;
+      final double distUsuarioACarretera =
+          distanciaMetros(usuario.lat, usuario.lng, inicioCarretera.lat, inicioCarretera.lng);
+      if (distUsuarioACarretera > 5) {
+        final List<PosicionGps> dotsInicio =
+            _generarPuntitos(usuario, inicioCarretera);
+        for (final PosicionGps pt in dotsInicio) {
+          opcionesCirculos.add(
+            CircleAnnotationOptions(
+              geometry: Point(coordinates: Position(pt.lng, pt.lat)),
+              circleColor: FqColors.volt.toARGB32(),
+              circleRadius: 4.5,
+              circleStrokeColor: FqColors.night.toARGB32(),
+              circleStrokeWidth: 1.5,
+            ),
+          );
+        }
+      }
+    }
+
+    if (puntosCirculo != null && opcionesCirculos.isNotEmpty) {
+      await puntosCirculo.createMulti(opcionesCirculos);
+    }
   }
 
   /// Lo que ya caminaste sobre el trazo oficial, en cian brillante.
@@ -1029,7 +1277,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
             ],
           ),
           const SizedBox(height: 16),
-          if (!_alcanzoRuta) ...<Widget>[
+          if (!_enRuta) ...<Widget>[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -1096,7 +1344,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                           ),
                           onPressed: _ultima == null
                               ? null
-                              : () => _comenzarRecorrido(avisar: false),
+                              : () => _comenzarRecorrido(
+                                    avisar: false,
+                                  ),
                           icon: const Icon(Icons.play_arrow_rounded, size: 22),
                           label: Text(
                             l10n?.recorridoEmpezarAqui ?? 'Empezar aquí',
@@ -1107,7 +1357,41 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
               ],
             ),
           ]
-          else
+          else ...<Widget>[
+            if (!_alcanzoRuta) ...<Widget>[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: FqColors.volt.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: FqColors.volt.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
+                ),
+                child: const Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.navigation_rounded,
+                      size: 16,
+                      color: FqColors.volt,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sigue la línea verde hasta el inicio de la ruta',
+                        style: TextStyle(
+                          color: FqColors.volt,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Row(
               children: <Widget>[
                 Expanded(
@@ -1156,6 +1440,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                 ),
               ],
             ),
+          ],
         ],
       ),
     );

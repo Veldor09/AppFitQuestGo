@@ -92,6 +92,24 @@ class Usuario {
 
   bool get activo => estado == EstadoUsuario.activado;
 
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'nombreUser': nombreUser,
+    'emailUser': emailUser,
+    'idrol': idrol,
+    'estado': estado,
+    if (rol != null)
+      'rol': <String, dynamic>{
+        'idrol': rol!.idrol,
+        'nombreRol': rol!.nombreRol,
+      },
+    'intereses': intereses,
+    'actividades': actividades,
+    'unidad': unidad,
+    'notificaciones': notificaciones,
+    'visibilidad': visibilidad,
+  };
+
   /// Etiqueta del rol en espanol para mostrar en la UI (Usuario / Empresa /
   /// Admin), independiente de como lo nombre el backend (`UserNormal`, ...).
   String get etiquetaRol {
