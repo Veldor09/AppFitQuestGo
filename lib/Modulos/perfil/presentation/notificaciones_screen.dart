@@ -205,6 +205,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                           'alertas': l10n.homeFiltroAlertas,
                           'insignias': l10n.perfilInsignias,
                           'eventos': l10n.comunEventos,
+                          'patrocinio': 'Patrocinio',
                         }.entries) ...<Widget>[
                           const SizedBox(width: 8),
                           _FiltroPill(
@@ -332,6 +333,13 @@ _EstiloCategoria _estiloDe(Notificacion n, AppLocalizations l10n) {
         const Color(0xFFB45309),
         const Color(0xFFFEF3C7),
         l10n.notificacionesAccionInsignias,
+      );
+    case 'patrocinio':
+      return const _EstiloCategoria(
+        Icons.campaign_rounded,
+        FqColors.purple,
+        Color(0xFFEFEBFB),
+        null,
       );
     default:
       return const _EstiloCategoria(

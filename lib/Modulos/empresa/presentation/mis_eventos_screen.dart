@@ -12,6 +12,8 @@ import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/editor_evento_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/interruptor_destacar.dart';
 
 /// Panel de la empresa · "Mis eventos": todos los que publico, los vigentes
 /// primero y los terminados al final. Crear uno nuevo, tocar uno para editarlo
@@ -226,11 +228,26 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
           evento: evento,
           ahora: ahora,
           onTap: () => _abrirEditor(evento),
-          trailing: IconButton(
-            key: ValueKey<String>('eliminar-evento-${evento.id}'),
-            tooltip: AppLocalizations.of(context)!.comunEliminar,
-            onPressed: () => _eliminar(evento),
-            icon: const Icon(Icons.delete_outline, color: FqColors.risk),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (eventoDestacable(evento, ahora))
+                InterruptorDestacar(
+                  compacto: true,
+                  activado: evento.destacarActivado,
+                  alCambiar: (bool destacar) async =>
+                      (await _api.destacar(
+                        evento.id,
+                        destacar: destacar,
+                      )).destacarActivado,
+                ),
+              IconButton(
+                key: ValueKey<String>('eliminar-evento-${evento.id}'),
+                tooltip: AppLocalizations.of(context)!.comunEliminar,
+                onPressed: () => _eliminar(evento),
+                icon: const Icon(Icons.delete_outline, color: FqColors.risk),
+              ),
+            ],
           ),
         );
       },

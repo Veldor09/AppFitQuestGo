@@ -1,5 +1,6 @@
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
 
 class EventoApi {
   EventoApi([ApiClient? client]) : _client = client ?? ApiClient();
@@ -16,6 +17,18 @@ class EventoApi {
   /// Todos los eventos de la empresa, tambien los ya terminados.
   Future<List<Evento>> mios() async =>
       _lista(await _client.get('/eventos/mios'));
+
+  /// Enciende o apaga "Destacar" en un evento propio (mismos errores que en nodos).
+  Future<ResultadoDestacar> destacar(int id, {required bool destacar}) async {
+    final dynamic data = await _client.patch('/eventos/$id/destacar', <String, dynamic>{
+      'destacar': destacar,
+    });
+    final Map<String, dynamic> json = data as Map<String, dynamic>;
+    return (
+      destacarActivado: json['destacarActivado'] as bool? ?? false,
+      destacado: json['destacado'] as bool? ?? false,
+    );
+  }
 
   Future<Evento> detalle(int id) async {
     final dynamic data = await _client.get('/eventos/$id');

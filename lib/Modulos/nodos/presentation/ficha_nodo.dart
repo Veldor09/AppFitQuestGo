@@ -12,6 +12,9 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/foto_nodo.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/etiqueta_destacado.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/interruptor_destacar.dart';
 
 /// Abre la ficha corta de un punto de interes (al tocar su pin en el mapa o su
 /// fila en la cola de moderacion del admin).
@@ -27,6 +30,7 @@ Future<void> mostrarFichaNodo(
   PosicionGps? Function()? posicionActual,
   int? usuarioId,
   ValueChanged<Nodo>? alVotar,
+  ValueChanged<Nodo>? alDestacar,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -37,6 +41,7 @@ Future<void> mostrarFichaNodo(
       posicionActual: posicionActual,
       usuarioId: usuarioId,
       alVotar: alVotar,
+      alDestacar: alDestacar,
     ),
   );
 }
@@ -51,6 +56,7 @@ class FichaNodo extends StatefulWidget {
     this.posicionActual,
     this.usuarioId,
     this.alVotar,
+    this.alDestacar,
   });
 
   final Nodo nodo;
@@ -62,6 +68,10 @@ class FichaNodo extends StatefulWidget {
   /// Quien mira la ficha: quien propuso el punto no lo vota.
   final int? usuarioId;
   final ValueChanged<Nodo>? alVotar;
+
+  /// Recibe el punto tal como quedo tras encender o apagar "Destacar", para que
+  /// el mapa lo dibuje al instante.
+  final ValueChanged<Nodo>? alDestacar;
 
   @override
   State<FichaNodo> createState() => _FichaNodoState();
@@ -113,6 +123,26 @@ class _FichaNodoState extends State<FichaNodo> {
     }
   }
 
+  /// El dueno de un punto que se puede destacar ve el interruptor.
+  bool get _puedeDestacar =>
+      widget.usuarioId != null &&
+      _nodo.creadoPorId == widget.usuarioId &&
+      nodoDestacable(_nodo);
+
+  Future<bool> _cambiarDestacado(bool destacar) async {
+    final ResultadoDestacar r = await widget.api.destacar(
+      _nodo.id,
+      destacar: destacar,
+    );
+    final Nodo nuevo = _nodo.conDestacado(
+      destacarActivado: r.destacarActivado,
+      destacado: r.destacado,
+    );
+    if (mounted) setState(() => _nodo = nuevo);
+    widget.alDestacar?.call(nuevo);
+    return r.destacarActivado;
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
@@ -135,9 +165,22 @@ class _FichaNodoState extends State<FichaNodo> {
               FotoNodo(api: widget.api, nodoId: _nodo.id),
               const SizedBox(height: 14),
             ],
-            Text(
-              _nodo.nombre,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    _nodo.nombre,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (_nodo.destacado) ...<Widget>[
+                  const SizedBox(width: 8),
+                  const EtiquetaDestacado(),
+                ],
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -211,6 +254,13 @@ class _FichaNodoState extends State<FichaNodo> {
                   fontWeight: FontWeight.w600,
                   color: FqColors.muted,
                 ),
+              ),
+            ],
+            if (_puedeDestacar) ...<Widget>[
+              const SizedBox(height: 12),
+              InterruptorDestacar(
+                activado: _nodo.destacarActivado,
+                alCambiar: _cambiarDestacado,
               ),
             ],
             if (voto != null) ...<Widget>[

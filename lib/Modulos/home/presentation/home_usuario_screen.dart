@@ -45,6 +45,9 @@ import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/formulario_nodo.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/proximidad_destacados.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/banner_destacado_cerca.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/capa_destacados_mapa.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
@@ -108,6 +111,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       widget.notificacionesApi ?? NotificacionesApi();
   late final ProximidadAlertas _proximidad;
   late final ClimaZona _clima;
+
+  /// El aviso "Destacado cerca de ti" (a 1 km o menos, uno a la vez).
+  final ProximidadDestacados _destacados = ProximidadDestacados();
   Timer? _temporizadorAlertas;
   Timer? _temporizadorRutas;
   Timer? _temporizadorClima;
@@ -122,6 +128,10 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   /// y el icono de su categoria (como en Google Maps).
   PointAnnotationManager? _iconosNodos;
   Cancelable? _escuchaTapNodos;
+
+  /// Los puntos destacados: pines dorados en su propio administrador, creado
+  /// despues del de los demas puntos para que quede encima de todo.
+  CapaDestacadosMapa? _capaDestacados;
 
   /// Los eventos de las empresas: sus areas y recorridos, con nombre.
   CapaEventosMapa? _capaEventos;
@@ -176,6 +186,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       posicion: () => _proximidad.ultimaPosicion,
     );
     _focoBusqueda.addListener(_alCambiarFocoBusqueda);
+    _proximidad.posicion.addListener(_alMoverseDestacados);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _proximidad.iniciar();
@@ -207,12 +218,15 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _focoBusqueda.dispose();
     _busqueda.dispose();
     _capaEventos?.liberar();
+    _capaDestacados?.liberar();
     _capaRutas?.liberar();
     _temporizadorAlertas?.cancel();
     _temporizadorRutas?.cancel();
     _temporizadorClima?.cancel();
     _escuchaTapNodos?.cancel();
     _clima.dispose();
+    _proximidad.posicion.removeListener(_alMoverseDestacados);
+    _destacados.dispose();
     _proximidad.dispose();
     _vozActiva?.detener();
     super.dispose();
@@ -292,7 +306,27 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
           if (n.id != nuevo.id) n else if (nuevo.estado == 'Aprobado') nuevo,
       ];
     });
+    _actualizarDestacables();
     unawaited(_dibujarPines());
+  }
+
+  /// Lo destacado que Home tiene cargado, para el aviso de cercania.
+  void _actualizarDestacables() =>
+      _destacados.actualizarDestacables(_nodos, _eventos);
+
+  void _alMoverseDestacados() {
+    final PosicionGps? pos = _proximidad.posicion.value;
+    if (pos != null) _destacados.alMoverse(pos);
+  }
+
+  /// Abre la ficha de un destacado (punto o evento).
+  void _abrirDestacado(DestacadoCercano destacado) {
+    switch (destacado.origen) {
+      case Nodo nodo:
+        _abrirFicha(nodo);
+      case Evento evento:
+        if (mounted) unawaited(mostrarFichaEvento(context, evento));
+    }
   }
 
   Future<void> _cargarNodos() async {
@@ -301,6 +335,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       // La recarga es periodica: si no cambio nada no se redibujan los pines.
       if (!mounted || _mismosNodos(_nodos, nodos)) return;
       setState(() => _nodos = nodos);
+      _actualizarDestacables();
       await _dibujarPines();
     } catch (_) {
       // Sin datos por ahora: el mapa queda vacio, no bloquea la pantalla.
@@ -313,6 +348,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       if (a[i].id != b[i].id ||
           a[i].estado != b[i].estado ||
           a[i].miVoto != b[i].miVoto ||
+          a[i].destacado != b[i].destacado ||
           a[i].confirmaciones != b[i].confirmaciones ||
           a[i].obsoletos != b[i].obsoletos) {
         return false;
@@ -398,6 +434,10 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     await prepararPines(nodos);
     _iconosNodos = nodos;
     _escuchaTapNodos = nodos.tapEvents(onTap: _onTapNodo);
+    _capaDestacados = await CapaDestacadosMapa.crear(
+      controller,
+      alTocarNodo: _abrirNodoPorId,
+    );
     // Lo que ya llego antes de que existiera el mapa se dibuja ahora.
     await _dibujarPines();
     await _dibujarEventos();
@@ -409,6 +449,15 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   /// si estas cerca, deja votar si sigue ahi o ya no existe.
   void _onTapNodo(PointAnnotation pin) => _abrirFicha(_nodoPorPin[pin.id]);
 
+  void _abrirNodoPorId(int nodoId) {
+    for (final Nodo n in _nodos) {
+      if (n.id == nodoId) {
+        _abrirFicha(n);
+        return;
+      }
+    }
+  }
+
   void _abrirFicha(Nodo? nodo) {
     if (nodo == null || !mounted) return;
     unawaited(
@@ -419,6 +468,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         posicionActual: () => _proximidad.ultimaPosicion,
         usuarioId: _usuarioId,
         alVotar: _reemplazarNodo,
+        alDestacar: _reemplazarNodo,
       ),
     );
   }
@@ -480,6 +530,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       // La recarga es periodica: si no cambio nada no se redibuja.
       if (!mounted || _mismosEventos(_eventos, eventos)) return;
       setState(() => _eventos = eventos);
+      _actualizarDestacables();
       await _dibujarEventos();
     } catch (_) {
       // Sin datos por ahora: el mapa queda sin eventos, no bloquea la pantalla.
@@ -490,6 +541,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i].id != b[i].id ||
+          a[i].destacado != b[i].destacado ||
           a[i].areas.length != b[i].areas.length ||
           a[i].recorridos.length != b[i].recorridos.length) {
         return false;
@@ -514,6 +566,10 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       recorridos: <ZonaEvento>[
         for (final Evento e in eventos) ...e.recorridosRotulados,
       ],
+      eventosDestacados: <int>{
+        for (final Evento e in eventos)
+          if (e.destacado) e.id,
+      },
     );
   }
 
@@ -559,12 +615,21 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       ]);
     }
 
-    if (nodos.isEmpty || !mounted) return;
+    if (!mounted) return;
     final double densidad = MediaQuery.devicePixelRatioOf(context);
+    // Los destacados van en su propia capa, encima de todo (y se borra si el
+    // filtro oculta los puntos).
+    final CapaDestacadosMapa? capaDestacados = _capaDestacados;
+    await capaDestacados?.dibujar(densidad: densidad, nodos: nodos);
+    final List<Nodo> normales = <Nodo>[
+      for (final Nodo n in nodos)
+        if (capaDestacados == null || !n.destacado) n,
+    ];
+    if (normales.isEmpty || !mounted) return;
     // Un local de empresa (nodo patrocinado) lleva su tienda; los demas puntos,
     // el icono de su categoria.
     final List<PointAnnotationOptions> opciones = <PointAnnotationOptions>[
-      for (final Nodo n in nodos)
+      for (final Nodo n in normales)
         opcionesDePin(
           lat: n.lat,
           lng: n.lng,
@@ -576,9 +641,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     ];
     final List<PointAnnotation?> creados = await nodosMgr.createMulti(opciones);
     // Los pines salen en el orden de las opciones.
-    for (int i = 0; i < nodos.length && i < creados.length; i++) {
+    for (int i = 0; i < normales.length && i < creados.length; i++) {
       final PointAnnotation? pin = creados[i];
-      if (pin != null) _nodoPorPin[pin.id] = nodos[i];
+      if (pin != null) _nodoPorPin[pin.id] = normales[i];
     }
   }
 
@@ -815,10 +880,20 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
             lng: posicion.lng,
             alertas: _alertas,
           );
+    final DestacadoCercano? destacado = posicion == null
+        ? null
+        : destacadoMasCercano(
+            lat: posicion.lat,
+            lng: posicion.lng,
+            nodos: _nodos,
+            eventos: _eventos,
+          );
     return PanelCercano(
       hayUbicacion: posicion != null,
       ruta: ruta,
       alerta: alerta,
+      destacado: destacado,
+      onDestacado: destacado == null ? null : () => _abrirDestacado(destacado),
       onRuta: () {
         if (ruta == null) return;
         unawaited(
@@ -914,6 +989,28 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                       onSigue: () => _votar(sigueAhi: true),
                       onNoEsta: () => _votar(sigueAhi: false),
                       onCerrar: _proximidad.descartar,
+                    );
+                  },
+                ),
+                // Un destacado nunca tapa una alerta de peligro: mientras haya
+                // una alerta que avisar, el aviso del destacado espera.
+                ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[
+                    _proximidad,
+                    _destacados,
+                  ]),
+                  builder: (BuildContext context, Widget? _) {
+                    final DestacadoCercano? destacado = _destacados.cercano;
+                    if (destacado == null || _proximidad.alertaCercana != null) {
+                      return const SizedBox.shrink();
+                    }
+                    return BannerDestacadoCerca(
+                      destacado: destacado,
+                      onTap: () {
+                        _destacados.cerrar();
+                        _abrirDestacado(destacado);
+                      },
+                      onCerrar: _destacados.cerrar,
                     );
                   },
                 ),

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
 
 class NodoApi {
   NodoApi([ApiClient? client]) : _client = client ?? ApiClient();
@@ -115,6 +116,20 @@ class NodoApi {
       'lng': lng,
     });
     return Nodo.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Enciende o apaga "Destacar" en un punto propio. Si no se puede, el
+  /// servidor responde 403 con `DESTACAR_SIN_PLAN`, `DESTACAR_TOPE` o
+  /// `DESTACAR_NO_ELEGIBLE` en `ApiException.message`.
+  Future<ResultadoDestacar> destacar(int id, {required bool destacar}) async {
+    final dynamic data = await _client.patch('/nodos/$id/destacar', <String, dynamic>{
+      'destacar': destacar,
+    });
+    final Map<String, dynamic> json = data as Map<String, dynamic>;
+    return (
+      destacarActivado: json['destacarActivado'] as bool? ?? false,
+      destacado: json['destacado'] as bool? ?? false,
+    );
   }
 
   /// ADM-07 · Cola de moderacion. Solo Admin.

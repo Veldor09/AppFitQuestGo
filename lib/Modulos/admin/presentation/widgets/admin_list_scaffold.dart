@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
@@ -18,6 +19,7 @@ class AdminListScaffold extends StatelessWidget {
     this.toolbarTrailing,
     this.searchController,
     this.onSearch,
+    this.onFilters,
   });
 
   final String searchHint;
@@ -28,6 +30,9 @@ class AdminListScaffold extends StatelessWidget {
   final Widget? toolbarTrailing;
   final TextEditingController? searchController;
   final ValueChanged<String>? onSearch;
+
+  /// Accion opcional del boton Filtros de la barra de herramientas.
+  final VoidCallback? onFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +45,7 @@ class AdminListScaffold extends StatelessWidget {
             searchHint: searchHint,
             controller: searchController,
             onChanged: onSearch,
+            onFilters: onFilters,
             trailing: toolbarTrailing,
           ),
           const SizedBox(height: FqGap.md),

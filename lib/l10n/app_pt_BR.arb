@@ -533,7 +533,7 @@
   "homeSinAlertasCerca": "Sem alertas por perto",
   "homeBuscandoUbicacion": "Buscando sua localizacao...",
   "homeReportarAqui": "Reportar aqui",
-  "homeSinUbicacionParaReportar": "Ainda nao tenho sua localizacao. Aguarde alguns segundos ou mantenha o mapa pressionado.",
+  "homeSinUbicacionParaReportar": "Ainda nao tenho sua localizacao. Aguarde algunos segundos ou mantenha o mapa pressionado.",
   "insigniasTitulo": "Minhas Insígnias",
   "insigniasDeUsuario": "Insígnias de {nombre}",
   "insigniasErrorCarga": "Não foi possível carregar as insígnias",
@@ -696,5 +696,12 @@
   "recorridoSeguir": "Continuar",
   "recorridoActivarVoz": "Ativar voz",
   "recorridoSilenciarVoz": "Silenciar voz",
-  "comunListo": "Pronto"
+  "comunListo": "Pronto",
+  "patrocinioDestacar": "Destacar no mapa",
+  "patrocinioDestacado": "Destaque",
+  "patrocinioSinPlan": "Voce precisa de um plano de patrocinio ativo para destacar.",
+  "patrocinioTope": "Voce chegou ao maximo de destaques ativos. Desative um para destacar este.",
+  "patrocinioNoElegible": "Este conteudo nao pode ser destacado.",
+  "patrocinioErrorDestacar": "Nao foi possivel alterar o destaque.",
+  "patrocinioCercaTitulo": "Destaque perto de voce"
 }

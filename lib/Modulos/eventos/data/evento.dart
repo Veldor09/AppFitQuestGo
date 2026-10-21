@@ -67,6 +67,8 @@ class Evento {
     this.descripcion,
     this.creadoPorNombre,
     this.creadoPorId,
+    this.destacado = false,
+    this.destacarActivado = false,
   });
 
   factory Evento.fromJson(Map<String, dynamic> json) {
@@ -87,6 +89,8 @@ class Evento {
       recorridos: zonas('recorridos'),
       creadoPorNombre: creador?['nombreUser'] as String?,
       creadoPorId: creador?['id'] as int?,
+      destacado: json['destacado'] as bool? ?? false,
+      destacarActivado: json['destacarActivado'] as bool? ?? false,
     );
   }
 
@@ -107,6 +111,12 @@ class Evento {
   /// Nombre comercial de la empresa que lo publica.
   final String? creadoPorNombre;
   final int? creadoPorId;
+
+  /// Sale destacado en el mapa AHORA (interruptor + plan vigente + sin terminar).
+  final bool destacado;
+
+  /// El interruptor "Destacar" de la empresa (solo en sus listas).
+  final bool destacarActivado;
 
   /// Las areas y los recorridos para dibujarlos en un mapa: cada uno lleva el
   /// nombre del EVENTO (no su nombre interno, "Area 1" / "Recorrido 1"), porque
