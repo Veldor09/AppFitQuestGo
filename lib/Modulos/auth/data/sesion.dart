@@ -43,6 +43,13 @@ class UsuarioSesion {
     );
   }
 
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'nombre': nombre,
+    'email': email,
+    'rol': rol,
+  };
+
   final int id;
   final String nombre;
   final String email;

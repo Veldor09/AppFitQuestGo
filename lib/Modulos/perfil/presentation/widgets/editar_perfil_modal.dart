@@ -11,6 +11,7 @@ import 'package:fit_quest_go/core/widgets/campo_texto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Modal para editar la información personal del usuario (nombre, correo y contraseña).
 class EditarPerfilModal extends StatefulWidget {
@@ -85,7 +86,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
 
   void _cerrar([bool cambio = false]) => Navigator.of(context).pop(cambio);
 
-  bool _camposValidos() {
+  bool _camposValidos(AppLocalizations l10n) {
     final bool datosBasicos = todoValido(<(String, List<Validador>)>[
       (_nombre.text, reglasNombre()),
       (_email.text, reglasCorreo()),
@@ -95,7 +96,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
 
     final bool passwordValido = todoValido(<(String, List<Validador>)>[
       (_password.text, <Validador>[
-        requerido('Ingresa la nueva contraseña'),
+        requerido(l10n.editarPerfilIngresaPassword),
         minCaracteres(8),
       ]),
     ]);
@@ -104,14 +105,14 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     return datosBasicos && passwordValido && coincide;
   }
 
-  Future<void> _guardar() async {
+  Future<void> _guardar(AppLocalizations l10n) async {
     FocusScope.of(context).unfocus();
-    if (!_camposValidos()) {
+    if (!_camposValidos(l10n)) {
       setState(() => _forzarError = true);
       if (_cambiarPassword && _password.text != _confirmPassword.text) {
-        notificarError('Las contraseñas no coinciden');
+        notificarError(l10n.editarPerfilPasswordNoCoincide);
       } else {
-        notificarError('Revisa los campos de información personal');
+        notificarError(l10n.editarPerfilRevisarCampos);
       }
       return;
     }
@@ -126,12 +127,12 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
       );
 
       if (!mounted) return;
-      notificarExito('Perfil actualizado correctamente');
+      notificarExito(l10n.editarPerfilExito);
       _cerrar(true);
     } on ApiException catch (e) {
       _fallar(e.message);
     } catch (_) {
-      _fallar('No se pudo actualizar el perfil. Revisa tu conexión.');
+      _fallar(l10n.editarPerfilError);
     }
   }
 
@@ -143,6 +144,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -160,15 +162,15 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  _encabezado(),
+                  _encabezado(l10n),
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: FqColors.border),
                   const SizedBox(height: 16),
-                  _campos(),
+                  _campos(l10n),
                   const SizedBox(height: 20),
                   const Divider(height: 1, color: FqColors.border),
                   const SizedBox(height: 14),
-                  _acciones(),
+                  _acciones(l10n),
                 ],
               ),
             ),
@@ -178,7 +180,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     );
   }
 
-  Widget _encabezado() {
+  Widget _encabezado(AppLocalizations l10n) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
@@ -205,9 +207,9 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Text(
-                'Editar mi perfil',
-                style: TextStyle(
+              Text(
+                l10n.editarPerfilTitulo,
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: FqColors.ink,
@@ -240,12 +242,12 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     );
   }
 
-  Widget _campos() {
+  Widget _campos(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         CampoTexto(
-          label: 'Nombre completo',
+          label: l10n.editarPerfilNombre,
           controller: _nombre,
           reglas: reglasNombre(),
           maxCaracteres: kMaxNombreUsuario,
@@ -254,7 +256,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
         ),
         const SizedBox(height: FqGap.md),
         CampoTexto(
-          label: 'Correo electrónico',
+          label: l10n.editarPerfilCorreo,
           controller: _email,
           reglas: reglasCorreo(),
           maxCaracteres: kMaxCorreoUsuario,
@@ -290,10 +292,10 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
                   color: _cambiarPassword ? FqColors.voltDark : FqColors.muted,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Cambiar contraseña de acceso',
-                    style: TextStyle(
+                    l10n.editarPerfilCambiarPassword,
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: FqColors.ink,
@@ -307,10 +309,10 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
         if (_cambiarPassword) ...<Widget>[
           const SizedBox(height: FqGap.sm),
           CampoTexto(
-            label: 'Nueva contraseña',
+            label: l10n.editarPerfilNuevaPassword,
             controller: _password,
             reglas: <Validador>[
-              requerido('Ingresa la contraseña'),
+              requerido(l10n.editarPerfilIngresaPassword),
               minCaracteres(8),
             ],
             obscureText: true,
@@ -319,10 +321,10 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
           ),
           const SizedBox(height: FqGap.sm),
           CampoTexto(
-            label: 'Confirmar nueva contraseña',
+            label: l10n.editarPerfilConfirmarPassword,
             controller: _confirmPassword,
             reglas: <Validador>[
-              requerido('Confirma la contraseña'),
+              requerido(l10n.editarPerfilConfirmaPassword),
               minCaracteres(8),
             ],
             obscureText: true,
@@ -334,22 +336,22 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     );
   }
 
-  Widget _acciones() {
+  Widget _acciones(AppLocalizations l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
         FqButton.ghost(
-          label: 'Cancelar',
+          label: l10n.comunCancelar,
           expand: false,
           onPressed: _guardando ? null : () => _cerrar(),
         ),
         const SizedBox(width: 10),
         FqButton.primary(
-          label: 'Guardar cambios',
+          label: l10n.comunGuardarCambios,
           icon: Icons.check_rounded,
           expand: false,
           loading: _guardando,
-          onPressed: _guardando ? null : _guardar,
+          onPressed: _guardando ? null : () => _guardar(l10n),
         ),
       ],
     );

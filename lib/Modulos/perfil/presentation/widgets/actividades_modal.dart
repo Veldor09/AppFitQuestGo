@@ -8,6 +8,7 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Modal para ver y actualizar exclusivamente las actividades y deportes favoritos del usuario.
 class GestionarActividadesModal extends StatefulWidget {
@@ -82,7 +83,7 @@ class _GestionarActividadesModalState extends State<GestionarActividadesModal> {
     });
   }
 
-  Future<void> _guardar() async {
+  Future<void> _guardar(AppLocalizations l10n) async {
     setState(() => _guardando = true);
     try {
       await _api.actualizarPerfil(
@@ -92,13 +93,13 @@ class _GestionarActividadesModalState extends State<GestionarActividadesModal> {
         actividades: _actividades.toList(),
       );
       if (!mounted) return;
-      notificarExito('Actividades actualizadas correctamente');
+      notificarExito(l10n.actividadesModalExito);
       _cerrar(true);
     } on ApiException catch (e) {
       if (mounted) notificarError(e.message);
     } catch (_) {
       if (mounted) {
-        notificarError('No se pudo actualizar las actividades. Revisa tu conexión.');
+        notificarError(l10n.actividadesModalError);
       }
     } finally {
       if (mounted) setState(() => _guardando = false);
@@ -107,6 +108,7 @@ class _GestionarActividadesModalState extends State<GestionarActividadesModal> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -147,20 +149,20 @@ class _GestionarActividadesModalState extends State<GestionarActividadesModal> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                          children: const <Widget>[
+                          children: <Widget>[
                             Text(
-                              'Mis actividades favoritas',
-                              style: TextStyle(
+                              l10n.actividadesModalTitulo,
+                              style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.w800,
                                 color: FqColors.ink,
                                 letterSpacing: -0.2,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'Deportes y disciplinas que practicas',
-                              style: TextStyle(
+                              l10n.actividadesModalSubtitulo,
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: FqColors.muted,
                                 fontWeight: FontWeight.w500,
@@ -183,9 +185,9 @@ class _GestionarActividadesModalState extends State<GestionarActividadesModal> {
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: FqColors.border),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Selecciona tus actividades para personalizar tus recomendaciones de rutas y retos:',
-                    style: TextStyle(fontSize: 12, color: FqColors.ink, height: 1.4),
+                  Text(
+                    l10n.actividadesModalPrompt,
+                    style: const TextStyle(fontSize: 12, color: FqColors.ink, height: 1.4),
                   ),
                   const SizedBox(height: 14),
                   Wrap(
@@ -210,17 +212,17 @@ class _GestionarActividadesModalState extends State<GestionarActividadesModal> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: <Widget>[
                       FqButton.ghost(
-                        label: 'Cancelar',
+                        label: l10n.comunCancelar,
                         expand: false,
                         onPressed: _guardando ? null : () => _cerrar(),
                       ),
                       const SizedBox(width: 10),
                       FqButton.primary(
-                        label: 'Guardar cambios',
+                        label: l10n.comunGuardarCambios,
                         icon: Icons.check_rounded,
                         expand: false,
                         loading: _guardando,
-                        onPressed: _guardando ? null : _guardar,
+                        onPressed: _guardando ? null : () => _guardar(l10n),
                       ),
                     ],
                   ),

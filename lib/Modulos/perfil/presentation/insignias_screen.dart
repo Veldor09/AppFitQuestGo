@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/insignia.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 
@@ -37,6 +38,7 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double top = MediaQuery.of(context).padding.top;
     final bool propio = widget.idUsuario == null;
     return Scaffold(
@@ -55,8 +57,10 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                 Expanded(
                   child: Text(
                     propio
-                        ? 'Mis Insignias'
-                        : 'Insignias${widget.nombre != null ? ' de ${widget.nombre}' : ''}',
+                        ? l10n.insigniasTitulo
+                        : (widget.nombre != null
+                            ? l10n.insigniasDeUsuario(widget.nombre!)
+                            : l10n.perfilInsignias),
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white),
                   ),
                 ),
@@ -73,9 +77,9 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                 if (snap.hasError) {
                   return FqEmptyState(
                     icon: Icons.error_outline,
-                    title: 'No se pudieron cargar las insignias',
-                    message: 'Revisa tu conexión e inténtalo de nuevo.',
-                    action: TextButton(onPressed: _recargar, child: const Text('Reintentar')),
+                    title: l10n.insigniasErrorCarga,
+                    message: l10n.insigniasErrorCargaMsg,
+                    action: TextButton(onPressed: _recargar, child: Text(l10n.comunReintentar)),
                   );
                 }
                 final List<Insignia> todas = snap.data!;
@@ -85,10 +89,10 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                     todas.where((Insignia i) => !i.desbloqueada).toList();
 
                 if (todas.isEmpty) {
-                  return const FqEmptyState(
+                  return FqEmptyState(
                     icon: Icons.military_tech_outlined,
-                    title: 'Aún no hay insignias',
-                    message: 'Pronto podrás desbloquear tus primeros logros.',
+                    title: l10n.insigniasVacioTitulo,
+                    message: l10n.insigniasVacioMsg,
                   );
                 }
 
@@ -101,20 +105,20 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                       _ResumenInsignias(ganadas: ganadas.length, total: todas.length),
                       const SizedBox(height: 16),
                       if (ganadas.isNotEmpty) ...<Widget>[
-                        const _SeccionTitulo(titulo: 'Insignias ganadas'),
+                        _SeccionTitulo(titulo: l10n.insigniasGanadas),
                         const SizedBox(height: 8),
                         _Grilla(insignias: ganadas),
                         const SizedBox(height: 16),
                       ] else if (propio)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 16),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
                           child: Text(
-                            'Aún no tienes insignias. ¡Crea rutas, reporta alertas y recorre kilómetros para ganarlas!',
-                            style: TextStyle(fontSize: 12, color: FqColors.muted),
+                            l10n.insigniasSinGanadas,
+                            style: const TextStyle(fontSize: 12, color: FqColors.muted),
                           ),
                         ),
                       if (pendientes.isNotEmpty) ...<Widget>[
-                        const _SeccionTitulo(titulo: 'Por desbloquear'),
+                        _SeccionTitulo(titulo: l10n.insigniasPorDesbloquear),
                         const SizedBox(height: 8),
                         _Grilla(insignias: pendientes),
                       ],
@@ -155,14 +159,15 @@ class _ResumenInsignias extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: FqColors.night, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: <Widget>[
-          _Stat(valor: '$ganadas', etiqueta: 'DESBLOQUEADAS'),
+          _Stat(valor: '$ganadas', etiqueta: l10n.insigniasDesbloqueadasStat),
           Container(width: 1, height: 40, color: const Color(0xFF2A4060)),
-          _Stat(valor: '${total - ganadas}', etiqueta: 'POR DESBLOQUEAR'),
+          _Stat(valor: '${total - ganadas}', etiqueta: l10n.insigniasPorDesbloquearStat),
         ],
       ),
     );

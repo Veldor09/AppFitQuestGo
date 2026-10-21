@@ -10,6 +10,7 @@ import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/planificar_ruta_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/selector_actividades_catalogo.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
@@ -106,6 +107,7 @@ Widget _montar({
   DateTime Function()? ahora,
   RutaApi? api,
   CatalogosApi? catalogosApi,
+  bool permitirFallbackActividades = true,
 }) {
   return MaterialApp(
     locale: const Locale('es'),
@@ -118,6 +120,7 @@ Widget _montar({
         accessToken: '',
         posicionStream: streamFalso == null ? null : (() => streamFalso),
         ahora: ahora,
+        permitirFallbackActividades: permitirFallbackActividades,
       ),
     ),
   );
@@ -138,6 +141,7 @@ Future<StreamController<Position>> _empezarAGrabar(
   _Reloj? reloj,
   RutaApi? api,
   CatalogosApi? catalogosApi,
+  bool permitirFallbackActividades = true,
 }) async {
   _forzarLocaleEspanol(tester);
 
@@ -152,6 +156,7 @@ Future<StreamController<Position>> _empezarAGrabar(
       ahora: reloj == null ? null : () => reloj.ahora,
       api: api,
       catalogosApi: catalogosApi,
+      permitirFallbackActividades: permitirFallbackActividades,
     ),
   );
 
@@ -191,6 +196,7 @@ Future<void> _detener(WidgetTester tester) async {
 Future<_RutaApiFalsa> _abrirFormulario(
   WidgetTester tester, {
   _CatalogosApiFalsa? catalogosApi,
+  bool permitirFallbackActividades = true,
 }) async {
   final _RutaApiFalsa api = _RutaApiFalsa();
 
@@ -198,6 +204,7 @@ Future<_RutaApiFalsa> _abrirFormulario(
     tester,
     api: api,
     catalogosApi: catalogosApi,
+    permitirFallbackActividades: permitirFallbackActividades,
   );
 
   await _emitir(tester, controlador, 9.9281, -84.0907);
@@ -472,6 +479,9 @@ void main() {
   });
 
   group('ADM-11: catálogo dinámico de actividades', () {
+    setUp(() {
+      SelectorActividadesCatalogo.limpiarCache();
+    });
     testWidgets('muestra las seis actividades originales activas', (
       WidgetTester tester,
     ) async {
@@ -649,7 +659,7 @@ void main() {
       ]);
     });
 
-    testWidgets('un error de conexión impide guardar', (
+    testWidgets('un error de conexión activa catálogo offline de respaldo y permite guardar', (
       WidgetTester tester,
     ) async {
       final catalogo = _CatalogosApiFalsa(fallar: true);
@@ -657,6 +667,45 @@ void main() {
       final api = await _abrirFormulario(
         tester,
         catalogosApi: catalogo,
+      );
+
+      expect(find.text('Running'), findsOneWidget);
+      expect(find.text('Ciclismo'), findsOneWidget);
+      expect(
+        find.text('Sin conexión: usando catálogo de actividades guardado.'),
+        findsOneWidget,
+      );
+
+      final Finder guardar = find.widgetWithText(
+        FilledButton,
+        'Guardar',
+      );
+
+      expect(guardar, findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(guardar).onPressed,
+        isNotNull,
+      );
+
+      await _escribirNombre(tester);
+      await tester.tap(find.text('Running'));
+      await tester.pump();
+      await _guardarFormulario(tester);
+
+      expect(api.actividadesCreadas, <List<String>>[
+        <String>['running'],
+      ]);
+    });
+
+    testWidgets('con fallback desactivado, un error de conexión impide guardar y permite reintentar', (
+      WidgetTester tester,
+    ) async {
+      final catalogo = _CatalogosApiFalsa(fallar: true);
+
+      await _abrirFormulario(
+        tester,
+        catalogosApi: catalogo,
+        permitirFallbackActividades: false,
       );
 
       expect(
@@ -677,21 +726,6 @@ void main() {
         isNull,
       );
 
-      expect(api.actividadesCreadas, isEmpty);
-    });
-
-    testWidgets('permite reintentar después de un error de conexión', (
-      WidgetTester tester,
-    ) async {
-      final catalogo = _CatalogosApiFalsa(fallar: true);
-
-      await _abrirFormulario(
-        tester,
-        catalogosApi: catalogo,
-      );
-
-      expect(find.text('Reintentar'), findsOneWidget);
-
       catalogo.fallar = false;
 
       await tester.tap(find.text('Reintentar'));
@@ -701,11 +735,6 @@ void main() {
       expect(find.text('Running'), findsOneWidget);
       expect(find.text('Ciclismo'), findsOneWidget);
       expect(catalogo.consultas, 2);
-
-      final Finder guardar = find.widgetWithText(
-        FilledButton,
-        'Guardar',
-      );
 
       expect(
         tester.widget<FilledButton>(guardar).onPressed,

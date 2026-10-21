@@ -8,12 +8,17 @@ import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
+import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/rutas_pendientes_banner.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/insignias_screen.dart';
+import 'package:fit_quest_go/Modulos/perfil/presentation/mapas_offline_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/preferencias_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/actividades_modal.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/editar_perfil_modal.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/widgets/intereses_modal.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
@@ -24,11 +29,13 @@ class PerfilScreen extends StatefulWidget {
     super.key,
     this.api,
     this.notificacionesApi,
+    this.cacheDao,
     this.onCerrarSesion,
   });
 
   final PerfilApi? api;
   final NotificacionesApi? notificacionesApi;
+  final PerfilCacheDao? cacheDao;
   final Future<void> Function()? onCerrarSesion;
 
   @override
@@ -39,13 +46,84 @@ class _PerfilScreenState extends State<PerfilScreen> {
   late final PerfilApi _api = widget.api ?? PerfilApi();
   late final NotificacionesApi _notifApi =
       widget.notificacionesApi ?? NotificacionesApi();
-  late Future<Usuario> _futuro = _api.miPerfil();
+  late final PerfilCacheDao _cacheDao = widget.cacheDao ?? PerfilCacheDao();
+
+  Usuario? _usuario;
+  bool _cargando = true;
+  bool _esOffline = false;
+  String? _errorMensaje;
   int _noLeidas = 0;
+  bool _inicializado = false;
 
   @override
   void initState() {
     super.initState();
     _cargarNoLeidas();
+    _refrescarDesdeApi();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_inicializado) {
+      _inicializado = true;
+      final UsuarioSesion? sesion = AuthScope.maybeOf(context)?.usuario;
+      if (sesion != null && _usuario == null) {
+        _usuario = Usuario(
+          id: sesion.id,
+          nombreUser: sesion.nombre.isNotEmpty
+              ? sesion.nombre
+              : sesion.email.split('@').first,
+          emailUser: sesion.email,
+          idrol: sesion.rol,
+        );
+        _cargando = false;
+      }
+      _cargarDesdeCache();
+    }
+  }
+
+  Future<void> _cargarDesdeCache() async {
+    final UsuarioSesion? sesion = AuthScope.maybeOf(context)?.usuario;
+
+    final Usuario? enCache = sesion != null
+        ? await _cacheDao.leerUsuario(sesion.id)
+        : await _cacheDao.leerUltimoUsuario();
+
+    if (mounted && enCache != null) {
+      setState(() {
+        _usuario = enCache;
+        _cargando = false;
+      });
+    }
+  }
+
+  Future<void> _refrescarDesdeApi() async {
+    try {
+      final Usuario remoto = await _api.miPerfil();
+      if (!mounted) return;
+      setState(() {
+        _usuario = remoto;
+        _cargando = false;
+        _esOffline = false;
+        _errorMensaje = null;
+      });
+      await _cacheDao.guardarUsuario(remoto);
+    } catch (e) {
+      if (!mounted) return;
+      if (_usuario == null) {
+        await _cargarDesdeCache();
+      }
+      if (!mounted) return;
+      setState(() {
+        _cargando = false;
+        if (_usuario != null) {
+          _esOffline = true;
+        } else {
+          _errorMensaje = e is ApiException ? e.message : null;
+        }
+      });
+    }
   }
 
   /// Contador del buzón; si falla simplemente no se muestra el indicador.
@@ -67,8 +145,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   void _recargar() {
     setState(() {
-      _futuro = _api.miPerfil();
+      _esOffline = false;
     });
+    _refrescarDesdeApi();
     _cargarNoLeidas();
   }
 
@@ -119,36 +198,40 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+    if (_cargando && _usuario == null) {
+      return const ColoredBox(
+        color: FqColors.paper,
+        child: _PerfilCargando(),
+      );
+    }
+
+    if (_usuario == null) {
+      return ColoredBox(
+        color: FqColors.paper,
+        child: _PerfilError(
+          mensaje: _errorMensaje ?? l10n.perfilErrorGenerico,
+          onReintentar: () {
+            setState(() => _cargando = true);
+            _recargar();
+          },
+        ),
+      );
+    }
+
     return ColoredBox(
       color: FqColors.paper,
-      child: FutureBuilder<Usuario>(
-        future: _futuro,
-        builder: (BuildContext context, AsyncSnapshot<Usuario> snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const _PerfilCargando();
-          }
-          if (snap.hasError || !snap.hasData) {
-            return _PerfilError(
-              mensaje: snap.error is ApiException
-                  ? (snap.error! as ApiException).message
-                  : l10n.perfilErrorGenerico,
-              onReintentar: _recargar,
-            );
-          }
-          final Usuario usuario = snap.data!;
-          return _PerfilContenido(
-            usuario: usuario,
-            api: _api,
-            onAjustes: () => _abrirAjustes(usuario),
-            onEditar: () => _editarPerfil(usuario),
-            onGestionarActividades: () => _gestionarActividades(usuario),
-            onGestionarIntereses: () => _gestionarIntereses(usuario),
-            onPreferencias: () => _abrirPreferencias(usuario),
-            onNotificaciones: _abrirNotificaciones,
-            noLeidas: _noLeidas,
-            onRecargar: _recargar,
-          );
-        },
+      child: _PerfilContenido(
+        usuario: _usuario!,
+        api: _api,
+        esOffline: _esOffline,
+        onAjustes: () => _abrirAjustes(_usuario!),
+        onEditar: () => _editarPerfil(_usuario!),
+        onGestionarActividades: () => _gestionarActividades(_usuario!),
+        onGestionarIntereses: () => _gestionarIntereses(_usuario!),
+        onPreferencias: () => _abrirPreferencias(_usuario!),
+        onNotificaciones: _abrirNotificaciones,
+        noLeidas: _noLeidas,
+        onRecargar: _recargar,
       ),
     );
   }
@@ -182,6 +265,7 @@ class _PerfilContenido extends StatelessWidget {
     required this.onNotificaciones,
     required this.noLeidas,
     required this.onRecargar,
+    this.esOffline = false,
   });
 
   final Usuario usuario;
@@ -194,6 +278,7 @@ class _PerfilContenido extends StatelessWidget {
   final VoidCallback onNotificaciones;
   final int noLeidas;
   final VoidCallback onRecargar;
+  final bool esOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +297,45 @@ class _PerfilContenido extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
             child: Column(
               children: <Widget>[
+                if (esOffline) ...<Widget>[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.wifi_off_rounded,
+                          size: 18,
+                          color: Color(0xFF92400E),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Modo sin conexión: mostrando datos guardados. Tus rutas descargadas siguen disponibles.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF92400E)),
+                          onPressed: onRecargar,
+                          tooltip: 'Reintentar',
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                RutasPendientesBanner(alSincronizar: onRecargar),
                 _SeccionActividades(
                   actividades: usuario.actividades,
                   onGestionar: onGestionarActividades,
@@ -259,7 +383,9 @@ class _PerfilContenido extends StatelessWidget {
                 _MenuFila(
                   icono: Icons.download_outlined,
                   texto: l10n.perfilMapasOffline,
-                  onTap: () => notificarInfo('Mapas offline: disponible próximamente'),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const MapasOfflineScreen()),
+                  ),
                 ),
                 _MenuFila(
                   icono: Icons.tune_rounded,
@@ -362,7 +488,7 @@ class _Hero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _MetricasEjemplo(api: api),
+                _MetricasEjemplo(api: api, usuario: usuario),
               ],
             ),
           ),
@@ -443,60 +569,94 @@ class _Avatar extends StatelessWidget {
 
 /// Tira blanca de 3 métricas reales (PRF-01 / NAV-07).
 class _MetricasEjemplo extends StatefulWidget {
-  const _MetricasEjemplo({required this.api});
+  const _MetricasEjemplo({required this.api, required this.usuario});
 
   final PerfilApi api;
+  final Usuario usuario;
 
   @override
   State<_MetricasEjemplo> createState() => _MetricasEjemploState();
 }
 
+/// Muestra primero las ultimas metricas guardadas en SQLite (al instante, y
+/// tambien sin red) y las reemplaza por las del backend cuando llegan.
 class _MetricasEjemploState extends State<_MetricasEjemplo> {
-  late final Future<Map<String, dynamic>> _stats =
-      widget.api.estadisticasPropias();
+  final PerfilCacheDao _cache = PerfilCacheDao();
+  MetricasCache? _enCache;
+  Map<String, dynamic>? _remotas;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    final MetricasCache? guardadas = await _cache.leer(widget.usuario.id);
+    if (mounted && _remotas == null && guardadas != null) {
+      setState(() => _enCache = guardadas);
+    }
+    try {
+      final Map<String, dynamic> datos = await widget.api.estadisticasPropias();
+      if (mounted) setState(() => _remotas = datos);
+      await _cache.guardar(
+        idUsuario: widget.usuario.id,
+        nombreUser: widget.usuario.nombreUser,
+        emailUser: widget.usuario.emailUser,
+        km: (datos['kmRecorridos'] as num? ?? 0).toDouble(),
+        rutas: (datos['rutasCompletadas'] as num? ?? 0).toInt(),
+        insignias: (datos['insignias'] as num? ?? 0).toInt(),
+      );
+    } catch (_) {
+      // Sin red o error del servidor: se queda lo que hubiera en caché.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _stats,
-      builder: (BuildContext ctx, AsyncSnapshot<Map<String, dynamic>> snap) {
-        final String km = snap.hasData
-            ? (snap.data!['kmRecorridos'] as num? ?? 0).toStringAsFixed(0)
+    final Map<String, dynamic>? r = _remotas;
+    final MetricasCache? c = _enCache;
+    final String km = r != null
+        ? (r['kmRecorridos'] as num? ?? 0).toStringAsFixed(0)
+        : c != null
+            ? c.km.toStringAsFixed(0)
             : '—';
-        final String rutas = snap.hasData
-            ? '${(snap.data!['rutasCompletadas'] as int?) ?? 0}'
+    final String rutas = r != null
+        ? '${(r['rutasCompletadas'] as num?)?.toInt() ?? 0}'
+        : c != null
+            ? '${c.rutas}'
             : '—';
-        final String insignias = snap.hasData
-            ? '${(snap.data!['insignias'] as int?) ?? 0}'
+    final String insignias = r != null
+        ? '${(r['insignias'] as num?)?.toInt() ?? 0}'
+        : c != null
+            ? '${c.insignias}'
             : '—';
-        return Container(
-          decoration: BoxDecoration(
-            color: FqColors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: FqColors.border),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x10000000),
-                blurRadius: 6,
-                offset: Offset(0, 2),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: FqColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FqColors.border),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              children: <Widget>[
-                Expanded(child: _Metrica(valor: km, etiqueta: l10n.perfilKm)),
-                Container(width: 1, color: FqColors.border),
-                Expanded(child: _Metrica(valor: rutas, etiqueta: l10n.perfilMetricaRutas)),
-                Container(width: 1, color: FqColors.border),
-                Expanded(child: _Metrica(valor: insignias, etiqueta: l10n.perfilMetricaInsignias)),
-              ],
-            ),
-          ),
-        );
-      },
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          children: <Widget>[
+            Expanded(child: _Metrica(valor: km, etiqueta: l10n.perfilKm)),
+            Container(width: 1, color: FqColors.border),
+            Expanded(child: _Metrica(valor: rutas, etiqueta: l10n.perfilMetricaRutas)),
+            Container(width: 1, color: FqColors.border),
+            Expanded(child: _Metrica(valor: insignias, etiqueta: l10n.perfilMetricaInsignias)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -748,8 +908,8 @@ class _HojaAjustes extends StatelessWidget {
             const SizedBox(height: 16),
             _OpcionAjusteTile(
               icono: Icons.edit_outlined,
-              titulo: 'Editar información del perfil',
-              subtitulo: 'Modificar datos personales, deportes e intereses',
+              titulo: l10n.perfilEditarInfo,
+              subtitulo: l10n.perfilModificarSubtitulo,
               onTap: () {
                 Navigator.of(context).pop();
                 onEditar();
@@ -901,6 +1061,7 @@ class _SeccionIntereses extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -920,10 +1081,10 @@ class _SeccionIntereses extends StatelessWidget {
                 color: Color(0xFF0F766E),
               ),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'MIS INTERESES',
-                  style: TextStyle(
+                  l10n.perfilMisInteresesHeader,
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
@@ -938,12 +1099,12 @@ class _SeccionIntereses extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const <Widget>[
-                      Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0F766E)),
-                      SizedBox(width: 4),
+                    children: <Widget>[
+                      const Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0F766E)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Editar',
-                        style: TextStyle(
+                        l10n.perfilEditar,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F766E),
@@ -969,13 +1130,13 @@ class _SeccionIntereses extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFE2E8DE)),
                 ),
                 child: Row(
-                  children: const <Widget>[
-                    Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
-                    SizedBox(width: 8),
+                  children: <Widget>[
+                    const Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Selecciona tus intereses favoritos',
-                        style: TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
+                        l10n.perfilInteresesVacio,
+                        style: const TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -1024,6 +1185,7 @@ class _SeccionActividades extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -1043,10 +1205,10 @@ class _SeccionActividades extends StatelessWidget {
                 color: Color(0xFF0369A1),
               ),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'MIS ACTIVIDADES FAVORITAS',
-                  style: TextStyle(
+                  l10n.perfilMisActividadesHeader,
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
@@ -1061,12 +1223,12 @@ class _SeccionActividades extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const <Widget>[
-                      Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0369A1)),
-                      SizedBox(width: 4),
+                    children: <Widget>[
+                      const Icon(Icons.edit_outlined, size: 12, color: Color(0xFF0369A1)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Editar',
-                        style: TextStyle(
+                        l10n.perfilEditar,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0369A1),
@@ -1092,13 +1254,13 @@ class _SeccionActividades extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFBAE6FD)),
                 ),
                 child: Row(
-                  children: const <Widget>[
-                    Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
-                    SizedBox(width: 8),
+                  children: <Widget>[
+                    const Icon(Icons.add_circle_outline_rounded, size: 16, color: FqColors.muted),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Selecciona tus deportes favoritos',
-                        style: TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
+                        l10n.perfilActividadesVacio,
+                        style: const TextStyle(fontSize: 11, color: FqColors.muted, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],

@@ -14,6 +14,9 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/db/daos/sync_rutas_dao.dart';
+import 'package:fit_quest_go/core/db/daos/tracking_dao.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/cronometro_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/metricas_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
@@ -45,6 +48,7 @@ class PlanificarRutaScreen extends StatefulWidget {
     this.posicionStream,
     this.ahora,
     this.accessToken,
+    this.permitirFallbackActividades = true,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -52,6 +56,9 @@ class PlanificarRutaScreen extends StatefulWidget {
 
   /// API de catálogos inyectable para pruebas de ADM-11.
   final CatalogosApi? catalogosApi;
+
+  /// Permite usar actividades de respaldo si falla la red al planificar offline.
+  final bool permitirFallbackActividades;
 
   /// Fabrica del stream de posicion, inyectable para pruebas. En produccion
   /// usa `Geolocator.getPositionStream`.
@@ -86,7 +93,69 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   bool _grabando = false;
   bool _iniciando = false;
 
+  /// SQLite: buffer de la grabacion en curso y cola de rutas sin subir.
+  final TrackingDao _tracking = TrackingDao();
+  final SyncRutasDao _colaSync = SyncRutasDao();
+
   bool get _pausada => _cronometro.estado == EstadoCronometro.pausado;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revisarSesionInterrumpida());
+  }
+
+  /// Si la app se cerro en medio de una grabacion, ofrece reanudarla, guardar
+  /// lo grabado o descartarlo.
+  Future<void> _revisarSesionInterrumpida() async {
+    final SesionTrackingGuardada? sesion = await _tracking.recuperar();
+    if (sesion == null || !mounted || _grabando) return;
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final String km = sesion.distanciaKm.toStringAsFixed(2);
+    final String? decision = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l10n.rutasGrabacionInterrumpidaTitulo),
+        content: Text(
+          l10n.rutasGrabacionInterrumpidaMsg(km, sesion.puntos.length),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('descartar'),
+            child: Text(l10n.resumenGrabacionDescartar),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('guardar'),
+            child: Text(l10n.rutasGuardarLoGrabado),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop('reanudar'),
+            child: Text(l10n.recorridoReanudar),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    switch (decision) {
+      case 'reanudar':
+        setState(() => _modo = _ModoRuta.gps);
+        await _iniciarGrabacion(retomar: sesion);
+      case 'guardar':
+        setState(() {
+          _modo = _ModoRuta.gps;
+          _puntos
+            ..clear()
+            ..addAll(sesion.puntos);
+          _cronometro.iniciar(inicial: Duration(seconds: sesion.segundos));
+          _cronometro.detener();
+        });
+        await _redibujar();
+        await _mostrarResumen();
+      default:
+        await _tracking.limpiar();
+    }
+  }
 
   @override
   void dispose() {
@@ -133,7 +202,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     setState(() => _modo = modo);
   }
 
-  Future<void> _iniciarGrabacion() async {
+  Future<void> _iniciarGrabacion({SesionTrackingGuardada? retomar}) async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     setState(() => _iniciando = true);
     try {
@@ -187,9 +256,11 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
       // dibujado a mano) se descarta, y el cronometro arranca de cero.
       setState(() {
         _puntos.clear();
+        if (retomar != null) _puntos.addAll(retomar.puntos);
         _grabando = true;
       });
-      _cronometro.iniciar();
+      _cronometro.iniciar(inicial: Duration(seconds: retomar?.segundos ?? 0));
+      if (retomar == null) unawaited(_tracking.iniciarSesion());
       _arrancarReloj();
       unawaited(_redibujar());
 
@@ -197,9 +268,18 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         // En pausa el GPS sigue abierto (para no volver a pedir permisos al
         // reanudar) pero sus puntos no cuentan.
         if (!mounted || _pausada) return;
-        setState(() {
-          _puntos.add(PuntoRuta(lat: posicion.latitude, lng: posicion.longitude));
-        });
+        final PuntoRuta punto =
+            PuntoRuta(lat: posicion.latitude, lng: posicion.longitude);
+        setState(() => _puntos.add(punto));
+        // Buffer en SQLite: si la app muere, la grabacion se puede recuperar.
+        unawaited(
+          _tracking.agregarPunto(
+            punto,
+            _puntos.length,
+            segundos: _cronometro.transcurrido.inSeconds,
+            distanciaKm: _distanciaKm,
+          ),
+        );
         await _redibujar();
       });
     } finally {
@@ -239,6 +319,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     if (_puntos.isEmpty) {
       // Nada que resumir: la pantalla vuelve a su estado inicial.
       setState(_cronometro.reiniciar);
+      unawaited(_tracking.limpiar());
       return;
     }
     await _mostrarResumen();
@@ -269,6 +350,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _descartarGrabacion() async {
+    unawaited(_tracking.limpiar());
     setState(() {
       _puntos.clear();
       _cronometro.reiniciar();
@@ -314,19 +396,38 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     if (datos == null) return;
     setState(() => _guardando = true);
     try {
-      await _api.crear(
-        nombre: datos.nombre,
-        actividades: datos.actividades,
-        dificultad: datos.dificultad,
-        distanciaKm: _distanciaKm,
-        puntos: _puntos,
-        visibilidad: datos.visibilidad,
-      );
-      if (!mounted) return;
-      final String msg = datos.visibilidad == 'publica'
-          ? 'Ruta enviada para revisión comunitaria.'
-          : 'Ruta guardada como ${datos.visibilidad == 'amigos' ? 'solo amigos' : 'privada'}.';
-      notificarExito(msg);
+      try {
+        await _api.crear(
+          nombre: datos.nombre,
+          actividades: datos.actividades,
+          dificultad: datos.dificultad,
+          distanciaKm: _distanciaKm,
+          puntos: _puntos,
+          visibilidad: datos.visibilidad,
+        );
+        unawaited(_tracking.limpiar());
+        if (!mounted) return;
+        final String msg = datos.visibilidad == 'publica'
+            ? 'Ruta enviada para revisión comunitaria.'
+            : 'Ruta guardada como ${datos.visibilidad == 'amigos' ? 'solo amigos' : 'privada'}.';
+        notificarExito(msg);
+      } on ApiException {
+        rethrow; // el servidor respondio: no es un problema de red
+      } catch (_) {
+        // Sin conexion: la ruta se guarda en SQLite y se sube sola despues.
+        final int? idLocal = await _colaSync.encolar(
+          nombre: datos.nombre,
+          actividades: datos.actividades,
+          dificultad: datos.dificultad,
+          distanciaKm: _distanciaKm,
+          puntos: List<PuntoRuta>.of(_puntos),
+          visibilidad: datos.visibilidad,
+        );
+        if (idLocal == null) rethrow;
+        if (!mounted) return;
+        notificarInfo(l10n.rutasGuardadaOfflineAviso);
+      }
+      unawaited(_tracking.limpiar());
       setState(() {
         _puntos.clear();
         _cronometro.reiniciar();
@@ -401,6 +502,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     const SizedBox(height: 8),
                     SelectorActividadesCatalogo(
                       catalogosApi: widget.catalogosApi,
+                      permitirFallbackOffline:
+                          widget.permitirFallbackActividades,
                       seleccion: actividades,
                       onChanged: (Set<String> seleccion) {
                         setSheetState(() {
@@ -446,22 +549,22 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       initialValue: visibilidad,
-                      decoration: const InputDecoration(
-                        labelText: 'Visibilidad de la ruta (RTE-08)',
-                        helperText: 'Pública la envía a revisión comunitaria',
+                      decoration: InputDecoration(
+                        labelText: l10n.rutasVisibilidadLabel,
+                        helperText: l10n.rutasVisibilidadHelper,
                       ),
-                      items: const <DropdownMenuItem<String>>[
+                      items: <DropdownMenuItem<String>>[
                         DropdownMenuItem<String>(
                           value: 'privada',
-                          child: Text('🔒 Privada (Solo tú)'),
+                          child: Text(l10n.rutasVisibilidadPrivada),
                         ),
                         DropdownMenuItem<String>(
                           value: 'amigos',
-                          child: Text('👥 Solo amigos'),
+                          child: Text(l10n.rutasVisibilidadAmigos),
                         ),
                         DropdownMenuItem<String>(
                           value: 'publica',
-                          child: Text('🌍 Pública (Comunidad)'),
+                          child: Text(l10n.rutasVisibilidadPublica),
                         ),
                       ],
                       onChanged: (String? v) =>

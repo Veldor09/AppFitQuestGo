@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 
@@ -33,6 +34,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
   }
 
   Future<void> _guardar() async {
+    final AppLocalizations? l10n = AppLocalizations.of(context);
     setState(() => _guardando = true);
     try {
       await _api.actualizarPerfil(
@@ -44,12 +46,12 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
         visibilidad: _visibilidad,
       );
       if (!mounted) return;
-      notificarExito('Preferencias guardadas');
+      notificarExito(l10n?.preferenciasGuardadas ?? 'Preferencias guardadas');
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (mounted) notificarError(e.message);
     } catch (_) {
-      if (mounted) notificarError('No se pudo guardar. Revisa tu conexion.');
+      if (mounted) notificarError(l10n?.preferenciasErrorGuardar ?? 'No se pudo guardar. Revisa tu conexion.');
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -57,6 +59,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double top = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: FqColors.paper,
@@ -72,10 +75,10 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                   icon: const Icon(Icons.arrow_back_rounded, color: FqColors.white),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Preferencias y privacidad',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white),
+                    l10n.preferenciasTitulo,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white),
                   ),
                 ),
               ],
@@ -88,26 +91,26 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
               children: <Widget>[
                 _Tarjeta(
                   icono: Icons.straighten_rounded,
-                  titulo: 'Unidad de medida',
-                  bajada: 'Las distancias se mostrarán con la unidad elegida.',
+                  titulo: l10n.preferenciasUnidadTitulo,
+                  bajada: l10n.preferenciasUnidadDesc,
                   child: Wrap(
                     spacing: 8,
                     children: <Widget>[
-                      _Chip(label: 'km  Kilómetros', activo: _unidad == 'km', onTap: () => setState(() => _unidad = 'km')),
-                      _Chip(label: 'mi  Millas', activo: _unidad == 'mi', onTap: () => setState(() => _unidad = 'mi')),
+                      _Chip(label: l10n.preferenciasKm, activo: _unidad == 'km', onTap: () => setState(() => _unidad = 'km')),
+                      _Chip(label: l10n.preferenciasMillas, activo: _unidad == 'mi', onTap: () => setState(() => _unidad = 'mi')),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
                 _Tarjeta(
                   icono: Icons.notifications_outlined,
-                  titulo: 'Notificaciones push',
-                  bajada: 'Recibe alertas de rutas, retos y comunidad.',
+                  titulo: l10n.preferenciasPushTitulo,
+                  bajada: l10n.preferenciasPushDesc,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Text(
-                        _notificaciones ? 'Activadas' : 'Desactivadas',
+                        _notificaciones ? l10n.preferenciasActivadas : l10n.preferenciasDesactivadas,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -128,26 +131,26 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                 const SizedBox(height: 12),
                 _Tarjeta(
                   icono: Icons.lock_outline_rounded,
-                  titulo: 'Visibilidad del perfil',
-                  bajada: 'Controla quién puede ver tu perfil y actividad.',
+                  titulo: l10n.preferenciasVisibilidadTitulo,
+                  bajada: l10n.preferenciasVisibilidadDesc,
                   child: Column(
                     children: <Widget>[
-                      _OpcionVisibilidad(icono: Icons.public_rounded, titulo: 'Público', sub: 'Cualquiera puede ver tu perfil', val: 'publico', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'publico')),
-                      _OpcionVisibilidad(icono: Icons.group_outlined, titulo: 'Solo amigos', sub: 'Solo tus contactos pueden verlo', val: 'amigos', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'amigos')),
-                      _OpcionVisibilidad(icono: Icons.lock_rounded, titulo: 'Privado', sub: 'Solo tú puedes ver tu perfil', val: 'privado', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'privado'), ultimo: true),
+                      _OpcionVisibilidad(icono: Icons.public_rounded, titulo: l10n.preferenciasPublicoTitulo, sub: l10n.preferenciasPublicoDesc, val: 'publico', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'publico')),
+                      _OpcionVisibilidad(icono: Icons.group_outlined, titulo: l10n.preferenciasAmigosTitulo, sub: l10n.preferenciasAmigosDesc, val: 'amigos', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'amigos')),
+                      _OpcionVisibilidad(icono: Icons.lock_rounded, titulo: l10n.preferenciasPrivadoTitulo, sub: l10n.preferenciasPrivadoDesc, val: 'privado', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'privado'), ultimo: true),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
                 _Tarjeta(
                   icono: Icons.download_outlined,
-                  titulo: 'Mapas offline',
-                  bajada: 'Descarga zonas para usar sin conexión.',
-                  child: _MapasPanel(),
+                  titulo: l10n.mapasOfflineTitulo,
+                  bajada: l10n.preferenciasMapasDesc,
+                  child: _MapasPanel(l10n: l10n),
                 ),
                 const SizedBox(height: 24),
                 FqButton.primary(
-                  label: 'Guardar preferencias',
+                  label: l10n.preferenciasGuardarBtn,
                   icon: Icons.save_outlined,
                   loading: _guardando,
                   onPressed: _guardando ? null : _guardar,
@@ -272,7 +275,8 @@ class _OpcionVisibilidad extends StatelessWidget {
 }
 
 class _MapasPanel extends StatelessWidget {
-  const _MapasPanel();
+  const _MapasPanel({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -281,26 +285,26 @@ class _MapasPanel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: FqColors.cloud, borderRadius: BorderRadius.circular(10)),
-          child: const Row(
+          child: Row(
             children: <Widget>[
-              Icon(Icons.info_outline, size: 16, color: FqColors.muted),
-              SizedBox(width: 8),
-              Expanded(child: Text('No hay mapas descargados aún.', style: TextStyle(fontSize: 10, color: FqColors.muted))),
+              const Icon(Icons.info_outline, size: 16, color: FqColors.muted),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.preferenciasSinMapasDescargados, style: const TextStyle(fontSize: 10, color: FqColors.muted))),
             ],
           ),
         ),
         const SizedBox(height: 10),
         GestureDetector(
-          onTap: () => notificarInfo('Descarga de mapas: disponible pronto'),
+          onTap: () => notificarInfo(l10n.preferenciasDescargaPronto),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(border: Border.all(color: FqColors.border), borderRadius: BorderRadius.circular(10), color: FqColors.white),
-            child: const Row(
+            child: Row(
               children: <Widget>[
-                Icon(Icons.add_circle_outline, size: 18, color: FqColors.river),
-                SizedBox(width: 8),
-                Expanded(child: Text('Descargar nueva zona de mapa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: FqColors.river))),
-                Icon(Icons.chevron_right, size: 16, color: FqColors.stone),
+                const Icon(Icons.add_circle_outline, size: 18, color: FqColors.river),
+                const SizedBox(width: 8),
+                Expanded(child: Text(l10n.preferenciasDescargarZona, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: FqColors.river))),
+                const Icon(Icons.chevron_right, size: 16, color: FqColors.stone),
               ],
             ),
           ),

@@ -83,3 +83,33 @@ Future<void> centrarEnUbicacionActual(MapboxMap controller) async {
     // Sin ubicacion por ahora: el mapa queda en la camara por defecto.
   }
 }
+
+/// Abre los ajustes del sistema para encender la ubicacion o los permisos de la app.
+Future<void> abrirConfiguracionUbicacion() async {
+  try {
+    if (!await geo.Geolocator.isLocationServiceEnabled()) {
+      await geo.Geolocator.openLocationSettings();
+    } else {
+      await geo.Geolocator.openAppSettings();
+    }
+  } catch (_) {}
+}
+
+/// Obtiene rapidamente la ultima ubicacion conocida o la posicion actual
+/// para inicializar la camara y estado sin esperar al stream periodico.
+Future<PosicionGps?> obtenerPosicionActualRapida() async {
+  try {
+    if (!await asegurarPermisoUbicacion()) return null;
+    final geo.Position? previa = await geo.Geolocator.getLastKnownPosition();
+    if (previa != null) return (lat: previa.latitude, lng: previa.longitude);
+    final geo.Position actual = await geo.Geolocator.getCurrentPosition(
+      locationSettings: const geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
+        timeLimit: Duration(seconds: 4),
+      ),
+    );
+    return (lat: actual.latitude, lng: actual.longitude);
+  } catch (_) {
+    return null;
+  }
+}

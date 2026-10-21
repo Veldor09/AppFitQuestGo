@@ -31,10 +31,10 @@ void main() {
       return elegidos;
     }
 
-    testWidgets('muestra los cinco filtros', (WidgetTester tester) async {
+    testWidgets('muestra los seis filtros', (WidgetTester tester) async {
       await montar(tester);
 
-      for (final String etiqueta in <String>['Todo', 'Rutas', 'Alertas', 'POIs', 'Eventos']) {
+      for (final String etiqueta in <String>['Todo', 'Rutas', 'Alertas', 'POIs', 'Eventos', 'Nada']) {
         expect(find.text(etiqueta), findsOneWidget, reason: etiqueta);
       }
     });
@@ -59,8 +59,14 @@ void main() {
       await tester.tap(find.text('Alertas'));
       await tester.tap(find.text('POIs'));
       await tester.tap(find.text('Eventos'));
+      await tester.tap(find.text('Nada'));
 
-      expect(elegidos, <FiltroMapa>[FiltroMapa.alertas, FiltroMapa.pois, FiltroMapa.eventos]);
+      expect(elegidos, <FiltroMapa>[
+        FiltroMapa.alertas,
+        FiltroMapa.pois,
+        FiltroMapa.eventos,
+        FiltroMapa.nada,
+      ]);
     });
 
     testWidgets('en una pantalla angosta pasan a otra linea, sin desbordarse', (

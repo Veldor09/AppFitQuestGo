@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:fit_quest_go/core/almacen_tokens.dart';
+import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/db/app_database.dart';
+import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 
@@ -21,11 +26,50 @@ class AuthRepositorio extends ChangeNotifier {
   Future<void> cargarSesionGuardada() async {
     final String? access = await _tokens.leerAccess();
     if (access == null) return;
+
+    // 1. Rehidratar inmediatamente la sesión local si existe
+    final String? usuarioJson = await _tokens.leerUsuarioSesion();
+    if (usuarioJson != null && usuarioJson.isNotEmpty) {
+      try {
+        _usuario = UsuarioSesion.fromJson(
+          jsonDecode(usuarioJson) as Map<String, dynamic>,
+        );
+        notifyListeners();
+      } catch (_) {}
+    }
+
+    // Respaldo secundario desde SQLite (perfil_cache) si no estaba en secure storage
+    if (_usuario == null) {
+      try {
+        final cached = await PerfilCacheDao().leerUltimoUsuario();
+        if (cached != null) {
+          _usuario = UsuarioSesion(
+            id: cached.id,
+            nombre: cached.nombreUser,
+            email: cached.emailUser,
+            rol: cached.idrol,
+          );
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
+    // 2. Intentar validar / refrescar con el backend en segundo plano
     try {
-      _usuario = await _api.obtenerPerfil();
+      final UsuarioSesion remoto = await _api.obtenerPerfil();
+      _usuario = remoto;
+      await _tokens.guardarUsuarioSesion(jsonEncode(remoto.toJson()));
       notifyListeners();
+    } on ApiException catch (e) {
+      // Únicamente si el backend responde 401 Unauthorized se invalida la sesión
+      if (e.statusCode == 401) {
+        await _tokens.limpiar();
+        _usuario = null;
+        notifyListeners();
+      }
     } catch (_) {
-      await _tokens.limpiar();
+      // Error de red (sin conexión a internet, timeout, etc.):
+      // Mantenemos la sesión activa en modo offline. ¡NO se borran los tokens!
     }
   }
 
@@ -87,6 +131,7 @@ class AuthRepositorio extends ChangeNotifier {
       email: actual.email,
       rol: actual.rol,
     );
+    _tokens.guardarUsuarioSesion(jsonEncode(_usuario!.toJson()));
     notifyListeners();
   }
 
@@ -96,6 +141,9 @@ class AuthRepositorio extends ChangeNotifier {
       await _api.cerrarSesion(refresh);
     } catch (_) {}
     await _tokens.limpiar();
+    try {
+      await AppDatabase.instancia.limpiarDatosUsuario();
+    } catch (_) {}
     _usuario = null;
     notifyListeners();
   }
@@ -105,6 +153,7 @@ class AuthRepositorio extends ChangeNotifier {
       access: sesion.accessToken,
       refresh: sesion.refreshToken,
     );
+    await _tokens.guardarUsuarioSesion(jsonEncode(sesion.usuario.toJson()));
     _usuario = sesion.usuario;
     notifyListeners();
   }
