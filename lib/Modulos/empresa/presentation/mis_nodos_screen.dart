@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/carga_lista.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
@@ -51,21 +52,25 @@ class MisNodosScreen extends StatefulWidget {
 
 class _MisNodosScreenState extends State<MisNodosScreen> {
   late final NodoApi _api = widget.api ?? NodoApi();
-  late Future<List<Nodo>> _futuro = _api.misNodos();
+  late final CargaLista<Nodo> _carga = CargaLista<Nodo>(() => _api.misNodos());
+
+  @override
+  void initState() {
+    super.initState();
+    _carga.cargar();
+  }
+
+  @override
+  void dispose() {
+    _carga.dispose();
+    super.dispose();
+  }
 
   bool get _esEmpresa => widget.modo == ModoNodos.empresa;
 
-  Future<void> _recargar() async {
-    final Future<List<Nodo>> nuevo = _api.misNodos();
-    setState(() {
-      _futuro = nuevo;
-    });
-    try {
-      await nuevo;
-    } catch (_) {
-      // El error se muestra en el propio FutureBuilder.
-    }
-  }
+  /// Refresca la lista sin repintarla: lo que ya se ve se queda hasta que
+  /// llegan los datos nuevos.
+  Future<void> _recargar() => _carga.cargar(silencioso: true);
 
   Future<void> _abrirFormulario([Nodo? nodo]) async {
     final Nodo? guardado = await Navigator.of(context).push<Nodo>(
@@ -117,7 +122,8 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
       await _api.eliminar(nodo.id);
       if (!mounted) return;
       notificarExito(l10n.nodoEmpresaEliminado);
-      await _recargar();
+      // Solo se quita ese nodo: nada mas se repinta ni se vuelve a pedir.
+      _carga.quitar((Nodo n) => n.id == nodo.id);
     } on ApiException catch (e) {
       notificarError(e.message);
     } catch (_) {
@@ -163,23 +169,17 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilder<List<Nodo>>(
-                future: _futuro,
-                builder: (BuildContext context, AsyncSnapshot<List<Nodo>> s) {
-                  if (s.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (s.hasError) {
-                    return FqEmptyState(
-                      icon: Icons.cloud_off_outlined,
-                      title: l10n.eventosErrorCarga,
-                      action: TextButton(
-                        onPressed: _recargar,
-                        child: Text(l10n.comunReintentar),
-                      ),
-                    );
-                  }
-                  final List<Nodo> nodos = s.data ?? const <Nodo>[];
+              child: CargaListaVista<Nodo>(
+                carga: _carga,
+                error: (BuildContext context, Object _) => FqEmptyState(
+                  icon: Icons.cloud_off_outlined,
+                  title: l10n.eventosErrorCarga,
+                  action: TextButton(
+                    onPressed: _carga.cargar,
+                    child: Text(l10n.comunReintentar),
+                  ),
+                ),
+                datos: (BuildContext context, List<Nodo> nodos) {
                   if (nodos.isEmpty) {
                     return FqEmptyState(
                       icon: _esEmpresa
@@ -207,6 +207,7 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
                       itemCount: nodos.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (BuildContext _, int i) => _TarjetaNodo(
+                        key: ValueKey<int>(nodos[i].id),
                         nodo: nodos[i],
                         esEmpresa: _esEmpresa,
                         onTap: () => _abrirNodo(nodos[i]),
@@ -238,6 +239,7 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
 
 class _TarjetaNodo extends StatelessWidget {
   const _TarjetaNodo({
+    super.key,
     required this.nodo,
     required this.esEmpresa,
     required this.onTap,

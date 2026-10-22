@@ -5,6 +5,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/mapa/control_ubicacion.dart';
+import 'package:fit_quest_go/core/mapa/estilo_mapa.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_directions_service.dart';
 import 'package:fit_quest_go/core/mapa/navegacion_destino.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -153,6 +154,15 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   PointAnnotationManager? _pinGuia;
   final ValueNotifier<GuiaActiva?> _guia = ValueNotifier<GuiaActiva?>(null);
   final MapboxDirectionsService _directions = MapboxDirectionsService();
+  RutaVial? _rutaGuia;
+  DestinoNavegacion? _destinoGuia;
+
+  /// Mantiene el estilo del mapa (Mapa / Satelite) al dia con el que eligio la
+  /// persona; al cambiarlo se vuelven a crear las capas (ver [GestorEstiloMapa]).
+  late final GestorEstiloMapa _estilo = GestorEstiloMapa(
+    mapa: () => _mapa,
+    alCambiarEstilo: _recrearCapas,
+  );
   List<Nodo> _nodos = <Nodo>[];
   List<Alerta> _alertas = <Alerta>[];
   bool _votando = false;
@@ -198,6 +208,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _focoBusqueda.addListener(_alCambiarFocoBusqueda);
     _proximidad.posicion.addListener(_alMoverseDestacados);
     NavegacionApp.instancia.registrarMapa();
+    _estilo.iniciar();
     NavegacionApp.instancia.destino.addListener(_alPedirDestino);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -240,6 +251,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _proximidad.posicion.removeListener(_alMoverseDestacados);
     NavegacionApp.instancia.destino.removeListener(_alPedirDestino);
     NavegacionApp.instancia.liberarMapa();
+    _estilo.liberar();
     _guia.dispose();
     _destacados.dispose();
     _proximidad.dispose();
@@ -430,9 +442,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     }
   }
 
-  Future<void> _onMapCreated(MapboxMap controller) async {
-    _mapa = controller;
-    await ocultarAdornos(controller);
+  /// Crea las capas del mapa, del fondo al frente. Se llama al crear el mapa y
+  /// otra vez al cambiar de estilo (que se lleva las capas).
+  Future<void> _crearCapas(MapboxMap controller) async {
     // Del fondo al frente: los eventos, las rutas, las alertas y, encima, los
     // puntos.
     _capaEventos = await CapaEventosMapa.crear(
@@ -459,11 +471,50 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       controller,
       alTocarNodo: _abrirNodoPorId,
     );
+  }
+
+  Future<void> _onMapCreated(MapboxMap controller) async {
+    _mapa = controller;
+    await ocultarAdornos(controller);
+    await _crearCapas(controller);
     // Lo que ya llego antes de que existiera el mapa se dibuja ahora.
     await _dibujarPines();
     await _dibujarEventos();
     await _dibujarRutas();
     await centrarEnUbicacionActual(controller);
+  }
+
+  /// Tras cambiar de estilo: quita las capas viejas, crea las nuevas y vuelve a
+  /// dibujar todo lo que ya estaba (puntos, alertas, eventos, rutas y, si hay,
+  /// el camino de "Como llegar"), sin volver a pedir nada al servidor.
+  Future<void> _recrearCapas() async {
+    final MapboxMap? mapa = _mapa;
+    if (mapa == null || !mounted) return;
+    _escuchaTapNodos?.cancel();
+    _escuchaTapNodos = null;
+    await _capaEventos?.quitar(mapa);
+    await _capaRutas?.quitar(mapa);
+    await _capaDestacados?.quitar(mapa);
+    for (final BaseAnnotationManager? m in <BaseAnnotationManager?>[
+      _lineasGuia,
+      _pinGuia,
+      _iconosNodos,
+    ]) {
+      if (m == null) continue;
+      try {
+        await mapa.annotations.removeAnnotationManager(m);
+      } catch (_) {
+        // Ya no estaba: no importa.
+      }
+    }
+    await _crearCapas(mapa);
+    if (!mounted) return;
+    await _dibujarPines();
+    await _dibujarEventos();
+    await _dibujarRutas();
+    final RutaVial? ruta = _rutaGuia;
+    final DestinoNavegacion? destino = _destinoGuia;
+    if (ruta != null && destino != null) await _dibujarGuia(ruta, destino);
   }
 
   // --- Como llegar (dentro de la app)
@@ -497,6 +548,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     }
     await _dibujarGuia(ruta, d);
     if (!mounted) return;
+    _rutaGuia = ruta;
+    _destinoGuia = d;
     _guia.value = GuiaActiva(
       nombre: d.nombre,
       metros: ruta.distanciaMetros,
@@ -540,6 +593,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   Future<void> _cerrarGuia() async {
     _guia.value = null;
+    _rutaGuia = null;
+    _destinoGuia = null;
     try {
       await _lineasGuia?.deleteAll();
       await _pinGuia?.deleteAll();
@@ -1046,6 +1101,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
             onPointerDown: (PointerDownEvent _) => _cerrarBusqueda(),
             child: MapWidget(
               key: const ValueKey<String>('fitquest-map'),
+              styleUri: PreferenciaEstiloMapa.instancia.estilo.value.uri,
+              onStyleLoadedListener: _estilo.alEstiloCargado,
               cameraOptions: CameraOptions(
                 center: Point(coordinates: Position(-84.0907, 9.9281)),
                 zoom: 13.5,
@@ -1102,7 +1159,14 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                   alignment: Alignment.centerRight,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 0, 10, 8),
-                    child: BotonMiUbicacion(mapa: () => _mapa),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const BotonTipoMapa(),
+                        const SizedBox(height: 8),
+                        BotonMiUbicacion(mapa: () => _mapa),
+                      ],
+                    ),
                   ),
                 ),
                 ValueListenableBuilder<GuiaActiva?>(

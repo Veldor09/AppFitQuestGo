@@ -78,6 +78,20 @@ class CapaEventosMapa {
     _escuchas.clear();
   }
 
+
+  /// Quita del mapa los administradores de anotaciones de esta capa: hace falta
+  /// al cambiar de estilo, para volver a crearla limpia sobre el estilo nuevo.
+  Future<void> quitar(MapboxMap mapa) async {
+    liberar();
+    for (final Object m in <Object>[poligonos, lineas, iconos]) {
+      try {
+        await mapa.annotations.removeAnnotationManager(m as BaseAnnotationManager);
+      } catch (_) {
+        // Ya no estaba (el estilo nuevo se lo llevo): no importa.
+      }
+    }
+  }
+
   /// Borra todo y lo vuelve a dibujar. Lo "secundario" (de otras empresas) va
   /// primero y en gris, para que quede por debajo de lo propio.
   ///

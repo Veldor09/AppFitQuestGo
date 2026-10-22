@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/carga_lista.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
@@ -52,18 +53,11 @@ class _AportesScreenState extends State<AportesScreen>
   late final RutaApi _rutaApi = widget.rutaApi ?? RutaApi();
   late final AlertaApi _alertaApi = widget.alertaApi ?? AlertaApi();
   late final NodoApi _nodoApi = widget.nodoApi ?? NodoApi();
-  int _recargarContador = 0;
 
   @override
   void dispose() {
     _tabs.dispose();
     super.dispose();
-  }
-
-  void _recargarRutas() {
-    setState(() {
-      _recargarContador++;
-    });
   }
 
   @override
@@ -122,11 +116,7 @@ class _AportesScreenState extends State<AportesScreen>
             child: TabBarView(
               controller: _tabs,
               children: <Widget>[
-                _TabMisRutas(
-                  key: ValueKey<int>(_recargarContador),
-                  rutaApi: _rutaApi,
-                  onCambio: _recargarRutas,
-                ),
+                _TabMisRutas(rutaApi: _rutaApi),
                 _TabMisAlertas(alertaApi: _alertaApi),
                 _TabMisNodos(
                   nodoApi: _nodoApi,
@@ -143,33 +133,46 @@ class _AportesScreenState extends State<AportesScreen>
 
 // ── Tab 1: Rutas Creadas ──────────────────────────────────────────────────────
 
-class _TabMisRutas extends StatelessWidget {
-  const _TabMisRutas({
-    super.key,
-    required this.rutaApi,
-    required this.onCambio,
-  });
+/// Mis rutas. Eliminar una ruta (desde aqui o desde su detalle) la quita de la
+/// lista al instante, sin volver a pedir ni repintar nada mas; cuando cambia
+/// otra cosa (se publica) la lista se refresca en silencio.
+class _TabMisRutas extends StatefulWidget {
+  const _TabMisRutas({required this.rutaApi});
 
   final RutaApi rutaApi;
-  final VoidCallback onCambio;
+
+  @override
+  State<_TabMisRutas> createState() => _TabMisRutasState();
+}
+
+class _TabMisRutasState extends State<_TabMisRutas> {
+  late final CargaLista<Ruta> _carga = CargaLista<Ruta>(
+    () => widget.rutaApi.misRutas(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _carga.cargar();
+  }
+
+  @override
+  void dispose() {
+    _carga.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<List<Ruta>>(
-      future: rutaApi.misRutas(),
-      builder: (BuildContext ctx, AsyncSnapshot<List<Ruta>> snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (snap.hasError) {
-          return FqEmptyState(
-            icon: Icons.error_outline,
-            title: l10n.aportesErrorRutas,
-            message: snap.error.toString(),
-          );
-        }
-        final List<Ruta> rutas = snap.data ?? <Ruta>[];
+    return CargaListaVista<Ruta>(
+      carga: _carga,
+      error: (BuildContext ctx, Object error) => FqEmptyState(
+        icon: Icons.error_outline,
+        title: l10n.aportesErrorRutas,
+        message: error.toString(),
+      ),
+      datos: (BuildContext ctx, List<Ruta> rutas) {
         if (rutas.isEmpty) {
           return FqEmptyState(
             icon: Icons.route_outlined,
@@ -182,9 +185,11 @@ class _TabMisRutas extends StatelessWidget {
           itemCount: rutas.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (_, int i) => _RutaFila(
+            key: ValueKey<int>(rutas[i].id),
             ruta: rutas[i],
-            rutaApi: rutaApi,
-            onCambio: onCambio,
+            rutaApi: widget.rutaApi,
+            onCambio: () => _carga.cargar(silencioso: true),
+            alEliminada: () => _carga.quitar((Ruta r) => r.id == rutas[i].id),
           ),
         );
       },
@@ -194,14 +199,19 @@ class _TabMisRutas extends StatelessWidget {
 
 class _RutaFila extends StatelessWidget {
   const _RutaFila({
+    super.key,
     required this.ruta,
     required this.rutaApi,
     required this.onCambio,
+    required this.alEliminada,
   });
 
   final Ruta ruta;
   final RutaApi rutaApi;
   final VoidCallback onCambio;
+
+  /// La ruta se elimino: quitarla de la lista, sin recargar.
+  final VoidCallback alEliminada;
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +234,7 @@ class _RutaFila extends StatelessWidget {
               puedeEnviarARevision: ruta.estado == 'Privada',
               puedeEliminar: true,
               onCambio: onCambio,
+              alEliminar: alEliminada,
             ),
           ),
         );
@@ -292,7 +303,7 @@ class _RutaFila extends StatelessWidget {
               onPressed: () async {
                 final bool eliminada =
                     await confirmarYEliminarRuta(context, rutaApi, ruta);
-                if (eliminada) onCambio();
+                if (eliminada) alEliminada();
               },
             ),
           ],
@@ -439,13 +450,20 @@ class _TabMisNodos extends StatefulWidget {
 }
 
 class _TabMisNodosState extends State<_TabMisNodos> {
-  late Future<List<Nodo>> _nodos = widget.nodoApi.misNodos();
+  late final CargaLista<Nodo> _carga = CargaLista<Nodo>(
+    () => widget.nodoApi.misNodos(),
+  );
 
-  void _recargar() {
-    final Future<List<Nodo>> nuevos = widget.nodoApi.misNodos();
-    setState(() {
-      _nodos = nuevos;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _carga.cargar();
+  }
+
+  @override
+  void dispose() {
+    _carga.dispose();
+    super.dispose();
   }
 
   Future<void> _editar(Nodo nodo) async {
@@ -463,7 +481,8 @@ class _TabMisNodosState extends State<_TabMisNodos> {
     );
     if (editado == null || !mounted) return;
     notificarExito(l10n.aportesNodoActualizado);
-    _recargar();
+    // Solo cambia ese punto: se reemplaza en la lista, sin volver a pedirla.
+    _carga.reemplazar((Nodo n) => n.id == nodo.id, editado);
   }
 
   Future<void> _eliminar(Nodo nodo) async {
@@ -491,7 +510,7 @@ class _TabMisNodosState extends State<_TabMisNodos> {
       await widget.nodoApi.eliminar(nodo.id);
       if (!mounted) return;
       notificarExito(l10n.aportesNodoEliminado);
-      _recargar();
+      _carga.quitar((Nodo n) => n.id == nodo.id);
     } catch (_) {
       if (mounted) notificarError(l10n.aportesNodoError);
     }
@@ -500,20 +519,14 @@ class _TabMisNodosState extends State<_TabMisNodos> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<List<Nodo>>(
-      future: _nodos,
-      builder: (BuildContext ctx, AsyncSnapshot<List<Nodo>> snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (snap.hasError) {
-          return FqEmptyState(
-            icon: Icons.error_outline,
-            title: l10n.aportesErrorNodos,
-            message: snap.error.toString(),
-          );
-        }
-        final List<Nodo> nodos = snap.data ?? <Nodo>[];
+    return CargaListaVista<Nodo>(
+      carga: _carga,
+      error: (BuildContext ctx, Object error) => FqEmptyState(
+        icon: Icons.error_outline,
+        title: l10n.aportesErrorNodos,
+        message: error.toString(),
+      ),
+      datos: (BuildContext ctx, List<Nodo> nodos) {
         if (nodos.isEmpty) {
           return FqEmptyState(
             icon: Icons.location_on_outlined,
@@ -526,6 +539,7 @@ class _TabMisNodosState extends State<_TabMisNodos> {
           itemCount: nodos.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (_, int i) => _NodoFila(
+            key: ValueKey<int>(nodos[i].id),
             nodo: nodos[i],
             alEditar: () => _editar(nodos[i]),
             alEliminar: () => _eliminar(nodos[i]),
@@ -538,6 +552,7 @@ class _TabMisNodosState extends State<_TabMisNodos> {
 
 class _NodoFila extends StatelessWidget {
   const _NodoFila({
+    super.key,
     required this.nodo,
     required this.alEditar,
     required this.alEliminar,

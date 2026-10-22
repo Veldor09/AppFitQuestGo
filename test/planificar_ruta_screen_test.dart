@@ -1,5 +1,7 @@
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,8 +13,18 @@ import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/planificar_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/selector_actividades_catalogo.dart';
+import 'package:fit_quest_go/core/fotos/selector_foto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+
+class _SelectorFalso implements SelectorFoto {
+  _SelectorFalso(this.bytes);
+
+  final Uint8List? bytes;
+
+  @override
+  Future<Uint8List?> elegir(OrigenFoto origen) async => bytes;
+}
 
 class _Reloj {
   DateTime ahora = DateTime(2026, 10, 5, 8);
@@ -25,6 +37,25 @@ class _Reloj {
 /// Evita llamadas reales al backend de rutas.
 class _RutaApiFalsa extends RutaApi {
   final List<List<String>> actividadesCreadas = <List<String>>[];
+  final List<({int id, Uint8List bytes})> fotosSubidas =
+      <({int id, Uint8List bytes})>[];
+  Object? errorAlSubirFoto;
+
+  @override
+  Future<Ruta> subirFoto(int id, Uint8List bytes) async {
+    if (errorAlSubirFoto != null) throw errorAlSubirFoto!;
+    fotosSubidas.add((id: id, bytes: bytes));
+    return Ruta(
+      id: id,
+      nombre: 'x',
+      actividades: const <String>[],
+      dificultad: 'moderada',
+      distanciaKm: 1,
+      puntos: const <PuntoRuta>[],
+      estado: 'Privada',
+      conFoto: true,
+    );
+  }
 
   @override
   Future<Ruta> crear({
@@ -108,6 +139,7 @@ Widget _montar({
   RutaApi? api,
   CatalogosApi? catalogosApi,
   bool permitirFallbackActividades = true,
+  SelectorFoto? selectorFoto,
 }) {
   return MaterialApp(
     locale: const Locale('es'),
@@ -121,6 +153,7 @@ Widget _montar({
         posicionStream: streamFalso == null ? null : (() => streamFalso),
         ahora: ahora,
         permitirFallbackActividades: permitirFallbackActividades,
+        selectorFoto: selectorFoto,
       ),
     ),
   );
@@ -142,6 +175,7 @@ Future<StreamController<Position>> _empezarAGrabar(
   RutaApi? api,
   CatalogosApi? catalogosApi,
   bool permitirFallbackActividades = true,
+  SelectorFoto? selectorFoto,
 }) async {
   _forzarLocaleEspanol(tester);
 
@@ -157,6 +191,7 @@ Future<StreamController<Position>> _empezarAGrabar(
       api: api,
       catalogosApi: catalogosApi,
       permitirFallbackActividades: permitirFallbackActividades,
+      selectorFoto: selectorFoto,
     ),
   );
 
@@ -197,14 +232,17 @@ Future<_RutaApiFalsa> _abrirFormulario(
   WidgetTester tester, {
   _CatalogosApiFalsa? catalogosApi,
   bool permitirFallbackActividades = true,
+  SelectorFoto? selectorFoto,
+  _RutaApiFalsa? apiFalsa,
 }) async {
-  final _RutaApiFalsa api = _RutaApiFalsa();
+  final _RutaApiFalsa api = apiFalsa ?? _RutaApiFalsa();
 
   final StreamController<Position> controlador = await _empezarAGrabar(
     tester,
     api: api,
     catalogosApi: catalogosApi,
     permitirFallbackActividades: permitirFallbackActividades,
+    selectorFoto: selectorFoto,
   );
 
   await _emitir(tester, controlador, 9.9281, -84.0907);
@@ -475,6 +513,81 @@ void main() {
         tester.widget<FqButton>(guardarFinder).onPressed,
         isNotNull,
       );
+    });
+  });
+
+  group('foto de la ruta', () {
+    setUp(() {
+      SelectorActividadesCatalogo.limpiarCache();
+    });
+    // PNG valido de 1x1 px (la vista previa lo decodifica de verdad).
+    final Uint8List foto = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    );
+
+    testWidgets('el formulario ofrece agregar una foto (camara o galeria)', (
+      WidgetTester tester,
+    ) async {
+      await _abrirFormulario(tester);
+
+      expect(find.text('Foto (opcional)'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('foto-camara')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('foto-galeria')), findsOneWidget);
+    });
+
+    testWidgets('con foto elegida, se sube con el id de la ruta recien creada', (
+      WidgetTester tester,
+    ) async {
+      final api = await _abrirFormulario(
+        tester,
+        selectorFoto: _SelectorFalso(foto),
+      );
+      await _escribirNombre(tester);
+      await tester.tap(find.text('Running'));
+      await tester.tap(find.byKey(const ValueKey<String>('foto-galeria')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('foto-elegida')), findsOneWidget);
+
+      await _guardarFormulario(tester);
+
+      expect(api.fotosSubidas, hasLength(1));
+      expect(api.fotosSubidas.single.id, 1);
+      expect(api.fotosSubidas.single.bytes, foto);
+    });
+
+    testWidgets('sin foto elegida no se sube nada', (WidgetTester tester) async {
+      final api = await _abrirFormulario(
+        tester,
+        selectorFoto: _SelectorFalso(foto),
+      );
+      await _escribirNombre(tester);
+      await tester.tap(find.text('Running'));
+
+      await _guardarFormulario(tester);
+
+      expect(api.actividadesCreadas, isNotEmpty);
+      expect(api.fotosSubidas, isEmpty);
+    });
+
+    testWidgets('si la foto no sube, la ruta igual queda guardada', (
+      WidgetTester tester,
+    ) async {
+      final _RutaApiFalsa fallida = _RutaApiFalsa()
+        ..errorAlSubirFoto = Exception('sin red');
+      final api = await _abrirFormulario(
+        tester,
+        selectorFoto: _SelectorFalso(foto),
+        apiFalsa: fallida,
+      );
+      await _escribirNombre(tester);
+      await tester.tap(find.text('Running'));
+      await tester.tap(find.byKey(const ValueKey<String>('foto-galeria')));
+      await tester.pump();
+
+      await _guardarFormulario(tester);
+
+      expect(api.actividadesCreadas, isNotEmpty);
+      expect(api.fotosSubidas, isEmpty);
     });
   });
 

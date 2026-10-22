@@ -742,5 +742,11 @@
   "guiaHacia": "To {nombre}",
   "guiaDetalle": "{distancia} · {minutos} min on foot",
   "guiaLineaRecta": "{distancia} in a straight line",
-  "guiaYaEstasAqui": "You are already there."
+  "guiaYaEstasAqui": "You are already there.",
+  "mapaTipoBoton": "Map type",
+  "mapaTipoTitulo": "Map type",
+  "mapaTipoCalles": "Map",
+  "mapaTipoSatelite": "Satellite",
+  "fotoYaTiene": "It already has a photo: pick another to replace it.",
+  "fotoNoSubida": "It was saved, but the photo could not be uploaded."
 }

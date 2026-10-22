@@ -3036,5 +3036,29 @@
   "guiaYaEstasAqui": "Ya estás en el destino.",
   "@guiaYaEstasAqui": {
     "description": "Toast when the user asks directions to where they already are."
+  },
+  "mapaTipoBoton": "Tipo de mapa",
+  "@mapaTipoBoton": {
+    "description": "Tooltip of the map layers button."
+  },
+  "mapaTipoTitulo": "Tipo de mapa",
+  "@mapaTipoTitulo": {
+    "description": "Title of the map type sheet."
+  },
+  "mapaTipoCalles": "Mapa",
+  "@mapaTipoCalles": {
+    "description": "Streets map style option."
+  },
+  "mapaTipoSatelite": "Satélite",
+  "@mapaTipoSatelite": {
+    "description": "Satellite map style option."
+  },
+  "fotoYaTiene": "Ya tiene una foto: elige otra para reemplazarla.",
+  "@fotoYaTiene": {
+    "description": "Hint in the photo field when editing something that already has a photo."
+  },
+  "fotoNoSubida": "Se guardó, pero no se pudo subir la foto.",
+  "@fotoNoSubida": {
+    "description": "Toast when the photo upload fails after saving a route or event."
   }
 }

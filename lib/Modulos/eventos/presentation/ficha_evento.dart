@@ -4,12 +4,14 @@ import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
 import 'package:fit_quest_go/core/geo/centroide.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
+import 'package:fit_quest_go/core/widgets/foto_remota.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/application/resumen_remoto.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
+import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/formato_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/etiqueta_destacado.dart';
@@ -22,6 +24,7 @@ Future<void> mostrarFichaEvento(
   DateTime Function()? ahora,
   CalificacionApi? calificaciones,
   Future<bool> Function(Uri uri)? abrirUrl,
+  EventoApi? api,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -33,6 +36,7 @@ Future<void> mostrarFichaEvento(
       ahora: ahora,
       calificaciones: calificaciones,
       abrirUrl: abrirUrl,
+      api: api,
     ),
   );
 }
@@ -63,6 +67,7 @@ class FichaEvento extends StatefulWidget {
     this.ahora,
     this.calificaciones,
     this.abrirUrl,
+    this.api,
   });
 
   final Evento evento;
@@ -75,6 +80,9 @@ class FichaEvento extends StatefulWidget {
 
   /// Abre "Como llegar"; por defecto lanza la app de mapas.
   final Future<bool> Function(Uri uri)? abrirUrl;
+
+  /// Para bajar la foto del evento, inyectable para pruebas.
+  final EventoApi? api;
 
   @override
   State<FichaEvento> createState() => _FichaEventoState();
@@ -161,6 +169,18 @@ class _FichaEventoState extends State<FichaEvento> {
                       ),
                     ),
                   ],
+                ),
+              ],
+              if (evento.conFoto) ...<Widget>[
+                const SizedBox(height: 16),
+                FotoRemota(
+                  // Llave estable: si cambia el orden de lo de arriba (llegan los
+                  // pulgares) la foto no se vuelve a bajar.
+                  key: const ValueKey<String>('foto-evento-widget'),
+                  llave: const ValueKey<String>('foto-evento'),
+                  cargar: () => (widget.api ?? EventoApi()).foto(evento.id),
+                  altura: 190,
+                  titulo: evento.nombre,
                 ),
               ],
               const SizedBox(height: 16),

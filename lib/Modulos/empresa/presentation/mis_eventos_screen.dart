@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/carga_lista.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -46,7 +47,7 @@ class MisEventosScreen extends StatefulWidget {
 
 class _MisEventosScreenState extends State<MisEventosScreen> {
   late final EventoApi _api = widget.api ?? EventoApi();
-  late Future<List<Evento>> _futuro = _api.mios();
+  late final CargaLista<Evento> _carga = CargaLista<Evento>(() => _api.mios());
 
   DateTime get _ahora => (widget.ahora ?? DateTime.now)();
 
@@ -54,11 +55,13 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
   void initState() {
     super.initState();
     widget.senal?.addListener(_alSenal);
+    _carga.cargar();
   }
 
   @override
   void dispose() {
     widget.senal?.removeListener(_alSenal);
+    _carga.dispose();
     super.dispose();
   }
 
@@ -75,17 +78,9 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
     }
   }
 
-  Future<void> _recargar() async {
-    final Future<List<Evento>> nuevo = _api.mios();
-    setState(() {
-      _futuro = nuevo;
-    });
-    try {
-      await nuevo;
-    } catch (_) {
-      // El error se muestra en el propio FutureBuilder.
-    }
-  }
+  /// Refresca la lista sin repintarla: lo que ya se ve se queda hasta que
+  /// llegan los datos nuevos.
+  Future<void> _recargar() => _carga.cargar(silencioso: true);
 
   Future<void> _abrirEditor([Evento? evento]) async {
     final Evento? guardado = await Navigator.of(context).push<Evento>(
@@ -123,6 +118,9 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
       await _api.eliminar(evento.id);
       if (!mounted) return;
       notificarExito(l10n.eventoEliminado);
+      // Se quita de esta lista al instante; las demas pantallas (el mapa) se
+      // ponen al dia en silencio con la señal.
+      _carga.quitar((Evento e) => e.id == evento.id);
       await _huboCambios();
     } on ApiException catch (e) {
       notificarError(e.message);
@@ -167,23 +165,17 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilder<List<Evento>>(
-                future: _futuro,
-                builder: (BuildContext context, AsyncSnapshot<List<Evento>> s) {
-                  if (s.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (s.hasError) {
-                    return FqEmptyState(
-                      icon: Icons.cloud_off_outlined,
-                      title: l10n.eventosErrorCarga,
-                      action: TextButton(
-                        onPressed: _recargar,
-                        child: Text(l10n.comunReintentar),
-                      ),
-                    );
-                  }
-                  final List<Evento> eventos = s.data ?? const <Evento>[];
+              child: CargaListaVista<Evento>(
+                carga: _carga,
+                error: (BuildContext context, Object _) => FqEmptyState(
+                  icon: Icons.cloud_off_outlined,
+                  title: l10n.eventosErrorCarga,
+                  action: TextButton(
+                    onPressed: _carga.cargar,
+                    child: Text(l10n.comunReintentar),
+                  ),
+                ),
+                datos: (BuildContext context, List<Evento> eventos) {
                   if (eventos.isEmpty) {
                     return FqEmptyState(
                       icon: Icons.event_outlined,

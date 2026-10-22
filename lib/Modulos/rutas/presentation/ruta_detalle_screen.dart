@@ -6,6 +6,7 @@ import 'package:fit_quest_go/core/mapa/mapas_offline_servicio.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
+import 'package:fit_quest_go/core/widgets/foto_remota.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -32,6 +33,7 @@ class RutaDetalleScreen extends StatefulWidget {
     this.puedeEnviarARevision = false,
     this.puedeEliminar = false,
     this.onCambio,
+    this.alEliminar,
     this.recorridoBuilder,
     this.calificaciones,
     this.abrirUrl,
@@ -44,6 +46,10 @@ class RutaDetalleScreen extends StatefulWidget {
 
   /// Muestra el boton de eliminar (solo en una ruta propia).
   final bool puedeEliminar;
+
+  /// Se llama cuando la ruta se elimino desde aqui (la lista la quita sin
+  /// recargar). Sin esto se usa [onCambio].
+  final VoidCallback? alEliminar;
   final VoidCallback? onCambio;
   final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
@@ -180,7 +186,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       widget.ruta,
     );
     if (!eliminada || !mounted) return;
-    widget.onCambio?.call();
+    (widget.alEliminar ?? widget.onCambio)?.call();
     Navigator.of(context).pop();
   }
 
@@ -359,6 +365,16 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                     ),
                   ],
 
+                  if (ruta.conFoto) ...<Widget>[
+                    const SizedBox(height: 14),
+                    FotoRemota(
+                      key: const ValueKey<String>('foto-ruta-widget'),
+                      llave: const ValueKey<String>('foto-ruta'),
+                      cargar: () => _api.foto(ruta.id),
+                      altura: 190,
+                      titulo: ruta.nombre,
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   FilaAccionesFicha(
                     acciones: <Widget>[

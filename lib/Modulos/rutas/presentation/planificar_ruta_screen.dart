@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -15,6 +16,8 @@ import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/fotos/selector_foto.dart';
+import 'package:fit_quest_go/core/widgets/campo_foto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -54,6 +57,7 @@ class PlanificarRutaScreen extends StatefulWidget {
     this.ahora,
     this.accessToken,
     this.permitirFallbackActividades = true,
+    this.selectorFoto,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -61,6 +65,9 @@ class PlanificarRutaScreen extends StatefulWidget {
 
   /// API de catálogos inyectable para pruebas de ADM-11.
   final CatalogosApi? catalogosApi;
+
+  /// Selector de foto del formulario de guardar, inyectable para pruebas.
+  final SelectorFoto? selectorFoto;
 
   /// Permite usar actividades de respaldo si falla la red al planificar offline.
   final bool permitirFallbackActividades;
@@ -456,7 +463,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     setState(() => _guardando = true);
     try {
       try {
-        await _api.crear(
+        final Ruta creada = await _api.crear(
           nombre: datos.nombre,
           actividades: datos.actividades,
           dificultad: datos.dificultad,
@@ -464,6 +471,15 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           puntos: _puntos,
           visibilidad: datos.visibilidad,
         );
+        // La foto va aparte del JSON: si falla, la ruta ya quedo guardada.
+        final Uint8List? foto = datos.foto;
+        if (foto != null) {
+          try {
+            await _api.subirFoto(creada.id, foto);
+          } catch (_) {
+            notificarError(l10n.fotoNoSubida);
+          }
+        }
         unawaited(_tracking.limpiar());
         if (!mounted) return;
         final String msg = datos.visibilidad == 'publica'
@@ -509,6 +525,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     List<String> clavesDisponibles = <String>[];
     String dificultad = 'moderada';
     String visibilidad = 'privada';
+    Uint8List? foto;
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     return showModalBottomSheet<_DatosRuta>(
@@ -635,6 +652,13 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       onChanged: (String? v) =>
                           setSheetState(() => visibilidad = v ?? visibilidad),
                     ),
+                    const SizedBox(height: 14),
+                    CampoFoto(
+                      foto: foto,
+                      selector: widget.selectorFoto,
+                      alCambiar: (Uint8List? f) =>
+                          setSheetState(() => foto = f),
+                    ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: !catalogoDisponible ? null : () {
@@ -657,6 +681,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                             ],
                             dificultad: dificultad,
                             visibilidad: visibilidad,
+                            foto: foto,
                           ),
                         );
                       },
@@ -1071,10 +1096,14 @@ class _DatosRuta {
     required this.actividades,
     required this.dificultad,
     this.visibilidad = 'privada',
+    this.foto,
   });
 
   final String nombre;
   final List<String> actividades;
   final String dificultad;
   final String visibilidad;
+
+  /// La foto elegida (se sube despues de guardar la ruta).
+  final Uint8List? foto;
 }

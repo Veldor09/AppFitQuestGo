@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
+import 'package:fit_quest_go/core/widgets/foto_remota.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/fq_app_header.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/application/resumen_remoto.dart';
@@ -11,6 +12,7 @@ import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
+import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/formato_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/mapa_trazos_evento.dart';
@@ -27,6 +29,7 @@ class EventoDetalleScreen extends StatefulWidget {
     this.mapaBuilder,
     this.calificaciones,
     this.abrirUrl,
+    this.api,
   });
 
   final Evento evento;
@@ -42,6 +45,9 @@ class EventoDetalleScreen extends StatefulWidget {
 
   /// Abre "Como llegar"; por defecto lanza la app de mapas.
   final Future<bool> Function(Uri uri)? abrirUrl;
+
+  /// Para bajar la foto del evento, inyectable para pruebas.
+  final EventoApi? api;
 
   @override
   State<EventoDetalleScreen> createState() => _EventoDetalleScreenState();
@@ -131,6 +137,17 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                               ),
                             ),
                           ],
+                        ),
+                      ],
+                      if (evento.conFoto) ...<Widget>[
+                        const SizedBox(height: 12),
+                        FotoRemota(
+                          key: const ValueKey<String>('foto-evento-widget'),
+                          llave: const ValueKey<String>('foto-evento'),
+                          cargar: () =>
+                              (widget.api ?? EventoApi()).foto(evento.id),
+                          altura: 190,
+                          titulo: evento.nombre,
                         ),
                       ],
                       const SizedBox(height: 12),

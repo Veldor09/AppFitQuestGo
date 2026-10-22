@@ -197,6 +197,7 @@ class _FichaNodoState extends State<FichaNodo> {
           if (_nodo.conFoto) ...<Widget>[
             const SizedBox(height: 16),
             FotoNodo(
+              key: const ValueKey<String>('foto-nodo-widget'),
               api: widget.api,
               nodoId: _nodo.id,
               altura: 190,

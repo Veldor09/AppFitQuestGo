@@ -742,5 +742,11 @@
   "guiaHacia": "Para {nombre}",
   "guiaDetalle": "{distancia} · {minutos} min a pe",
   "guiaLineaRecta": "{distancia} em linha reta",
-  "guiaYaEstasAqui": "Voce ja esta no destino."
+  "guiaYaEstasAqui": "Voce ja esta no destino.",
+  "mapaTipoBoton": "Tipo de mapa",
+  "mapaTipoTitulo": "Tipo de mapa",
+  "mapaTipoCalles": "Mapa",
+  "mapaTipoSatelite": "Satelite",
+  "fotoYaTiene": "Ja tem uma foto: escolha outra para substitui-la.",
+  "fotoNoSubida": "Foi salvo, mas nao foi possivel enviar a foto."
 }
