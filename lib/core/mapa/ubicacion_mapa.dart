@@ -35,14 +35,27 @@ Future<bool> _pedirPermiso() async {
 /// Posiciones del dispositivo mientras la app esta abierta, con un filtro de
 /// `distanciaMinimaM` metros entre una y otra. Termina sin emitir nada si no
 /// hay servicio de ubicacion o permiso.
-Stream<PosicionGps> posicionesGps({int distanciaMinimaM = 10}) async* {
+Stream<PosicionGps> posicionesGps({
+  int distanciaMinimaM = 10,
+  bool segundoPlano = false,
+  String? tituloNotificacion,
+  String? mensajeNotificacion,
+}) async* {
   if (!await asegurarPermisoUbicacion()) return;
   final geo.LocationSettings settings;
   if (defaultTargetPlatform == TargetPlatform.android) {
     settings = geo.AndroidSettings(
       accuracy: geo.LocationAccuracy.high,
       distanceFilter: distanciaMinimaM,
-      intervalDuration: const Duration(seconds: 5),
+      intervalDuration: const Duration(seconds: 3),
+      foregroundNotificationConfig: segundoPlano
+          ? geo.ForegroundNotificationConfig(
+              notificationTitle: tituloNotificacion ?? 'FitQuest Go · Grabación GPS activa',
+              notificationText: mensajeNotificacion ?? 'Registrando tu recorrido en segundo plano...',
+              notificationIcon: const geo.AndroidResource(name: 'ic_launcher'),
+              enableWakeLock: true,
+            )
+          : null,
     );
   } else {
     settings = geo.LocationSettings(

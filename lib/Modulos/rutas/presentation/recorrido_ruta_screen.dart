@@ -183,8 +183,14 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
         }
       }));
     }
-    final Stream<PosicionGps> flujo =
-        widget.posiciones != null ? widget.posiciones!() : posicionesGps(distanciaMinimaM: 3);
+    final Stream<PosicionGps> flujo = widget.posiciones != null
+        ? widget.posiciones!()
+        : posicionesGps(
+            distanciaMinimaM: 3,
+            segundoPlano: true,
+            tituloNotificacion: 'Navegando: ${widget.ruta.nombre}',
+            mensajeNotificacion: 'Siguiendo ruta en FitQuest Go',
+          );
     _suscripcion = flujo.listen(
       _alRecibirPosicion,
       onError: (_) {

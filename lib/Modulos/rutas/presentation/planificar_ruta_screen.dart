@@ -238,6 +238,12 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
             accuracy: geo.LocationAccuracy.high,
             distanceFilter: _distanciaMinimaEntrePuntosM.toInt(),
             intervalDuration: const Duration(seconds: 2),
+            foregroundNotificationConfig: const geo.ForegroundNotificationConfig(
+              notificationTitle: 'FitQuest Go · Grabando ruta',
+              notificationText: 'Grabación de recorrido GPS en curso...',
+              notificationIcon: geo.AndroidResource(name: 'ic_launcher'),
+              enableWakeLock: true,
+            ),
           );
         } else {
           settings = geo.LocationSettings(
