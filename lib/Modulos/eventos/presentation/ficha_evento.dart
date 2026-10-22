@@ -13,6 +13,7 @@ import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/formato_evento.dart';
+import 'package:fit_quest_go/Modulos/eventos/presentation/recorrido_evento_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/etiqueta_destacado.dart';
 
@@ -25,6 +26,7 @@ Future<void> mostrarFichaEvento(
   CalificacionApi? calificaciones,
   Future<bool> Function(Uri uri)? abrirUrl,
   EventoApi? api,
+  Widget Function(BuildContext context, Evento evento)? recorridoBuilder,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -37,6 +39,7 @@ Future<void> mostrarFichaEvento(
       calificaciones: calificaciones,
       abrirUrl: abrirUrl,
       api: api,
+      recorridoBuilder: recorridoBuilder,
     ),
   );
 }
@@ -68,6 +71,7 @@ class FichaEvento extends StatefulWidget {
     this.calificaciones,
     this.abrirUrl,
     this.api,
+    this.recorridoBuilder,
   });
 
   final Evento evento;
@@ -83,6 +87,9 @@ class FichaEvento extends StatefulWidget {
 
   /// Para bajar la foto del evento, inyectable para pruebas.
   final EventoApi? api;
+
+  /// Pantalla de navegación/recorrido inyectable para pruebas.
+  final Widget Function(BuildContext context, Evento evento)? recorridoBuilder;
 
   @override
   State<FichaEvento> createState() => _FichaEventoState();
@@ -160,13 +167,27 @@ class _FichaEventoState extends State<FichaEvento> {
                       icono: Icons.directions_rounded,
                       etiqueta: l10n.fichaComoLlegar,
                       principal: true,
-                      onTap: () => abrirComoLlegar(
-                        context,
-                        lat: destino.lat,
-                        lng: destino.lng,
-                        nombre: evento.nombre,
-                        abrir: widget.abrirUrl,
-                      ),
+                      onTap: () async {
+                        if (widget.abrirUrl != null) {
+                          await abrirComoLlegar(
+                            context,
+                            lat: destino.lat,
+                            lng: destino.lng,
+                            nombre: evento.nombre,
+                            abrir: widget.abrirUrl,
+                          );
+                          return;
+                        }
+                        final NavigatorState nav = Navigator.of(context);
+                        nav.pop();
+                        await nav.push<void>(
+                          MaterialPageRoute<void>(
+                            builder: (BuildContext ctx) =>
+                                widget.recorridoBuilder?.call(ctx, evento) ??
+                                RecorridoEventoScreen(evento: evento),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

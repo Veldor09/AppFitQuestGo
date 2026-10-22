@@ -15,6 +15,7 @@ import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/formato_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
+import 'package:fit_quest_go/Modulos/eventos/presentation/recorrido_evento_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/mapa_trazos_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
 
@@ -30,6 +31,7 @@ class EventoDetalleScreen extends StatefulWidget {
     this.calificaciones,
     this.abrirUrl,
     this.api,
+    this.recorridoBuilder,
   });
 
   final Evento evento;
@@ -48,6 +50,9 @@ class EventoDetalleScreen extends StatefulWidget {
 
   /// Para bajar la foto del evento, inyectable para pruebas.
   final EventoApi? api;
+
+  /// Pantalla de navegación/recorrido inyectable para pruebas.
+  final Widget Function(BuildContext context, Evento evento)? recorridoBuilder;
 
   @override
   State<EventoDetalleScreen> createState() => _EventoDetalleScreenState();
@@ -128,13 +133,25 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                               icono: Icons.directions_rounded,
                               etiqueta: l10n.fichaComoLlegar,
                               principal: true,
-                              onTap: () => abrirComoLlegar(
-                                context,
-                                lat: destino.lat,
-                                lng: destino.lng,
-                                nombre: evento.nombre,
-                                abrir: widget.abrirUrl,
-                              ),
+                              onTap: () async {
+                                if (widget.abrirUrl != null) {
+                                  await abrirComoLlegar(
+                                    context,
+                                    lat: destino.lat,
+                                    lng: destino.lng,
+                                    nombre: evento.nombre,
+                                    abrir: widget.abrirUrl,
+                                  );
+                                  return;
+                                }
+                                await Navigator.of(context).push<void>(
+                                  MaterialPageRoute<void>(
+                                    builder: (BuildContext ctx) =>
+                                        widget.recorridoBuilder?.call(ctx, evento) ??
+                                        RecorridoEventoScreen(evento: evento),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
