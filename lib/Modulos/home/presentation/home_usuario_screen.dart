@@ -96,12 +96,12 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   /// otra persona mientras caminas tiene que poder avisarte sin reabrir la app,
   /// un punto que otras personas votan como obsoleto tiene que salir del mapa y
   /// una notificacion nueva tiene que prender la campana.
-  static const Duration _refrescoAlertas = Duration(seconds: 60);
+  static const Duration _refrescoAlertas = Duration(seconds: 5);
 
   /// Cada cuanto se vuelven a pedir las rutas publicadas: cambian poco (pasan
   /// por la moderacion del admin) y cada una trae todo su trazo, asi que no se
   /// piden tan seguido como lo demas.
-  static const Duration _refrescoRutas = Duration(minutes: 5);
+  static const Duration _refrescoRutas = Duration(seconds: 5);
 
   /// Cada cuanto se vuelve a preguntar el clima de la zona: cambia despacio y el
   /// servidor ademas lo guarda 10 minutos.
@@ -122,6 +122,17 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   Timer? _temporizadorAlertas;
   Timer? _temporizadorRutas;
   Timer? _temporizadorClima;
+  Timer? _temporizadorAutoCierreAlerta;
+  Timer? _temporizadorAutoCierreClima;
+  Timer? _temporizadorAutoCierreDestacado;
+  int? _alertaAutoCierreId;
+  String? _climaAutoCierreClave;
+  String? _destacadoAutoCierreClave;
+
+  /// Duracion prudente antes de ocultar automaticamente las tarjetas emergentes
+  /// del mapa (alerta cercana, clima, destacados) si el usuario no interactua.
+  static const Duration _duracionAutoCierreAvisos = Duration(seconds: 7);
+
   AvisoVoz? _vozActiva;
 
   MapboxMap? _mapa;
@@ -207,6 +218,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     );
     _focoBusqueda.addListener(_alCambiarFocoBusqueda);
     _proximidad.posicion.addListener(_alMoverseDestacados);
+    _proximidad.addListener(_alCambiarAlertaProximidad);
+    _clima.addListener(_alCambiarAvisoClima);
+    _destacados.addListener(_alCambiarDestacadoCercano);
     NavegacionApp.instancia.registrarMapa();
     _estilo.iniciar();
     NavegacionApp.instancia.destino.addListener(_alPedirDestino);
@@ -246,13 +260,19 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _temporizadorAlertas?.cancel();
     _temporizadorRutas?.cancel();
     _temporizadorClima?.cancel();
+    _temporizadorAutoCierreAlerta?.cancel();
+    _temporizadorAutoCierreClima?.cancel();
+    _temporizadorAutoCierreDestacado?.cancel();
     _escuchaTapNodos?.cancel();
+    _clima.removeListener(_alCambiarAvisoClima);
     _clima.dispose();
+    _proximidad.removeListener(_alCambiarAlertaProximidad);
     _proximidad.posicion.removeListener(_alMoverseDestacados);
     NavegacionApp.instancia.destino.removeListener(_alPedirDestino);
     NavegacionApp.instancia.liberarMapa();
     _estilo.liberar();
     _guia.dispose();
+    _destacados.removeListener(_alCambiarDestacadoCercano);
     _destacados.dispose();
     _proximidad.dispose();
     _vozActiva?.detener();
@@ -344,6 +364,60 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   void _alMoverseDestacados() {
     final PosicionGps? pos = _proximidad.posicion.value;
     if (pos != null) _destacados.alMoverse(pos);
+  }
+
+  /// Oculta la tarjeta de alerta de proximidad tras un tiempo prudente si no se vota.
+  void _alCambiarAlertaProximidad() {
+    final Alerta? actual = _proximidad.alertaCercana;
+    if (actual == null) {
+      _alertaAutoCierreId = null;
+      _temporizadorAutoCierreAlerta?.cancel();
+      return;
+    }
+    if (_alertaAutoCierreId == actual.id) return;
+    _alertaAutoCierreId = actual.id;
+    _temporizadorAutoCierreAlerta?.cancel();
+    _temporizadorAutoCierreAlerta = Timer(_duracionAutoCierreAvisos, () {
+      if (!mounted || _votando) return;
+      _alertaAutoCierreId = null;
+      _proximidad.descartar();
+    });
+  }
+
+  /// Oculta la tarjeta de aviso del clima tras unos segundos para no tapar el mapa.
+  void _alCambiarAvisoClima() {
+    final AlertaClima? aviso = _clima.principal;
+    if (aviso == null) {
+      _climaAutoCierreClave = null;
+      _temporizadorAutoCierreClima?.cancel();
+      return;
+    }
+    if (_climaAutoCierreClave == aviso.clave) return;
+    _climaAutoCierreClave = aviso.clave;
+    _temporizadorAutoCierreClima?.cancel();
+    _temporizadorAutoCierreClima = Timer(_duracionAutoCierreAvisos, () {
+      if (!mounted) return;
+      _climaAutoCierreClave = null;
+      _clima.cerrar(aviso);
+    });
+  }
+
+  /// Oculta la tarjeta de destacado cercano tras unos segundos si no se abre.
+  void _alCambiarDestacadoCercano() {
+    final DestacadoCercano? destacado = _destacados.cercano;
+    if (destacado == null) {
+      _destacadoAutoCierreClave = null;
+      _temporizadorAutoCierreDestacado?.cancel();
+      return;
+    }
+    if (_destacadoAutoCierreClave == destacado.clave) return;
+    _destacadoAutoCierreClave = destacado.clave;
+    _temporizadorAutoCierreDestacado?.cancel();
+    _temporizadorAutoCierreDestacado = Timer(_duracionAutoCierreAvisos, () {
+      if (!mounted) return;
+      _destacadoAutoCierreClave = null;
+      _destacados.cerrar();
+    });
   }
 
   /// Abre la ficha de un destacado (punto o evento).
@@ -1142,12 +1216,17 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 listenable: _clima,
                 builder: (BuildContext context, Widget? _) {
                   final AlertaClima? aviso = _clima.principal;
-                  if (aviso == null) return const SizedBox.shrink();
-                  return BannerClima(
-                    alerta: aviso,
-                    fuente: _clima.fuente,
-                    masAvisos: _clima.visibles.length - 1,
-                    onCerrar: () => _clima.cerrar(aviso),
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: aviso == null
+                        ? const SizedBox.shrink()
+                        : BannerClima(
+                            key: ValueKey<String>('banner-clima-${aviso.clave}'),
+                            alerta: aviso,
+                            fuente: _clima.fuente,
+                            masAvisos: _clima.visibles.length - 1,
+                            onCerrar: () => _clima.cerrar(aviso),
+                          ),
                   );
                 },
               ),
@@ -1180,14 +1259,19 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                   listenable: _proximidad,
                   builder: (BuildContext context, Widget? _) {
                     final Alerta? alerta = _proximidad.alertaCercana;
-                    if (alerta == null) return const SizedBox.shrink();
-                    return BannerAlertaCercana(
-                      alerta: alerta,
-                      metros: _proximidad.metrosAlertaCercana ?? 0,
-                      votando: _votando,
-                      onSigue: () => _votar(sigueAhi: true),
-                      onNoEsta: () => _votar(sigueAhi: false),
-                      onCerrar: _proximidad.descartar,
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: alerta == null
+                          ? const SizedBox.shrink()
+                          : BannerAlertaCercana(
+                              key: ValueKey<int>(alerta.id),
+                              alerta: alerta,
+                              metros: _proximidad.metrosAlertaCercana ?? 0,
+                              votando: _votando,
+                              onSigue: () => _votar(sigueAhi: true),
+                              onNoEsta: () => _votar(sigueAhi: false),
+                              onCerrar: _proximidad.descartar,
+                            ),
                     );
                   },
                 ),
@@ -1200,16 +1284,21 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                   ]),
                   builder: (BuildContext context, Widget? _) {
                     final DestacadoCercano? destacado = _destacados.cercano;
-                    if (destacado == null || _proximidad.alertaCercana != null) {
-                      return const SizedBox.shrink();
-                    }
-                    return BannerDestacadoCerca(
-                      destacado: destacado,
-                      onTap: () {
-                        _destacados.cerrar();
-                        _abrirDestacado(destacado);
-                      },
-                      onCerrar: _destacados.cerrar,
+                    final bool visible =
+                        destacado != null && _proximidad.alertaCercana == null;
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: !visible
+                          ? const SizedBox.shrink()
+                          : BannerDestacadoCerca(
+                              key: ValueKey<String>('banner-destacado-${destacado.clave}'),
+                              destacado: destacado,
+                              onTap: () {
+                                _destacados.cerrar();
+                                _abrirDestacado(destacado);
+                              },
+                              onCerrar: _destacados.cerrar,
+                            ),
                     );
                   },
                 ),

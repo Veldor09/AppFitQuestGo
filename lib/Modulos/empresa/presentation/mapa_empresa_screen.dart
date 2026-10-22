@@ -235,6 +235,7 @@ class _MapaEmpresaScreenState extends State<MapaEmpresaScreen> {
                   pines: _pines,
                   alTocarEvento: _abrirEvento,
                   centrarEnUsuario: true,
+                  controlesAbajo: true,
                 ),
           SafeArea(
             child: Padding(

@@ -18,10 +18,13 @@ class AdminTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 54,
       color: FqColors.night,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          height: 54,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
         children: <Widget>[
           if (onToggleSidebar != null)
             IconButton(
@@ -84,7 +87,9 @@ class AdminTopBar extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 }
 

@@ -47,6 +47,7 @@ class MapaTrazosEvento extends StatefulWidget {
     this.etiquetaZonas,
     this.alTocarEvento,
     this.mostrarControles = true,
+    this.controlesAbajo = false,
   });
 
   /// Trazos ya guardados. La lista se redibuja cuando cambia la instancia:
@@ -82,6 +83,10 @@ class MapaTrazosEvento extends StatefulWidget {
 
   /// Los botones de "mi ubicacion" y de tipo de mapa (Mapa / Satelite).
   final bool mostrarControles;
+
+  /// Pone los botones abajo a la derecha (sobre un boton flotante) en vez de
+  /// arriba, para pantallas que ya usan la parte superior.
+  final bool controlesAbajo;
 
   @override
   State<MapaTrazosEvento> createState() => _MapaTrazosEventoState();
@@ -372,7 +377,8 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
           ),
         if (widget.mostrarControles)
           Positioned(
-            top: 10,
+            top: widget.controlesAbajo ? null : 10,
+            bottom: widget.controlesAbajo ? 88 : null,
             right: 10,
             child: Column(
               children: <Widget>[

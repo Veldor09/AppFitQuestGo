@@ -247,13 +247,15 @@ class _AccesoDenegado extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: FqColors.adminBg,
-      body: FqEmptyState(
-        icon: Icons.lock_outline,
-        title: l10n.admAccesoRestringidoTitulo,
-        message: l10n.admAccesoRestringidoMensaje,
-        action: TextButton(
-          onPressed: onSalir,
-          child: Text(l10n.perfilCerrarSesion),
+      body: SafeArea(
+        child: FqEmptyState(
+          icon: Icons.lock_outline,
+          title: l10n.admAccesoRestringidoTitulo,
+          message: l10n.admAccesoRestringidoMensaje,
+          action: TextButton(
+            onPressed: onSalir,
+            child: Text(l10n.perfilCerrarSesion),
+          ),
         ),
       ),
     );

@@ -176,35 +176,38 @@ class _SidebarBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _Header(showLabel: showLabels),
-        const _HairLine(),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: secciones.length,
-            itemBuilder: (BuildContext context, int i) => _SidebarItem(
-              icon: secciones[i].icono,
-              label: secciones[i].navLabel,
-              selected: i == selectedIndex,
-              showLabel: showLabels,
-              onTap: () => onSelect(i),
+    return SafeArea(
+      top: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _Header(showLabel: showLabels),
+          const _HairLine(),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: secciones.length,
+              itemBuilder: (BuildContext context, int i) => _SidebarItem(
+                icon: secciones[i].icono,
+                label: secciones[i].navLabel,
+                selected: i == selectedIndex,
+                showLabel: showLabels,
+                onTap: () => onSelect(i),
+              ),
             ),
           ),
-        ),
-        const _HairLine(),
-        _SidebarItem(
-          icon: Icons.logout,
-          label: l10n.perfilCerrarSesion,
-          selected: false,
-          showLabel: showLabels,
-          danger: true,
-          onTap: onLogout,
-        ),
-        const SizedBox(height: 8),
-      ],
+          const _HairLine(),
+          _SidebarItem(
+            icon: Icons.logout,
+            label: l10n.perfilCerrarSesion,
+            selected: false,
+            showLabel: showLabels,
+            danger: true,
+            onTap: onLogout,
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }
