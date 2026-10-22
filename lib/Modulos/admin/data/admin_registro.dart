@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/auditoria_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/catalogos_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/insignias_admin_screen.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart'
+    show PatrocinadoresScreen;
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/reportes_contenido_screen.dart'
     as reportes;
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
@@ -17,8 +20,8 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart'
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
-/// Registro único de las pantallas del panel de administración (ADM-01..ADM-13).
+
+/// Registro unico de las pantallas del panel de administracion (ADM-01..ADM-13).
 ///
 /// El sidebar y el shell se construyen a partir de esta lista.
 /// Se conserva la estructura original para no afectar otras secciones.
