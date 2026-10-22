@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
@@ -16,6 +17,8 @@ Future<void> mostrarFichaAlerta(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
+    shape: formaFichaLugar,
     builder: (BuildContext _) => FichaAlerta(alerta: alerta, metros: metros),
   );
 }
@@ -24,10 +27,18 @@ Future<void> mostrarFichaAlerta(
 /// metros esta y la descripcion. Es solo de lectura: votar si sigue ahi se hace
 /// desde el aviso que sale al acercarse.
 class FichaAlerta extends StatelessWidget {
-  const FichaAlerta({super.key, required this.alerta, this.metros});
+  const FichaAlerta({
+    super.key,
+    required this.alerta,
+    this.metros,
+    this.abrirUrl,
+  });
 
   final Alerta alerta;
   final double? metros;
+
+  /// Abre "Como llegar" fuera de la app (pruebas); por defecto traza el camino en el mapa.
+  final Future<bool> Function(Uri uri)? abrirUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -36,94 +47,91 @@ class FichaAlerta extends StatelessWidget {
     final String? autor = alerta.creadoPorNombre;
     final String? descripcion = alerta.descripcion?.trim();
     final double? distancia = metros;
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: FqColors.risk.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(13),
+    final Color color = colorGravedadAlerta(alerta.gravedad);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          CabeceraFicha(
+            titulo: tipoAlertaLabel(l10n, alerta.tipo, otro: alerta.tipoOtro),
+            subtitulo: autor == null
+                ? l10n.alertasGravedadConValor(gravedad)
+                : l10n.alertasGravedadReportadaPor(gravedad, autor),
+            icono: Container(
+              key: const ValueKey<String>('ficha-alerta-icono'),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Icon(_icono(alerta.tipo), color: FqColors.risk),
+                ],
+              ),
+              child: Icon(
+                iconoAlerta(alerta.tipo),
+                color: Colors.white,
+                size: 26,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          FilaAccionesFicha(
+            acciones: <Widget>[
+              AccionFicha(
+                key: const ValueKey<String>('ficha-como-llegar'),
+                icono: Icons.directions_rounded,
+                etiqueta: l10n.fichaComoLlegar,
+                principal: true,
+                onTap: () => abrirComoLlegar(
+                  context,
+                  lat: alerta.lat,
+                  lng: alerta.lng,
+                  nombre: tipoAlertaLabel(
+                    l10n,
+                    alerta.tipo,
+                    otro: alerta.tipoOtro,
+                  ),
+                  abrir: abrirUrl,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        tipoAlertaLabel(
-                          l10n,
-                          alerta.tipo,
-                          otro: alerta.tipoOtro,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        autor == null
-                            ? l10n.alertasGravedadConValor(gravedad)
-                            : l10n.alertasGravedadReportadaPor(gravedad, autor),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: FqColors.muted,
-                        ),
-                      ),
-                    ],
+              ),
+            ],
+          ),
+          if (distancia != null) ...<Widget>[
+            const SizedBox(height: 14),
+            Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.near_me_outlined,
+                  size: 16,
+                  color: FqColors.muted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.alertasCercaDistancia(distancia.round()),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            if (distancia != null) ...<Widget>[
-              const SizedBox(height: 14),
-              Row(
-                children: <Widget>[
-                  const Icon(
-                    Icons.near_me_outlined,
-                    size: 16,
-                    color: FqColors.muted,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.alertasCercaDistancia(distancia.round()),
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (descripcion != null && descripcion.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 10),
-              Text(
-                descripcion,
-                style: const TextStyle(fontSize: 13.5, height: 1.4),
-              ),
-            ],
           ],
-        ),
+          if (descripcion != null && descripcion.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              descripcion,
+              style: const TextStyle(fontSize: 13.5, height: 1.4),
+            ),
+          ],
+        ],
       ),
     );
-  }
-
-  IconData _icono(String tipo) {
-    for (final OpcionCatalogo o in tiposAlerta) {
-      if (o.clave == tipo) return o.icono;
-    }
-    return Icons.warning_amber_rounded;
   }
 }

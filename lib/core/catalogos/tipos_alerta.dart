@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/catalogos/opcion_catalogo.dart';
+import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 export 'package:fit_quest_go/core/catalogos/opcion_catalogo.dart';
@@ -48,5 +49,46 @@ String tipoAlertaLabel(AppLocalizations l10n, String clave, {String? otro}) {
       return texto.isEmpty ? l10n.alertaTipoOtro : texto;
     default:
       return clave;
+  }
+}
+
+/// El icono "lleno" de cada tipo de alerta, el que va dentro de su pin en el
+/// mapa y en su ficha (los de [tiposAlerta] son de contorno, para el selector).
+/// Un tipo desconocido usa el triangulo de advertencia.
+IconData iconoAlerta(String tipo) {
+  switch (tipo) {
+    case 'arbol_caido':
+      return Icons.park_rounded;
+    case 'bache':
+      return Icons.report_problem_rounded;
+    case 'derrumbe':
+      return Icons.landscape_rounded;
+    case 'inundacion':
+      return Icons.flood_rounded;
+    case 'perro':
+      return Icons.pets_rounded;
+    case 'via_cerrada':
+      return Icons.block_rounded;
+    case 'accidente':
+      return Icons.car_crash_rounded;
+    case 'zona_insegura':
+      return Icons.shield_rounded;
+    case 'cable_caido':
+      return Icons.electrical_services_rounded;
+    default:
+      return Icons.warning_amber_rounded;
+  }
+}
+
+/// El color de una alerta segun su gravedad (`baja`, `media`, `alta`): ambar,
+/// naranja y rojo.
+Color colorGravedadAlerta(String gravedad) {
+  switch (gravedad) {
+    case 'alta':
+      return FqColors.risk;
+    case 'baja':
+      return FqColors.amber;
+    default:
+      return const Color(0xFFF08A24);
   }
 }

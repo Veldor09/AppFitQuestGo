@@ -126,3 +126,28 @@ Future<PosicionGps?> obtenerPosicionActualRapida() async {
     return null;
   }
 }
+
+/// La posicion de ahora mismo y, si el dispositivo se esta moviendo, hacia
+/// donde va (grados desde el norte). A diferencia de
+/// [obtenerPosicionActualRapida] no se conforma con la ultima conocida, que
+/// puede ser de hace rato: si el GPS no responde a tiempo cae a esa, sin rumbo.
+Future<({PosicionGps posicion, double? rumbo})?> obtenerPosicionYRumbo() async {
+  try {
+    if (!await asegurarPermisoUbicacion()) return null;
+    final geo.Position actual = await geo.Geolocator.getCurrentPosition(
+      locationSettings: const geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
+        timeLimit: Duration(seconds: 5),
+      ),
+    );
+    // El rumbo del GPS solo vale con el dispositivo en movimiento.
+    final bool enMarcha = actual.speed > 0.5 && actual.heading >= 0;
+    return (
+      posicion: (lat: actual.latitude, lng: actual.longitude),
+      rumbo: enMarcha ? actual.heading : null,
+    );
+  } catch (_) {
+    final PosicionGps? previa = await obtenerPosicionActualRapida();
+    return previa == null ? null : (posicion: previa, rumbo: null);
+  }
+}

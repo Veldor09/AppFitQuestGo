@@ -17,6 +17,9 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/voz/aviso_voz.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
+import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
+import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/actividades_service.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/cronometro_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/desviacion_ruta.dart';
@@ -44,6 +47,7 @@ class RecorridoRutaScreen extends StatefulWidget {
     this.ahora,
     this.accessToken,
     this.idUsuario,
+    this.calificaciones,
   });
 
   final Ruta ruta;
@@ -68,6 +72,9 @@ class RecorridoRutaScreen extends StatefulWidget {
 
   /// Id del usuario; por defecto el de la sesion.
   final int? idUsuario;
+
+  /// Calificaciones (pulgares al terminar), inyectable para pruebas.
+  final CalificacionApi? calificaciones;
 
   @override
   State<RecorridoRutaScreen> createState() => _RecorridoRutaScreenState();
@@ -1038,6 +1045,13 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                     ),
                   ],
                 ),
+                if (!esOffline) ...<Widget>[
+                  const SizedBox(height: 16),
+                  _CalificarRecorrido(
+                    rutaId: widget.ruta.id,
+                    api: widget.calificaciones,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -1687,6 +1701,49 @@ class _BotonAccionMapa extends StatelessWidget {
             size: 20,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tarjeta del resumen de llegada: "¿Como estuvo tu recorrido?" con los pulgares.
+/// Solo se ofrece con el recorrido ya registrado en el servidor, que es lo que
+/// exige para dejar calificar la ruta.
+class _CalificarRecorrido extends StatelessWidget {
+  const _CalificarRecorrido({required this.rutaId, this.api});
+
+  final int rutaId;
+  final CalificacionApi? api;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations? l10n = AppLocalizations.of(context);
+    return Container(
+      key: const ValueKey<String>('calificar-recorrido'),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: FqColors.paper,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l10n?.calificarPreguntaRuta ?? '¿Cómo estuvo tu recorrido?',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: FqColors.ink,
+            ),
+          ),
+          const SizedBox(height: 10),
+          PulgaresObjeto(
+            tipo: TipoCalificable.ruta,
+            id: rutaId,
+            api: api,
+          ),
+        ],
       ),
     );
   }

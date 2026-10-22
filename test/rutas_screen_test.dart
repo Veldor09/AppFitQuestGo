@@ -7,6 +7,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
+import 'helpers/calificacion_falsa.dart';
 
 const List<PuntoRuta> _puntos = <PuntoRuta>[
   PuntoRuta(lat: 9.9281, lng: -84.0907),
@@ -78,6 +79,8 @@ Future<_RutaApiFalsa> _montar(WidgetTester tester) async {
 }
 
 void main() {
+  usarCalificacionesFalsas();
+
   testWidgets('tocar una ruta de Explorar abre su detalle con el estado publico', (
     WidgetTester tester,
   ) async {
@@ -87,7 +90,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PUBLICADA'), findsOneWidget);
-    expect(find.text('Enviar a revision'), findsNothing);
+    expect(find.text('Publicar ruta'), findsNothing);
   });
 
   testWidgets('en Mis rutas el detalle de una ruta privada ofrece enviarla a revision', (
@@ -101,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PRIVADA'), findsOneWidget);
-    expect(find.widgetWithText(FqButton, 'Enviar a revision'), findsOneWidget);
+    expect(find.widgetWithText(FqButton, 'Publicar ruta'), findsOneWidget);
   });
 
   testWidgets('enviar a revision vuelve a la lista y la recarga', (
@@ -114,11 +117,11 @@ void main() {
 
     await tester.tap(find.text('Mi vuelta al lago'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FqButton, 'Enviar a revision'));
+    await tester.tap(find.widgetWithText(FqButton, 'Publicar ruta'));
     await tester.pumpAndSettle();
 
     expect(api.solicitudes, <int>[2]);
     expect(api.cargasDeMisRutas, 2);
-    expect(find.text('Ruta enviada a revision'), findsOneWidget);
+    expect(find.text('Ruta publicada'), findsOneWidget);
   });
 }

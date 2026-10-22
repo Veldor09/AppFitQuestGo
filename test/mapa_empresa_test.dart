@@ -8,6 +8,7 @@ import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/montar.dart';
 
@@ -164,6 +165,8 @@ Future<_Captura> _abrir(
 Finder _clave(String c) => find.byKey(ValueKey<String>(c));
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('lo que dibuja', () {
     testWidgets('todas las areas y recorridos de los eventos de la empresa', (
       WidgetTester tester,

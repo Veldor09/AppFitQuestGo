@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -6,13 +7,19 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
+import 'package:fit_quest_go/core/mapa/capa_dibujo_mano.dart';
+import 'package:fit_quest_go/core/mapa/control_ubicacion.dart';
+import 'package:fit_quest_go/Modulos/eventos/data/evento.dart' show PuntoGeo;
 import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/selector_actividades_catalogo.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/fotos/selector_foto.dart';
+import 'package:fit_quest_go/core/widgets/campo_foto.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
+import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/db/daos/sync_rutas_dao.dart';
@@ -27,8 +34,9 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/metrica_ruta.dar
 
 enum _ModoRuta { dibujar, gps }
 
-/// RTE-05/06/07 · Planificar ruta. Modo "Dibujar": cada toque en el mapa
-/// agrega un punto. Modo "Grabar GPS": cada posicion del dispositivo (con un
+/// RTE-05/06/07 · Planificar ruta. Modo "Dibujar": se traza con el dedo sobre el
+/// mapa, igual que las empresas trazan sus recorridos (un trazo por arrastre,
+/// varios si se quiere seguir; el lapiz alterna entre trazar y mover el mapa). Modo "Grabar GPS": cada posicion del dispositivo (con un
 /// filtro de distancia minima) agrega un punto mientras se graba, con
 /// cronometro, distancia y ritmo en vivo, y se puede pausar y reanudar. Al
 /// detener se abre un resumen (tiempo, distancia, ritmo medio) desde donde se
@@ -49,6 +57,7 @@ class PlanificarRutaScreen extends StatefulWidget {
     this.ahora,
     this.accessToken,
     this.permitirFallbackActividades = true,
+    this.selectorFoto,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -56,6 +65,9 @@ class PlanificarRutaScreen extends StatefulWidget {
 
   /// API de catálogos inyectable para pruebas de ADM-11.
   final CatalogosApi? catalogosApi;
+
+  /// Selector de foto del formulario de guardar, inyectable para pruebas.
+  final SelectorFoto? selectorFoto;
 
   /// Permite usar actividades de respaldo si falla la red al planificar offline.
   final bool permitirFallbackActividades;
@@ -81,8 +93,19 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
 
   late final RutaApi _api = widget.api ?? RutaApi();
   late final CronometroRuta _cronometro = CronometroRuta(ahora: widget.ahora);
+  MapboxMap? _mapa;
   CircleAnnotationManager? _pines;
   PolylineAnnotationManager? _lineas;
+
+  /// La linea que sigue al dedo mientras se traza.
+  PolylineAnnotation? _previa;
+
+  /// Cuantos puntos aporto cada trazo, para que "Deshacer" quite el ultimo
+  /// trazo entero y no un punto suelto.
+  final List<int> _trazos = <int>[];
+
+  /// En modo Dibujar: el dedo traza (true) o mueve el mapa (false).
+  bool _trazando = true;
 
   final List<PuntoRuta> _puntos = <PuntoRuta>[];
   bool _guardando = false;
@@ -165,6 +188,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _onMapCreated(MapboxMap controller) async {
+    _mapa = controller;
     await ocultarAdornos(controller);
     _pines = await controller.annotations.createCircleAnnotationManager();
     _lineas = await controller.annotations.createPolylineAnnotationManager();
@@ -174,26 +198,64 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     await centrarEnUbicacionActual(controller);
   }
 
-  Future<void> _onTap(MapContentGestureContext contexto) async {
+  /// Un trazo terminado con el dedo: se agrega a continuacion de lo que ya hay.
+  Future<void> _alTrazoMano(List<PuntoGeo> trazo) async {
     if (_guardando || _modo != _ModoRuta.dibujar) return;
-    final Position posicion = contexto.point.coordinates;
     setState(() {
-      _puntos.add(
-        PuntoRuta(lat: posicion[1]!.toDouble(), lng: posicion[0]!.toDouble()),
-      );
+      _puntos.addAll(<PuntoRuta>[
+        for (final PuntoGeo p in trazo) PuntoRuta(lat: p.lat, lng: p.lng),
+      ]);
+      _trazos.add(trazo.length);
     });
     await _redibujar();
   }
 
+  void _alTrazoCortoMano() {
+    notificarInfo(AppLocalizations.of(context)!.eventoTrazoCorto);
+  }
+
+  /// La linea que sigue al dedo mientras se traza.
+  Future<void> _pintarPrevia(List<PuntoGeo> enCurso) async {
+    final PolylineAnnotationManager? lineas = _lineas;
+    if (lineas == null || enCurso.length < 2) return;
+    final LineString geometria = LineString(
+      coordinates: <Position>[
+        for (final PuntoGeo p in enCurso) Position(p.lng, p.lat),
+      ],
+    );
+    final PolylineAnnotation? previa = _previa;
+    if (previa == null) {
+      _previa = await lineas.create(
+        PolylineAnnotationOptions(
+          geometry: geometria,
+          lineColor: FqColors.volt.toARGB32(),
+          lineWidth: 6,
+        ),
+      );
+    } else {
+      previa.geometry = geometria;
+      await lineas.update(previa);
+    }
+  }
+
   Future<void> _deshacer() async {
     if (_puntos.isEmpty || _grabando) return;
-    setState(() => _puntos.removeLast());
+    setState(() {
+      // El ultimo trazo entero; sin trazos registrados, el ultimo punto.
+      final int quitar = _trazos.isEmpty
+          ? 1
+          : _trazos.removeLast().clamp(1, _puntos.length);
+      _puntos.removeRange(_puntos.length - quitar, _puntos.length);
+    });
     await _redibujar();
   }
 
   Future<void> _limpiar() async {
     if (_puntos.isEmpty || _grabando) return;
-    setState(() => _puntos.clear());
+    setState(() {
+      _puntos.clear();
+      _trazos.clear();
+    });
     await _redibujar();
   }
 
@@ -262,6 +324,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
       // dibujado a mano) se descarta, y el cronometro arranca de cero.
       setState(() {
         _puntos.clear();
+        _trazos.clear();
         if (retomar != null) _puntos.addAll(retomar.puntos);
         _grabando = true;
       });
@@ -359,12 +422,15 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     unawaited(_tracking.limpiar());
     setState(() {
       _puntos.clear();
+      _trazos.clear();
       _cronometro.reiniciar();
     });
     await _redibujar();
   }
 
   Future<void> _redibujar() async {
+    // Borrar las lineas tambien se lleva la que seguia al dedo.
+    _previa = null;
     await _pines?.deleteAll();
     await _lineas?.deleteAll();
     for (final PuntoRuta p in _puntos) {
@@ -403,7 +469,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     setState(() => _guardando = true);
     try {
       try {
-        await _api.crear(
+        final Ruta creada = await _api.crear(
           nombre: datos.nombre,
           actividades: datos.actividades,
           dificultad: datos.dificultad,
@@ -411,11 +477,20 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           puntos: _puntos,
           visibilidad: datos.visibilidad,
         );
+        // La foto va aparte del JSON: si falla, la ruta ya quedo guardada.
+        final Uint8List? foto = datos.foto;
+        if (foto != null) {
+          try {
+            await _api.subirFoto(creada.id, foto);
+          } catch (_) {
+            notificarError(l10n.fotoNoSubida);
+          }
+        }
         unawaited(_tracking.limpiar());
         if (!mounted) return;
         final String msg = datos.visibilidad == 'publica'
-            ? 'Ruta enviada para revisión comunitaria.'
-            : 'Ruta guardada como ${datos.visibilidad == 'amigos' ? 'solo amigos' : 'privada'}.';
+            ? l10n.rutasPublicadaAviso
+            : 'Ruta guardada como privada.';
         notificarExito(msg);
       } on ApiException {
         rethrow; // el servidor respondio: no es un problema de red
@@ -436,6 +511,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
       unawaited(_tracking.limpiar());
       setState(() {
         _puntos.clear();
+        _trazos.clear();
         _cronometro.reiniciar();
       });
       await _redibujar();
@@ -455,6 +531,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     List<String> clavesDisponibles = <String>[];
     String dificultad = 'moderada';
     String visibilidad = 'privada';
+    Uint8List? foto;
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     return showModalBottomSheet<_DatosRuta>(
@@ -538,15 +615,24 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                       items: <DropdownMenuItem<String>>[
                         DropdownMenuItem<String>(
                           value: 'facil',
-                          child: Text(dificultadLabel(l10n, 'facil')),
+                          child: _OpcionDificultad(
+                            dificultad: 'facil',
+                            texto: dificultadLabel(l10n, 'facil'),
+                          ),
                         ),
                         DropdownMenuItem<String>(
                           value: 'moderada',
-                          child: Text(dificultadLabel(l10n, 'moderada')),
+                          child: _OpcionDificultad(
+                            dificultad: 'moderada',
+                            texto: dificultadLabel(l10n, 'moderada'),
+                          ),
                         ),
                         DropdownMenuItem<String>(
                           value: 'dificil',
-                          child: Text(dificultadLabel(l10n, 'dificil')),
+                          child: _OpcionDificultad(
+                            dificultad: 'dificil',
+                            texto: dificultadLabel(l10n, 'dificil'),
+                          ),
                         ),
                       ],
                       onChanged: (String? v) =>
@@ -565,16 +651,19 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                           child: Text(l10n.rutasVisibilidadPrivada),
                         ),
                         DropdownMenuItem<String>(
-                          value: 'amigos',
-                          child: Text(l10n.rutasVisibilidadAmigos),
-                        ),
-                        DropdownMenuItem<String>(
                           value: 'publica',
                           child: Text(l10n.rutasVisibilidadPublica),
                         ),
                       ],
                       onChanged: (String? v) =>
                           setSheetState(() => visibilidad = v ?? visibilidad),
+                    ),
+                    const SizedBox(height: 14),
+                    CampoFoto(
+                      foto: foto,
+                      selector: widget.selectorFoto,
+                      alCambiar: (Uint8List? f) =>
+                          setSheetState(() => foto = f),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
@@ -598,6 +687,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                             ],
                             dificultad: dificultad,
                             visibilidad: visibilidad,
+                            foto: foto,
                           ),
                         );
                       },
@@ -628,7 +718,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
               zoom: 13.5,
             ),
             onMapCreated: _onMapCreated,
-            onTapListener: _onTap,
           )
         else
           const ColoredBox(
@@ -644,6 +733,16 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
               ),
             ),
           ),
+        if (_modo == _ModoRuta.dibujar && _trazando && !_guardando)
+          Positioned.fill(
+            child: CapaDibujoMano(
+              mapa: () => _mapa,
+              alMover: (List<PuntoGeo> enCurso) =>
+                  unawaited(_pintarPrevia(enCurso)),
+              alTrazo: _alTrazoMano,
+              alTrazoCorto: _alTrazoCortoMano,
+            ),
+          ),
         SafeArea(
           child: Column(
             children: <Widget>[
@@ -657,7 +756,11 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.all(10),
-                child: Container(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: FqColors.white.withValues(alpha: .97),
@@ -666,7 +769,9 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                   ),
                   child: Text(
                     _modo == _ModoRuta.dibujar
-                        ? l10n.planificarModoDibujarInstruccion
+                        ? (_trazando
+                            ? l10n.planificarModoDibujarInstruccion
+                            : l10n.planificarModoMoverInstruccion)
                         : (_pausada
                             ? l10n.grabacionEnPausa(l10n.grabacionReanudar)
                             : (_grabando
@@ -677,8 +782,25 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                   ),
                 ),
+                    ),
+                    if (_modo == _ModoRuta.dibujar) ...<Widget>[
+                      const SizedBox(width: 8),
+                      _BotonTrazar(
+                        trazando: _trazando,
+                        alCambiar: () => setState(() => _trazando = !_trazando),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               const Spacer(),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: BotonMiUbicacion(mapa: () => _mapa),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(10),
                 child: Container(
@@ -835,6 +957,62 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 }
 
+/// Una dificultad del selector del formulario: su carita y su nombre.
+class _OpcionDificultad extends StatelessWidget {
+  const _OpcionDificultad({required this.dificultad, required this.texto});
+
+  final String dificultad;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        IconoDificultad(dificultad: dificultad, size: 22),
+        const SizedBox(width: 10),
+        Text(texto),
+      ],
+    );
+  }
+}
+
+/// Alterna el dedo entre trazar y mover el mapa (mientras traza, el mapa no se
+/// mueve: la capa de dibujo se queda con el gesto).
+class _BotonTrazar extends StatelessWidget {
+  const _BotonTrazar({required this.trazando, required this.alCambiar});
+
+  final bool trazando;
+  final VoidCallback alCambiar;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return Material(
+      color: trazando ? FqColors.volt : FqColors.white,
+      elevation: 3,
+      shadowColor: const Color(0x3313233F),
+      shape: const CircleBorder(),
+      child: InkWell(
+        key: const ValueKey<String>('boton-trazar'),
+        customBorder: const CircleBorder(),
+        onTap: alCambiar,
+        child: Tooltip(
+          message: trazando ? l10n.planificarMoverMapa : l10n.planificarTrazar,
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              trazando ? Icons.draw_rounded : Icons.pan_tool_alt_rounded,
+              size: 22,
+              color: FqColors.night,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SelectorModo extends StatelessWidget {
   const _SelectorModo({
     required this.modo,
@@ -924,10 +1102,14 @@ class _DatosRuta {
     required this.actividades,
     required this.dificultad,
     this.visibilidad = 'privada',
+    this.foto,
   });
 
   final String nombre;
   final List<String> actividades;
   final String dificultad;
   final String visibilidad;
+
+  /// La foto elegida (se sube despues de guardar la ruta).
+  final Uint8List? foto;
 }

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/carga_lista.dart';
+import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -10,6 +12,7 @@ import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 
 /// RTE-01/02/03 · Rutas (vista de usuario).
@@ -40,9 +43,9 @@ class RutasScreen extends StatefulWidget {
 
 class _RutasScreenState extends State<RutasScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
-  late Future<List<Ruta>> _explorarFuturo;
-  late Future<List<Ruta>> _misRutasFuturo;
-  late Future<List<Ruta>> _favoritasFuturo;
+  late final CargaLista<Ruta> _explorar = CargaLista<Ruta>(() => _api.explorar());
+  late final CargaLista<Ruta> _misRutas = CargaLista<Ruta>(() => _api.misRutas());
+  late final CargaLista<Ruta> _favoritas = CargaLista<Ruta>(() => _api.favoritas());
   Set<int> _favoritasIds = <int>{};
   late int _tab;
 
@@ -53,19 +56,37 @@ class _RutasScreenState extends State<RutasScreen> {
     _cargar();
   }
 
-  void _cargar() {
-    _explorarFuturo = _api.explorar();
-    _misRutasFuturo = _api.misRutas();
-    _favoritasFuturo = _api.favoritas();
+  @override
+  void dispose() {
+    _explorar.dispose();
+    _misRutas.dispose();
+    _favoritas.dispose();
+    super.dispose();
+  }
+
+  /// [silencioso]: refresca sin volver a mostrar el circulo de carga ni
+  /// repintar lo que ya se ve (cada lista cambia cuando llegan sus datos).
+  void _cargar({bool silencioso = false}) {
+    _explorar.cargar(silencioso: silencioso);
+    _misRutas.cargar(silencioso: silencioso);
+    _favoritas.cargar(silencioso: silencioso);
     _api.favoritasIds().then((Set<int> ids) {
       if (mounted) setState(() => _favoritasIds = ids);
     }).catchError((_) {});
   }
 
-  void _recargar() {
-    setState(() {
-      _cargar();
-    });
+  void _recargar() => _cargar(silencioso: true);
+
+  /// Una ruta se elimino: sale de las tres listas al instante, sin pedir nada.
+  void _rutaEliminada(int id) {
+    for (final CargaLista<Ruta> lista in <CargaLista<Ruta>>[
+      _explorar,
+      _misRutas,
+      _favoritas,
+    ]) {
+      lista.quitar((Ruta r) => r.id == id);
+    }
+    setState(() => _favoritasIds.remove(id));
   }
 
   Future<void> _toggleFavorita(int rutaId) async {
@@ -77,8 +98,8 @@ class _RutasScreenState extends State<RutasScreen> {
       } else {
         _favoritasIds.remove(rutaId);
       }
-      _favoritasFuturo = _api.favoritas();
     });
+    _favoritas.cargar(silencioso: true);
     notificarExito(
       agregada ? 'Ruta guardada en tus favoritas' : 'Ruta eliminada de tus guardadas',
     );
@@ -191,11 +212,11 @@ class _RutasScreenState extends State<RutasScreen> {
       return _ListaRutas(
         key: const ValueKey<String>('explorar'),
         api: _api,
-        futuro: _explorarFuturo,
+        carga: _explorar,
         favoritasIds: _favoritasIds,
         onToggleFavorita: _toggleFavorita,
-        onReintentar: _recargar,
         onCambio: _recargar,
+        onEliminada: _rutaEliminada,
         vacioTitulo: 'Sin rutas publicadas',
         vacioMensaje: 'Cuando la comunidad publique rutas, apareceran aqui.',
       );
@@ -204,11 +225,11 @@ class _RutasScreenState extends State<RutasScreen> {
       return _ListaRutas(
         key: const ValueKey<String>('mias'),
         api: _api,
-        futuro: _misRutasFuturo,
+        carga: _misRutas,
         favoritasIds: _favoritasIds,
         onToggleFavorita: _toggleFavorita,
-        onReintentar: _recargar,
         onCambio: _recargar,
+        onEliminada: _rutaEliminada,
         mostrarEstado: true,
         vacioTitulo: 'Todavia no tenes rutas',
         vacioMensaje: 'Las rutas que registres o planifiques apareceran aqui.',
@@ -217,11 +238,11 @@ class _RutasScreenState extends State<RutasScreen> {
     return _ListaRutas(
       key: const ValueKey<String>('guardadas'),
       api: _api,
-      futuro: _favoritasFuturo,
+      carga: _favoritas,
       favoritasIds: _favoritasIds,
       onToggleFavorita: _toggleFavorita,
-      onReintentar: _recargar,
       onCambio: _recargar,
+      onEliminada: _rutaEliminada,
       vacioTitulo: 'Sin rutas guardadas',
       vacioMensaje: 'Guarda tus rutas favoritas desde el catalogo para verlas aqui.',
     );
@@ -293,22 +314,22 @@ class _ListaRutas extends StatelessWidget {
   const _ListaRutas({
     super.key,
     required this.api,
-    required this.futuro,
+    required this.carga,
     required this.favoritasIds,
     required this.onToggleFavorita,
-    required this.onReintentar,
     required this.onCambio,
+    required this.onEliminada,
     required this.vacioTitulo,
     required this.vacioMensaje,
     this.mostrarEstado = false,
   });
 
   final RutaApi api;
-  final Future<List<Ruta>> futuro;
+  final CargaLista<Ruta> carga;
   final Set<int> favoritasIds;
   final ValueChanged<int> onToggleFavorita;
-  final VoidCallback onReintentar;
   final VoidCallback onCambio;
+  final ValueChanged<int> onEliminada;
   final bool mostrarEstado;
   final String vacioTitulo;
   final String vacioMensaje;
@@ -316,24 +337,18 @@ class _ListaRutas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<List<Ruta>>(
-      future: futuro,
-      builder: (BuildContext context, AsyncSnapshot<List<Ruta>> snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snap.hasError) {
-          return FqEmptyState(
-            icon: Icons.wifi_off_rounded,
-            title: l10n.rutasNoSePudoCargar,
-            message: _mensajeError(l10n, snap.error!),
-            action: TextButton(
-              onPressed: onReintentar,
-              child: Text(l10n.rutasReintentar),
-            ),
-          );
-        }
-        final List<Ruta> rutas = snap.data ?? const <Ruta>[];
+    return CargaListaVista<Ruta>(
+      carga: carga,
+      error: (BuildContext context, Object error) => FqEmptyState(
+        icon: Icons.wifi_off_rounded,
+        title: l10n.rutasNoSePudoCargar,
+        message: _mensajeError(l10n, error),
+        action: TextButton(
+          onPressed: carga.cargar,
+          child: Text(l10n.rutasReintentar),
+        ),
+      ),
+      datos: (BuildContext context, List<Ruta> rutas) {
         if (rutas.isEmpty) {
           return FqEmptyState(
             icon: Icons.route_outlined,
@@ -346,12 +361,14 @@ class _ListaRutas extends StatelessWidget {
           itemCount: rutas.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
           itemBuilder: (BuildContext context, int i) => _TarjetaRuta(
+            key: ValueKey<int>(rutas[i].id),
             api: api,
             ruta: rutas[i],
             esFavorita: favoritasIds.contains(rutas[i].id),
             onToggleFavorita: () => onToggleFavorita(rutas[i].id),
             mostrarEstado: mostrarEstado,
             onCambio: onCambio,
+            onEliminada: () => onEliminada(rutas[i].id),
           ),
         );
       },
@@ -366,12 +383,14 @@ class _ListaRutas extends StatelessWidget {
 
 class _TarjetaRuta extends StatelessWidget {
   const _TarjetaRuta({
+    super.key,
     required this.api,
     required this.ruta,
     required this.esFavorita,
     required this.onToggleFavorita,
     required this.mostrarEstado,
     required this.onCambio,
+    required this.onEliminada,
   });
 
   final RutaApi api;
@@ -380,6 +399,7 @@ class _TarjetaRuta extends StatelessWidget {
   final VoidCallback onToggleFavorita;
   final bool mostrarEstado;
   final VoidCallback onCambio;
+  final VoidCallback onEliminada;
 
   @override
   Widget build(BuildContext context) {
@@ -419,10 +439,23 @@ class _TarjetaRuta extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km · '
-                    '${dificultadLabel(l10n, ruta.dificultad)}',
-                    style: const TextStyle(fontSize: 10, color: FqColors.muted),
+                  Row(
+                    children: <Widget>[
+                      IconoDificultad(dificultad: ruta.dificultad, size: 15),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km · '
+                          '${dificultadLabel(l10n, ruta.dificultad)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: FqColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -440,6 +473,21 @@ class _TarjetaRuta extends StatelessWidget {
             if (mostrarEstado) ...<Widget>[
               const SizedBox(width: 8),
               EtiquetaEstadoRuta(ruta.estado),
+              IconButton(
+                key: ValueKey<String>('eliminar-ruta-${ruta.id}'),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: FqColors.risk,
+                  size: 22,
+                ),
+                tooltip: AppLocalizations.of(context)!.rutasEliminar,
+                splashRadius: 18,
+                onPressed: () async {
+                  final bool eliminada =
+                      await confirmarYEliminarRuta(context, api, ruta);
+                  if (eliminada) onEliminada();
+                },
+              ),
             ],
           ],
         ),
@@ -456,7 +504,9 @@ class _TarjetaRuta extends StatelessWidget {
           ruta: ruta,
           api: api,
           puedeEnviarARevision: mostrarEstado,
+          puedeEliminar: mostrarEstado,
           onCambio: onCambio,
+          alEliminar: onEliminada,
         ),
       ),
     );

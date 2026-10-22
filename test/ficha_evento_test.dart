@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/montar.dart';
 
@@ -61,6 +62,8 @@ Future<void> _abrir(WidgetTester tester, Evento evento) async {
 }
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('FichaEvento (al tocar un area o un recorrido en el mapa)', () {
     testWidgets('muestra el nombre, la categoria y quien lo organiza', (
       WidgetTester tester,

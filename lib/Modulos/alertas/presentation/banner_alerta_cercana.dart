@@ -49,12 +49,21 @@ class BannerAlertaCercana extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: FqColors.risk,
-                size: 22,
+              Container(
+                key: const ValueKey<String>('banner-alerta-icono'),
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: colorGravedadAlerta(alerta.gravedad),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(
+                  iconoAlerta(alerta.tipo),
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

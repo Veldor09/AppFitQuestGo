@@ -22,6 +22,7 @@ class Ruta {
     required this.puntos,
     required this.estado,
     this.creadoPorNombre,
+    this.conFoto = false,
   });
 
   factory Ruta.fromJson(Map<String, dynamic> json) {
@@ -43,6 +44,7 @@ class Ruta {
           .toList(),
       estado: json['estado'] as String,
       creadoPorNombre: creador?['nombreUser'] as String?,
+      conFoto: json['conFoto'] as bool? ?? false,
     );
   }
 
@@ -67,4 +69,7 @@ class Ruta {
   final List<PuntoRuta> puntos;
   final String estado;
   final String? creadoPorNombre;
+
+  /// Tiene una foto en el servidor (`GET /rutas/:id/foto`).
+  final bool conFoto;
 }

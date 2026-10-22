@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
@@ -108,6 +110,20 @@ class EventoApi {
     );
     return Evento.fromJson(data as Map<String, dynamic>);
   }
+
+  /// Adjunta la foto (JPEG, PNG o WebP, hasta 3 MB) a un evento propio.
+  Future<Evento> subirFoto(int id, Uint8List bytes) async {
+    final dynamic data = await _client.subirArchivo(
+      '/eventos/$id/foto',
+      campo: 'foto',
+      bytes: bytes,
+      nombreArchivo: 'foto.jpg',
+    );
+    return Evento.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Bytes de la foto del evento; 404 (`ApiException`) si no tiene.
+  Future<Uint8List> foto(int id) => _client.getBytes('/eventos/$id/foto');
 
   Future<void> eliminar(int id) async {
     await _client.delete('/eventos/$id');

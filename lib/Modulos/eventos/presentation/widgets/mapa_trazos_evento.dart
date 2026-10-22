@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
+import 'package:fit_quest_go/core/mapa/control_ubicacion.dart';
+import 'package:fit_quest_go/core/mapa/estilo_mapa.dart';
 import 'package:fit_quest_go/core/geo/simplificar_trazo.dart';
-import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
@@ -45,6 +46,7 @@ class MapaTrazosEvento extends StatefulWidget {
     this.pines = const <PuntoGeo>[],
     this.etiquetaZonas,
     this.alTocarEvento,
+    this.mostrarControles = true,
   });
 
   /// Trazos ya guardados. La lista se redibuja cuando cambia la instancia:
@@ -77,6 +79,9 @@ class MapaTrazosEvento extends StatefulWidget {
   /// Se llama con el id del evento cuya area, recorrido o pin se toca (los
   /// trazos tienen que traer su `eventoId`: ver `Evento.areasRotuladas`).
   final void Function(int eventoId)? alTocarEvento;
+
+  /// Los botones de "mi ubicacion" y de tipo de mapa (Mapa / Satelite).
+  final bool mostrarControles;
 
   @override
   State<MapaTrazosEvento> createState() => _MapaTrazosEventoState();
@@ -138,10 +143,36 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
     return Point(coordinates: Position(todos.first.lng, todos.first.lat));
   }
 
+  /// Mantiene el estilo del mapa al dia con el que eligio la persona; al
+  /// cambiarlo, las capas se vuelven a crear (ver [GestorEstiloMapa]).
+  late final GestorEstiloMapa _estilo = GestorEstiloMapa(
+    mapa: () => _mapa,
+    alCambiarEstilo: _recrearCapas,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _estilo.iniciar();
+  }
+
   @override
   void dispose() {
+    _estilo.liberar();
     _capa?.liberar();
     super.dispose();
+  }
+
+  Future<void> _recrearCapas() async {
+    final MapboxMap? mapa = _mapa;
+    if (mapa == null || !mounted) return;
+    await _capa?.quitar(mapa);
+    _capa = await CapaEventosMapa.crear(
+      mapa,
+      alTocarEvento: (int id) => widget.alTocarEvento?.call(id),
+    );
+    _previa = null;
+    await _dibujarTrazos();
   }
 
   @override
@@ -319,8 +350,10 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
       children: <Widget>[
         MapWidget(
           key: const ValueKey<String>('mapa-trazos-evento'),
+          styleUri: PreferenciaEstiloMapa.instancia.estilo.value.uri,
           viewport: _viewportInicial,
           onMapCreated: _onMapCreated,
+          onStyleLoadedListener: _estilo.alEstiloCargado,
         ),
         if (dibujando)
           Positioned.fill(
@@ -335,6 +368,18 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
                   border: Border.all(color: FqColors.volt, width: 3),
                 ),
               ),
+            ),
+          ),
+        if (widget.mostrarControles)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Column(
+              children: <Widget>[
+                const BotonTipoMapa(),
+                const SizedBox(height: 8),
+                BotonMiUbicacion(mapa: () => _mapa),
+              ],
             ),
           ),
       ],

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 
 /// Los pines con icono que se dibujan en los mapas, uno por cosa que se puede
@@ -131,6 +132,12 @@ EstiloPin estiloPinNodo(String categoria) {
   }
 }
 
+/// El pin de una alerta: la gota con el icono de su tipo (un perro, un arbol
+/// caido...) en el color de su gravedad: ambar (baja), naranja (media) o rojo
+/// (alta).
+EstiloPin estiloPinAlerta(String tipo, String gravedad) =>
+    EstiloPin(icono: iconoAlerta(tipo), fondo: colorGravedadAlerta(gravedad));
+
 /// Ancho y alto, en pixeles, de la imagen de un pin: 3x de su tamaño en
 /// pantalla (44 x 56) para que se vea nitido en celulares de alta densidad.
 const int kPinAncho = 132;
@@ -154,6 +161,11 @@ Future<Uint8List> imagenPin(TipoPin tipo, {bool secundario = false}) {
 /// La imagen PNG del pin de la categoria [categoria] de un punto de interes.
 Future<Uint8List> imagenPinNodo(String categoria) {
   return _imagenDe(estiloPinNodo(categoria));
+}
+
+/// La imagen PNG del pin de una alerta de [tipo] y [gravedad].
+Future<Uint8List> imagenPinAlerta(String tipo, String gravedad) {
+  return _imagenDe(estiloPinAlerta(tipo, gravedad));
 }
 
 Future<Uint8List> _imagenDe(EstiloPin e) {

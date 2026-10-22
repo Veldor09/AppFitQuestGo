@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/carga_lista.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta_api.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
+import 'package:fit_quest_go/Modulos/nodos/presentation/formulario_nodo.dart';
 
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 
 /// PRF-02 / RTE-02 - Mis aportes: Rutas creadas, Alertas y Nodos.
@@ -22,12 +28,16 @@ class AportesScreen extends StatefulWidget {
     this.rutaApi,
     this.alertaApi,
     this.nodoApi,
+    this.catalogosApi,
   });
 
   final int initialTab;
   final RutaApi? rutaApi;
   final AlertaApi? alertaApi;
   final NodoApi? nodoApi;
+
+  /// Categorias del formulario de editar un punto, inyectable para pruebas.
+  final CatalogosApi? catalogosApi;
 
   @override
   State<AportesScreen> createState() => _AportesScreenState();
@@ -43,18 +53,11 @@ class _AportesScreenState extends State<AportesScreen>
   late final RutaApi _rutaApi = widget.rutaApi ?? RutaApi();
   late final AlertaApi _alertaApi = widget.alertaApi ?? AlertaApi();
   late final NodoApi _nodoApi = widget.nodoApi ?? NodoApi();
-  int _recargarContador = 0;
 
   @override
   void dispose() {
     _tabs.dispose();
     super.dispose();
-  }
-
-  void _recargarRutas() {
-    setState(() {
-      _recargarContador++;
-    });
   }
 
   @override
@@ -113,13 +116,12 @@ class _AportesScreenState extends State<AportesScreen>
             child: TabBarView(
               controller: _tabs,
               children: <Widget>[
-                _TabMisRutas(
-                  key: ValueKey<int>(_recargarContador),
-                  rutaApi: _rutaApi,
-                  onCambio: _recargarRutas,
-                ),
+                _TabMisRutas(rutaApi: _rutaApi),
                 _TabMisAlertas(alertaApi: _alertaApi),
-                _TabMisNodos(nodoApi: _nodoApi),
+                _TabMisNodos(
+                  nodoApi: _nodoApi,
+                  catalogosApi: widget.catalogosApi,
+                ),
               ],
             ),
           ),
@@ -131,33 +133,46 @@ class _AportesScreenState extends State<AportesScreen>
 
 // ── Tab 1: Rutas Creadas ──────────────────────────────────────────────────────
 
-class _TabMisRutas extends StatelessWidget {
-  const _TabMisRutas({
-    super.key,
-    required this.rutaApi,
-    required this.onCambio,
-  });
+/// Mis rutas. Eliminar una ruta (desde aqui o desde su detalle) la quita de la
+/// lista al instante, sin volver a pedir ni repintar nada mas; cuando cambia
+/// otra cosa (se publica) la lista se refresca en silencio.
+class _TabMisRutas extends StatefulWidget {
+  const _TabMisRutas({required this.rutaApi});
 
   final RutaApi rutaApi;
-  final VoidCallback onCambio;
+
+  @override
+  State<_TabMisRutas> createState() => _TabMisRutasState();
+}
+
+class _TabMisRutasState extends State<_TabMisRutas> {
+  late final CargaLista<Ruta> _carga = CargaLista<Ruta>(
+    () => widget.rutaApi.misRutas(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _carga.cargar();
+  }
+
+  @override
+  void dispose() {
+    _carga.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<List<Ruta>>(
-      future: rutaApi.misRutas(),
-      builder: (BuildContext ctx, AsyncSnapshot<List<Ruta>> snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (snap.hasError) {
-          return FqEmptyState(
-            icon: Icons.error_outline,
-            title: l10n.aportesErrorRutas,
-            message: snap.error.toString(),
-          );
-        }
-        final List<Ruta> rutas = snap.data ?? <Ruta>[];
+    return CargaListaVista<Ruta>(
+      carga: _carga,
+      error: (BuildContext ctx, Object error) => FqEmptyState(
+        icon: Icons.error_outline,
+        title: l10n.aportesErrorRutas,
+        message: error.toString(),
+      ),
+      datos: (BuildContext ctx, List<Ruta> rutas) {
         if (rutas.isEmpty) {
           return FqEmptyState(
             icon: Icons.route_outlined,
@@ -170,9 +185,11 @@ class _TabMisRutas extends StatelessWidget {
           itemCount: rutas.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (_, int i) => _RutaFila(
+            key: ValueKey<int>(rutas[i].id),
             ruta: rutas[i],
-            rutaApi: rutaApi,
-            onCambio: onCambio,
+            rutaApi: widget.rutaApi,
+            onCambio: () => _carga.cargar(silencioso: true),
+            alEliminada: () => _carga.quitar((Ruta r) => r.id == rutas[i].id),
           ),
         );
       },
@@ -182,14 +199,19 @@ class _TabMisRutas extends StatelessWidget {
 
 class _RutaFila extends StatelessWidget {
   const _RutaFila({
+    super.key,
     required this.ruta,
     required this.rutaApi,
     required this.onCambio,
+    required this.alEliminada,
   });
 
   final Ruta ruta;
   final RutaApi rutaApi;
   final VoidCallback onCambio;
+
+  /// La ruta se elimino: quitarla de la lista, sin recargar.
+  final VoidCallback alEliminada;
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +232,9 @@ class _RutaFila extends StatelessWidget {
               ruta: ruta,
               api: rutaApi,
               puedeEnviarARevision: ruta.estado == 'Privada',
+              puedeEliminar: true,
               onCambio: onCambio,
+              alEliminar: alEliminada,
             ),
           ),
         );
@@ -248,15 +272,40 @@ class _RutaFila extends StatelessWidget {
                       color: FqColors.ink,
                     ),
                   ),
-                  Text(
-                    subtitulo,
-                    style: const TextStyle(fontSize: 10, color: FqColors.muted),
+                  Row(
+                    children: <Widget>[
+                      IconoDificultad(dificultad: ruta.dificultad, size: 15),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          subtitulo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: FqColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             EtiquetaEstadoRuta(ruta.estado),
+            IconButton(
+              key: ValueKey<String>('eliminar-aporte-ruta-${ruta.id}'),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  size: 20, color: FqColors.risk),
+              tooltip: AppLocalizations.of(context)!.rutasEliminar,
+              visualDensity: VisualDensity.compact,
+              onPressed: () async {
+                final bool eliminada =
+                    await confirmarYEliminarRuta(context, rutaApi, ruta);
+                if (eliminada) alEliminada();
+              },
+            ),
           ],
         ),
       ),
@@ -389,27 +438,95 @@ class _AlertaFila extends StatelessWidget {
 
 // ── Tab 3: Nodos / Puntos de Interés ──────────────────────────────────────────
 
-class _TabMisNodos extends StatelessWidget {
-  const _TabMisNodos({required this.nodoApi});
+/// Mis puntos de interes. Cada uno se puede editar o eliminar (el servidor solo
+/// deja a quien lo creo); al editarlo se guarda directo, sin volver a revision.
+class _TabMisNodos extends StatefulWidget {
+  const _TabMisNodos({required this.nodoApi, this.catalogosApi});
   final NodoApi nodoApi;
+  final CatalogosApi? catalogosApi;
+
+  @override
+  State<_TabMisNodos> createState() => _TabMisNodosState();
+}
+
+class _TabMisNodosState extends State<_TabMisNodos> {
+  late final CargaLista<Nodo> _carga = CargaLista<Nodo>(
+    () => widget.nodoApi.misNodos(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _carga.cargar();
+  }
+
+  @override
+  void dispose() {
+    _carga.dispose();
+    super.dispose();
+  }
+
+  Future<void> _editar(Nodo nodo) async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final Nodo? editado = await showModalBottomSheet<Nodo>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext _) => FormularioNodo(
+        api: widget.nodoApi,
+        lat: nodo.lat,
+        lng: nodo.lng,
+        editar: nodo,
+        catalogosApi: widget.catalogosApi,
+      ),
+    );
+    if (editado == null || !mounted) return;
+    notificarExito(l10n.aportesNodoActualizado);
+    // Solo cambia ese punto: se reemplaza en la lista, sin volver a pedirla.
+    _carga.reemplazar((Nodo n) => n.id == nodo.id, editado);
+  }
+
+  Future<void> _eliminar(Nodo nodo) async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final bool? confirmado = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        key: const ValueKey<String>('confirmar-eliminar-aporte'),
+        title: Text(l10n.aportesEliminarNodoTitulo),
+        content: Text(l10n.aportesEliminarNodoMensaje(nodo.nombre)),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.comunCancelar),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.aportesEliminarNodo),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+    try {
+      await widget.nodoApi.eliminar(nodo.id);
+      if (!mounted) return;
+      notificarExito(l10n.aportesNodoEliminado);
+      _carga.quitar((Nodo n) => n.id == nodo.id);
+    } catch (_) {
+      if (mounted) notificarError(l10n.aportesNodoError);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    return FutureBuilder<List<Nodo>>(
-      future: nodoApi.misNodos(),
-      builder: (BuildContext ctx, AsyncSnapshot<List<Nodo>> snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (snap.hasError) {
-          return FqEmptyState(
-            icon: Icons.error_outline,
-            title: l10n.aportesErrorNodos,
-            message: snap.error.toString(),
-          );
-        }
-        final List<Nodo> nodos = snap.data ?? <Nodo>[];
+    return CargaListaVista<Nodo>(
+      carga: _carga,
+      error: (BuildContext ctx, Object error) => FqEmptyState(
+        icon: Icons.error_outline,
+        title: l10n.aportesErrorNodos,
+        message: error.toString(),
+      ),
+      datos: (BuildContext ctx, List<Nodo> nodos) {
         if (nodos.isEmpty) {
           return FqEmptyState(
             icon: Icons.location_on_outlined,
@@ -421,7 +538,12 @@ class _TabMisNodos extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           itemCount: nodos.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (_, int i) => _NodoFila(nodo: nodos[i]),
+          itemBuilder: (_, int i) => _NodoFila(
+            key: ValueKey<int>(nodos[i].id),
+            nodo: nodos[i],
+            alEditar: () => _editar(nodos[i]),
+            alEliminar: () => _eliminar(nodos[i]),
+          ),
         );
       },
     );
@@ -429,8 +551,15 @@ class _TabMisNodos extends StatelessWidget {
 }
 
 class _NodoFila extends StatelessWidget {
-  const _NodoFila({required this.nodo});
+  const _NodoFila({
+    super.key,
+    required this.nodo,
+    required this.alEditar,
+    required this.alEliminar,
+  });
   final Nodo nodo;
+  final VoidCallback alEditar;
+  final VoidCallback alEliminar;
 
   Color get _colorEstado {
     switch (nodo.estado.toLowerCase()) {
@@ -445,8 +574,9 @@ class _NodoFila extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
       decoration: BoxDecoration(
         color: FqColors.white,
         borderRadius: BorderRadius.circular(12),
@@ -488,7 +618,7 @@ class _NodoFila extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: _colorEstado.withOpacity(0.12),
+              color: _colorEstado.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -499,6 +629,39 @@ class _NodoFila extends StatelessWidget {
                 color: _colorEstado,
               ),
             ),
+          ),
+          PopupMenuButton<String>(
+            key: ValueKey<String>('menu-nodo-${nodo.id}'),
+            icon: const Icon(Icons.more_vert_rounded,
+                size: 20, color: FqColors.muted),
+            onSelected: (String accion) =>
+                accion == 'editar' ? alEditar() : alEliminar(),
+            itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'editar',
+                child: Row(
+                  children: <Widget>[
+                    const Icon(Icons.edit_outlined, size: 18),
+                    const SizedBox(width: 10),
+                    Text(l10n.aportesEditarNodo),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'eliminar',
+                child: Row(
+                  children: <Widget>[
+                    const Icon(Icons.delete_outline_rounded,
+                        size: 18, color: FqColors.risk),
+                    const SizedBox(width: 10),
+                    Text(
+                      l10n.aportesEliminarNodo,
+                      style: const TextStyle(color: FqColors.risk),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

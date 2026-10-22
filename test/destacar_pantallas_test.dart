@@ -13,6 +13,7 @@ import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/interruptor_destacar.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/montar.dart';
 
@@ -88,6 +89,8 @@ Evento _evento(int id, DateTime inicio, DateTime fin, {bool destacado = false}) 
 final DateTime _ahora = DateTime(2030, 5, 1, 12);
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('InterruptorDestacar', () {
     testWidgets('al tocarlo pide encender y queda encendido', (WidgetTester tester) async {
       bool? recibido;

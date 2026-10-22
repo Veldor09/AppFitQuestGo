@@ -371,17 +371,17 @@
   "@rutasPropuestaPor": {
     "description": "Label showing who created the route, in the route detail sheet (only for routes proposed by someone else)."
   },
-  "rutasEnviarARevision": "Enviar a revision",
+  "rutasEnviarARevision": "Publicar ruta",
   "@rutasEnviarARevision": {
-    "description": "Button in the route detail sheet: submit a private route for moderation."
+    "description": "Button that publishes a private route right away (no moderation)."
   },
-  "rutasEnviadaARevision": "Ruta enviada a revision",
+  "rutasEnviadaARevision": "Ruta publicada",
   "@rutasEnviadaARevision": {
-    "description": "Success toast after submitting a route for moderation."
+    "description": "Toast after publishing a route."
   },
-  "rutasNoSePudoEnviarRuta": "No se pudo enviar la ruta",
+  "rutasNoSePudoEnviarRuta": "No se pudo publicar la ruta",
   "@rutasNoSePudoEnviarRuta": {
-    "description": "Error toast when submitting a route for moderation fails."
+    "description": "Error toast when publishing a route fails."
   },
   "dificultadFacil": "Facil",
   "dificultadModerada": "Moderada",
@@ -390,9 +390,9 @@
   "estadoRutaPendiente": "Pendiente",
   "estadoRutaPublicada": "Publicada",
   "estadoRutaRechazada": "Rechazada",
-  "planificarModoDibujarInstruccion": "Toca el mapa para trazar tu ruta, punto por punto.",
+  "planificarModoDibujarInstruccion": "Arrastra el dedo sobre el mapa para trazar tu ruta.",
   "@planificarModoDibujarInstruccion": {
-    "description": "Instruction banner shown in 'Dibujar' (draw) mode on the plan-a-route screen."
+    "description": "Instruction shown in draw mode of the route planner."
   },
   "planificarModoGpsGrabando": "Grabando... camina para trazar la ruta.",
   "@planificarModoGpsGrabando": {
@@ -2741,9 +2741,9 @@
   "@rutasVisibilidadLabel": {
     "description": "Label for route visibility dropdown"
   },
-  "rutasVisibilidadHelper": "Pública la envía a revisión comunitaria",
+  "rutasVisibilidadHelper": "Pública: la ve toda la comunidad al instante",
   "@rutasVisibilidadHelper": {
-    "description": "Helper text under route visibility dropdown"
+    "description": "Helper of the route visibility selector."
   },
   "rutasVisibilidadPrivada": "🔒 Privada (Solo tú)",
   "@rutasVisibilidadPrivada": {
@@ -2844,5 +2844,221 @@
   "patrocinioCercaTitulo": "Destacado cerca de ti",
   "@patrocinioCercaTitulo": {
     "description": "Title of the banner and card shown when a featured place is within 1 km."
+  },
+  "calificarArriba": "Me gustó",
+  "@calificarArriba": {
+    "description": "Thumbs-up button label (rating)."
+  },
+  "calificarAbajo": "No me gustó",
+  "@calificarAbajo": {
+    "description": "Thumbs-down button label (rating)."
+  },
+  "calificarPreguntaRuta": "¿Cómo estuvo tu recorrido?",
+  "@calificarPreguntaRuta": {
+    "description": "Title of the rating prompt shown after finishing a route."
+  },
+  "calificarGracias": "¡Gracias por tu calificación!",
+  "@calificarGracias": {
+    "description": "Toast after the user rates something."
+  },
+  "calificarError": "No se pudo guardar tu calificación.",
+  "@calificarError": {
+    "description": "Error toast when rating fails."
+  },
+  "calificarOmitir": "Ahora no",
+  "@calificarOmitir": {
+    "description": "Button to skip the rating prompt."
+  },
+  "calificarMotivoSinRecorrido": "Inicia y finaliza la ruta para poder calificarla.",
+  "@calificarMotivoSinRecorrido": {
+    "description": "Why the user cannot rate a route yet."
+  },
+  "calificarMotivoPropio": "No puedes calificar lo que tú creaste.",
+  "@calificarMotivoPropio": {
+    "description": "Why the user cannot rate their own content."
+  },
+  "calificarMotivoNoDisponible": "Ya no está disponible para calificar.",
+  "@calificarMotivoNoDisponible": {
+    "description": "Why the user cannot rate something that is gone."
+  },
+  "calificarLejos": "Acércate a menos de {radio} m para calificar (estás a {metros} m).",
+  "@calificarLejos": {
+    "description": "Hint when the user is too far from a point to rate it.",
+    "placeholders": {
+      "radio": {
+        "type": "int"
+      },
+      "metros": {
+        "type": "int"
+      }
+    }
+  },
+  "calificarSinGps": "Activa tu ubicación para calificar.",
+  "@calificarSinGps": {
+    "description": "Hint when there is no GPS fix to rate a point."
+  },
+  "calificarAreasTitulo": "Califica cada área",
+  "@calificarAreasTitulo": {
+    "description": "Title of the per-area rating list in an event."
+  },
+  "calificarVotos": "Tu calificación cuenta: ayuda a otros deportistas.",
+  "@calificarVotos": {
+    "description": "Small note under the thumbs."
+  },
+  "fichaComoLlegar": "Cómo llegar",
+  "@fichaComoLlegar": {
+    "description": "Button that opens the maps app with directions."
+  },
+  "fichaNoSePudoAbrirMapa": "No se pudo abrir la app de mapas.",
+  "@fichaNoSePudoAbrirMapa": {
+    "description": "Error toast when directions cannot be opened."
+  },
+  "fichaCerrar": "Cerrar",
+  "@fichaCerrar": {
+    "description": "Tooltip of the close button of a detail sheet."
+  },
+  "mapaMiUbicacion": "Mi ubicación",
+  "@mapaMiUbicacion": {
+    "description": "Tooltip of the recenter-on-me map button."
+  },
+  "aportesEditarNodo": "Editar",
+  "@aportesEditarNodo": {
+    "description": "Contributions: edit one of my points."
+  },
+  "aportesEliminarNodo": "Eliminar",
+  "@aportesEliminarNodo": {
+    "description": "Contributions: delete one of my points."
+  },
+  "aportesEliminarNodoTitulo": "¿Eliminar este punto?",
+  "@aportesEliminarNodoTitulo": {
+    "description": "Title of the delete-point confirmation."
+  },
+  "aportesEliminarNodoMensaje": "Se quitará «{nombre}» del mapa. Esta acción no se puede deshacer.",
+  "@aportesEliminarNodoMensaje": {
+    "description": "Body of the delete-point confirmation.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "aportesNodoEliminado": "Punto eliminado.",
+  "@aportesNodoEliminado": {
+    "description": "Toast after deleting a point."
+  },
+  "aportesNodoActualizado": "Punto actualizado.",
+  "@aportesNodoActualizado": {
+    "description": "Toast after editing a point."
+  },
+  "aportesNodoError": "No se pudo completar la acción.",
+  "@aportesNodoError": {
+    "description": "Error toast for edit/delete of a point."
+  },
+  "aportesEditarNodoTitulo": "Editar punto",
+  "@aportesEditarNodoTitulo": {
+    "description": "Title of the edit-point sheet."
+  },
+  "calificarPregunta": "¿Qué te pareció?",
+  "@calificarPregunta": {
+    "description": "Title of the rating section of a detail sheet."
+  },
+  "planificarTrazar": "Trazar con el dedo",
+  "@planificarTrazar": {
+    "description": "Tooltip of the button that turns finger drawing on."
+  },
+  "planificarMoverMapa": "Mover el mapa",
+  "@planificarMoverMapa": {
+    "description": "Tooltip of the button that turns finger drawing off to pan the map."
+  },
+  "planificarModoMoverInstruccion": "Mueve el mapa con el dedo. Toca el lápiz para seguir trazando.",
+  "@planificarModoMoverInstruccion": {
+    "description": "Instruction while finger drawing is paused in the route planner."
+  },
+  "rutasEliminar": "Eliminar ruta",
+  "@rutasEliminar": {
+    "description": "Button/tooltip to delete one of my routes."
+  },
+  "rutasEliminarTitulo": "¿Eliminar esta ruta?",
+  "@rutasEliminarTitulo": {
+    "description": "Title of the delete-route confirmation."
+  },
+  "rutasEliminarMensaje": "Se eliminará «{nombre}» con sus recorridos y calificaciones. Esta acción no se puede deshacer.",
+  "@rutasEliminarMensaje": {
+    "description": "Body of the delete-route confirmation.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "rutasEliminada": "Ruta eliminada.",
+  "@rutasEliminada": {
+    "description": "Toast after deleting a route."
+  },
+  "rutasNoSePudoEliminar": "No se pudo eliminar la ruta.",
+  "@rutasNoSePudoEliminar": {
+    "description": "Error toast when deleting a route fails."
+  },
+  "rutasPublicadaAviso": "Ruta publicada para la comunidad.",
+  "@rutasPublicadaAviso": {
+    "description": "Toast after saving a public route."
+  },
+  "guiaHacia": "Hacia {nombre}",
+  "@guiaHacia": {
+    "description": "Title of the in-app walking directions banner.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "guiaDetalle": "{distancia} · {minutos} min a pie",
+  "@guiaDetalle": {
+    "description": "Distance and walking time of the directions banner.",
+    "placeholders": {
+      "distancia": {
+        "type": "String"
+      },
+      "minutos": {
+        "type": "int"
+      }
+    }
+  },
+  "guiaLineaRecta": "{distancia} en línea recta",
+  "@guiaLineaRecta": {
+    "description": "Directions banner when only the straight line is known.",
+    "placeholders": {
+      "distancia": {
+        "type": "String"
+      }
+    }
+  },
+  "guiaYaEstasAqui": "Ya estás en el destino.",
+  "@guiaYaEstasAqui": {
+    "description": "Toast when the user asks directions to where they already are."
+  },
+  "mapaTipoBoton": "Tipo de mapa",
+  "@mapaTipoBoton": {
+    "description": "Tooltip of the map layers button."
+  },
+  "mapaTipoTitulo": "Tipo de mapa",
+  "@mapaTipoTitulo": {
+    "description": "Title of the map type sheet."
+  },
+  "mapaTipoCalles": "Mapa",
+  "@mapaTipoCalles": {
+    "description": "Streets map style option."
+  },
+  "mapaTipoSatelite": "Satélite",
+  "@mapaTipoSatelite": {
+    "description": "Satellite map style option."
+  },
+  "fotoYaTiene": "Ya tiene una foto: elige otra para reemplazarla.",
+  "@fotoYaTiene": {
+    "description": "Hint in the photo field when editing something that already has a photo."
+  },
+  "fotoNoSubida": "Se guardó, pero no se pudo subir la foto.",
+  "@fotoNoSubida": {
+    "description": "Toast when the photo upload fails after saving a route or event."
   }
 }

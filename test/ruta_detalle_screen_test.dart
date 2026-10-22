@@ -8,6 +8,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'helpers/calificacion_falsa.dart';
 
 const List<PuntoRuta> _tresPuntos = <PuntoRuta>[
   PuntoRuta(lat: 9.9281, lng: -84.0907),
@@ -89,6 +90,7 @@ Future<void> _abrir(
                   puedeEnviarARevision: puedeEnviarARevision,
                   onCambio: onCambio,
                   recorridoBuilder: recorridoBuilder,
+                  calificaciones: CalificacionApiFalsa(),
                 ),
               ),
             ),
@@ -124,15 +126,15 @@ void main() {
     expect(find.textContaining('Creada por'), findsNothing);
   });
 
-  group('Enviar a revision', () {
+  group('Publicar ruta', () {
     testWidgets('no aparece si no es tu ruta privada', (WidgetTester tester) async {
       await _abrir(tester, _ruta(), puedeEnviarARevision: false);
-      expect(find.text('Enviar a revision'), findsNothing);
+      expect(find.text('Publicar ruta'), findsNothing);
     });
 
     testWidgets('no aparece si la ruta ya no es privada', (WidgetTester tester) async {
       await _abrir(tester, _ruta(estado: 'Publicada'), puedeEnviarARevision: true);
-      expect(find.text('Enviar a revision'), findsNothing);
+      expect(find.text('Publicar ruta'), findsNothing);
     });
 
     testWidgets('envia, avisa del cambio, cierra y confirma', (
@@ -148,14 +150,14 @@ void main() {
         onCambio: () => cambios++,
       );
 
-      await tester.tap(find.widgetWithText(FqButton, 'Enviar a revision'));
+      await tester.tap(find.widgetWithText(FqButton, 'Publicar ruta'));
       await tester.pump();
       await tester.pumpAndSettle();
 
       expect(api.solicitudes, <int>[5]);
       expect(cambios, 1);
       expect(find.text('Cerro de la Muerte'), findsNothing); // volvio a la lista
-      expect(find.text('Ruta enviada a revision'), findsOneWidget);
+      expect(find.text('Ruta publicada'), findsOneWidget);
     });
 
     testWidgets('si falla, avisa y la pantalla sigue abierta', (
@@ -171,15 +173,15 @@ void main() {
         onCambio: () => cambios++,
       );
 
-      await tester.tap(find.widgetWithText(FqButton, 'Enviar a revision'));
+      await tester.tap(find.widgetWithText(FqButton, 'Publicar ruta'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(cambios, 0);
-      expect(find.text('No se pudo enviar la ruta'), findsOneWidget);
+      expect(find.text('No se pudo publicar la ruta'), findsOneWidget);
       expect(find.text('Cerro de la Muerte'), findsAtLeastNWidgets(1));
       expect(
-        tester.widget<FqButton>(find.widgetWithText(FqButton, 'Enviar a revision')).onPressed,
+        tester.widget<FqButton>(find.widgetWithText(FqButton, 'Publicar ruta')).onPressed,
         isNotNull,
       );
     });

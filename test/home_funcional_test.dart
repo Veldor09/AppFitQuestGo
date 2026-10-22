@@ -30,6 +30,7 @@ import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/datos_mapa.dart';
 
@@ -192,6 +193,8 @@ Future<void> _escribir(WidgetTester tester, String texto) async {
 const ValueKey<String> _contador = ValueKey<String>('campana-contador');
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('filtros', () {
     testWidgets('empieza en Todo y tocar un filtro lo selecciona', (WidgetTester tester) async {
       final SemanticsHandle semantica = tester.ensureSemantics();

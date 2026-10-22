@@ -6,6 +6,7 @@ import 'package:fit_quest_go/Modulos/empresa/presentation/mis_nodos_screen.dart'
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/user_nav_bar.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
+import 'helpers/calificacion_falsa.dart';
 
 import 'helpers/montar.dart';
 
@@ -79,6 +80,8 @@ Widget _selectorFalso(
 Finder _clave(String c) => find.byKey(ValueKey<String>(c));
 
 void main() {
+  usarCalificacionesFalsas();
+
   group('MisNodosScreen para el deportista', () {
     testWidgets('muestra el titulo y el subtitulo de sus propios nodos', (
       WidgetTester tester,

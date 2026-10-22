@@ -1,9 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
+import 'package:fit_quest_go/core/fotos/selector_foto.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/widgets/campo_foto.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_selector_opciones.dart';
@@ -37,7 +41,11 @@ class EditorEventoScreen extends StatefulWidget {
     this.evento,
     this.mapaBuilder,
     this.ahora,
+    this.selectorFoto,
   });
+
+  /// Selector de foto, inyectable para pruebas; en produccion usa image_picker.
+  final SelectorFoto? selectorFoto;
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final EventoApi? api;
@@ -65,6 +73,9 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
   );
 
   late String? _categoria = widget.evento?.categoria;
+
+  /// La foto elegida; se sube despues de guardar (va aparte del JSON).
+  Uint8List? _foto;
   late DateTime? _inicio = widget.evento?.fechaInicio.toLocal();
   late DateTime? _fin = widget.evento?.fechaFin.toLocal();
   late List<ZonaEvento> _areas = List<ZonaEvento>.of(
@@ -230,8 +241,18 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
               recorridos: _recorridos,
             );
       if (!mounted) return;
+      Evento resultado = guardado;
+      final Uint8List? foto = _foto;
+      if (foto != null) {
+        try {
+          resultado = await _api.subirFoto(guardado.id, foto);
+        } catch (_) {
+          notificarError(l10n.fotoNoSubida);
+        }
+      }
+      if (!mounted) return;
       notificarExito(l10n.eventoGuardado);
-      Navigator.of(context).pop(guardado);
+      Navigator.of(context).pop(resultado);
     } on ApiException catch (e) {
       _fallar(e.message);
     } catch (_) {
@@ -359,7 +380,15 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
                 labelText: l10n.comunDescripcionOpcional,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
+            CampoFoto(
+              foto: _foto,
+              selector: widget.selectorFoto,
+              yaTiene: widget.evento?.conFoto ?? false,
+              habilitado: !_guardando,
+              alCambiar: (Uint8List? f) => setState(() => _foto = f),
+            ),
+            const SizedBox(height: 10),
             _FilaFecha(
               key: const ValueKey<String>('fecha-inicio'),
               icono: Icons.event_available_outlined,
