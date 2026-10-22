@@ -98,26 +98,6 @@ class NodoApi {
   /// Bytes de la foto del nodo; 404 (`ApiException`) si no tiene o no te toca verla.
   Future<Uint8List> foto(int id) => _client.getBytes('/nodos/$id/foto');
 
-  /// NOD-04 · "Sigue ahi": confirma que el punto existe. El servidor exige estar
-  /// a menos de 150 m con la posicion enviada, no haberlo votado ni haberlo
-  /// propuesto.
-  Future<Nodo> confirmar(int id, {required double lat, required double lng}) {
-    return _votar(id, 'confirmar', lat, lng);
-  }
-
-  /// NOD-04 · "Ya no existe": con suficientes votos el punto sale del mapa.
-  Future<Nodo> marcarObsoleto(int id, {required double lat, required double lng}) {
-    return _votar(id, 'obsoleto', lat, lng);
-  }
-
-  Future<Nodo> _votar(int id, String voto, double lat, double lng) async {
-    final dynamic data = await _client.patch('/nodos/$id/$voto', <String, dynamic>{
-      'lat': lat,
-      'lng': lng,
-    });
-    return Nodo.fromJson(data as Map<String, dynamic>);
-  }
-
   /// Enciende o apaga "Destacar" en un punto propio. Si no se puede, el
   /// servidor responde 403 con `DESTACAR_SIN_PLAN`, `DESTACAR_TOPE` o
   /// `DESTACAR_NO_ELEGIBLE` en `ApiException.message`.

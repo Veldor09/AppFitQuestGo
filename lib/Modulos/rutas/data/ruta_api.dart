@@ -80,7 +80,12 @@ class RutaApi {
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
-  /// ADM-05 · Aprobar / rechazar. Solo Admin.
+  /// Elimina una ruta propia (con sus recorridos y guardados). 403 si no es tuya.
+  Future<void> eliminar(int id) async {
+    await _client.delete('/rutas/$id');
+  }
+
+  /// ADM-05 · Retirar una ruta. Solo Admin. Ya no se aprueban: se publican solas.
   Future<Ruta> cambiarEstado(int id, String estado) async {
     final dynamic data = await _client.patch('/rutas/$id/estado', {
       'estado': estado,

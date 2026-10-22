@@ -11,6 +11,7 @@ import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 
 /// RTE-01/02/03 · Rutas (vista de usuario).
@@ -454,6 +455,21 @@ class _TarjetaRuta extends StatelessWidget {
             if (mostrarEstado) ...<Widget>[
               const SizedBox(width: 8),
               EtiquetaEstadoRuta(ruta.estado),
+              IconButton(
+                key: ValueKey<String>('eliminar-ruta-${ruta.id}'),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: FqColors.risk,
+                  size: 22,
+                ),
+                tooltip: AppLocalizations.of(context)!.rutasEliminar,
+                splashRadius: 18,
+                onPressed: () async {
+                  final bool eliminada =
+                      await confirmarYEliminarRuta(context, api, ruta);
+                  if (eliminada) onCambio();
+                },
+              ),
             ],
           ],
         ),
@@ -470,6 +486,7 @@ class _TarjetaRuta extends StatelessWidget {
           ruta: ruta,
           api: api,
           puedeEnviarARevision: mostrarEstado,
+          puedeEliminar: mostrarEstado,
           onCambio: onCambio,
         ),
       ),

@@ -126,6 +126,7 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                                 context,
                                 lat: destino.lat,
                                 lng: destino.lng,
+                                nombre: evento.nombre,
                                 abrir: widget.abrirUrl,
                               ),
                             ),

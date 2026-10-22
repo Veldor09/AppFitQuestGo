@@ -90,7 +90,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PUBLICADA'), findsOneWidget);
-    expect(find.text('Enviar a revision'), findsNothing);
+    expect(find.text('Publicar ruta'), findsNothing);
   });
 
   testWidgets('en Mis rutas el detalle de una ruta privada ofrece enviarla a revision', (
@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PRIVADA'), findsOneWidget);
-    expect(find.widgetWithText(FqButton, 'Enviar a revision'), findsOneWidget);
+    expect(find.widgetWithText(FqButton, 'Publicar ruta'), findsOneWidget);
   });
 
   testWidgets('enviar a revision vuelve a la lista y la recarga', (
@@ -117,11 +117,11 @@ void main() {
 
     await tester.tap(find.text('Mi vuelta al lago'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FqButton, 'Enviar a revision'));
+    await tester.tap(find.widgetWithText(FqButton, 'Publicar ruta'));
     await tester.pumpAndSettle();
 
     expect(api.solicitudes, <int>[2]);
     expect(api.cargasDeMisRutas, 2);
-    expect(find.text('Ruta enviada a revision'), findsOneWidget);
+    expect(find.text('Ruta publicada'), findsOneWidget);
   });
 }

@@ -371,17 +371,17 @@
   "@rutasPropuestaPor": {
     "description": "Label showing who created the route, in the route detail sheet (only for routes proposed by someone else)."
   },
-  "rutasEnviarARevision": "Enviar a revision",
+  "rutasEnviarARevision": "Publicar ruta",
   "@rutasEnviarARevision": {
-    "description": "Button in the route detail sheet: submit a private route for moderation."
+    "description": "Button that publishes a private route right away (no moderation)."
   },
-  "rutasEnviadaARevision": "Ruta enviada a revision",
+  "rutasEnviadaARevision": "Ruta publicada",
   "@rutasEnviadaARevision": {
-    "description": "Success toast after submitting a route for moderation."
+    "description": "Toast after publishing a route."
   },
-  "rutasNoSePudoEnviarRuta": "No se pudo enviar la ruta",
+  "rutasNoSePudoEnviarRuta": "No se pudo publicar la ruta",
   "@rutasNoSePudoEnviarRuta": {
-    "description": "Error toast when submitting a route for moderation fails."
+    "description": "Error toast when publishing a route fails."
   },
   "dificultadFacil": "Facil",
   "dificultadModerada": "Moderada",
@@ -2741,9 +2741,9 @@
   "@rutasVisibilidadLabel": {
     "description": "Label for route visibility dropdown"
   },
-  "rutasVisibilidadHelper": "Pública la envía a revisión comunitaria",
+  "rutasVisibilidadHelper": "Pública: la ve toda la comunidad al instante",
   "@rutasVisibilidadHelper": {
-    "description": "Helper text under route visibility dropdown"
+    "description": "Helper of the route visibility selector."
   },
   "rutasVisibilidadPrivada": "🔒 Privada (Solo tú)",
   "@rutasVisibilidadPrivada": {
@@ -2973,5 +2973,68 @@
   "planificarModoMoverInstruccion": "Mueve el mapa con el dedo. Toca el lápiz para seguir trazando.",
   "@planificarModoMoverInstruccion": {
     "description": "Instruction while finger drawing is paused in the route planner."
+  },
+  "rutasEliminar": "Eliminar ruta",
+  "@rutasEliminar": {
+    "description": "Button/tooltip to delete one of my routes."
+  },
+  "rutasEliminarTitulo": "¿Eliminar esta ruta?",
+  "@rutasEliminarTitulo": {
+    "description": "Title of the delete-route confirmation."
+  },
+  "rutasEliminarMensaje": "Se eliminará «{nombre}» con sus recorridos y calificaciones. Esta acción no se puede deshacer.",
+  "@rutasEliminarMensaje": {
+    "description": "Body of the delete-route confirmation.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "rutasEliminada": "Ruta eliminada.",
+  "@rutasEliminada": {
+    "description": "Toast after deleting a route."
+  },
+  "rutasNoSePudoEliminar": "No se pudo eliminar la ruta.",
+  "@rutasNoSePudoEliminar": {
+    "description": "Error toast when deleting a route fails."
+  },
+  "rutasPublicadaAviso": "Ruta publicada para la comunidad.",
+  "@rutasPublicadaAviso": {
+    "description": "Toast after saving a public route."
+  },
+  "guiaHacia": "Hacia {nombre}",
+  "@guiaHacia": {
+    "description": "Title of the in-app walking directions banner.",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "guiaDetalle": "{distancia} · {minutos} min a pie",
+  "@guiaDetalle": {
+    "description": "Distance and walking time of the directions banner.",
+    "placeholders": {
+      "distancia": {
+        "type": "String"
+      },
+      "minutos": {
+        "type": "int"
+      }
+    }
+  },
+  "guiaLineaRecta": "{distancia} en línea recta",
+  "@guiaLineaRecta": {
+    "description": "Directions banner when only the straight line is known.",
+    "placeholders": {
+      "distancia": {
+        "type": "String"
+      }
+    }
+  },
+  "guiaYaEstasAqui": "Ya estás en el destino.",
+  "@guiaYaEstasAqui": {
+    "description": "Toast when the user asks directions to where they already are."
   }
 }

@@ -126,15 +126,15 @@ void main() {
     expect(find.textContaining('Creada por'), findsNothing);
   });
 
-  group('Enviar a revision', () {
+  group('Publicar ruta', () {
     testWidgets('no aparece si no es tu ruta privada', (WidgetTester tester) async {
       await _abrir(tester, _ruta(), puedeEnviarARevision: false);
-      expect(find.text('Enviar a revision'), findsNothing);
+      expect(find.text('Publicar ruta'), findsNothing);
     });
 
     testWidgets('no aparece si la ruta ya no es privada', (WidgetTester tester) async {
       await _abrir(tester, _ruta(estado: 'Publicada'), puedeEnviarARevision: true);
-      expect(find.text('Enviar a revision'), findsNothing);
+      expect(find.text('Publicar ruta'), findsNothing);
     });
 
     testWidgets('envia, avisa del cambio, cierra y confirma', (
@@ -150,14 +150,14 @@ void main() {
         onCambio: () => cambios++,
       );
 
-      await tester.tap(find.widgetWithText(FqButton, 'Enviar a revision'));
+      await tester.tap(find.widgetWithText(FqButton, 'Publicar ruta'));
       await tester.pump();
       await tester.pumpAndSettle();
 
       expect(api.solicitudes, <int>[5]);
       expect(cambios, 1);
       expect(find.text('Cerro de la Muerte'), findsNothing); // volvio a la lista
-      expect(find.text('Ruta enviada a revision'), findsOneWidget);
+      expect(find.text('Ruta publicada'), findsOneWidget);
     });
 
     testWidgets('si falla, avisa y la pantalla sigue abierta', (
@@ -173,15 +173,15 @@ void main() {
         onCambio: () => cambios++,
       );
 
-      await tester.tap(find.widgetWithText(FqButton, 'Enviar a revision'));
+      await tester.tap(find.widgetWithText(FqButton, 'Publicar ruta'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(cambios, 0);
-      expect(find.text('No se pudo enviar la ruta'), findsOneWidget);
+      expect(find.text('No se pudo publicar la ruta'), findsOneWidget);
       expect(find.text('Cerro de la Muerte'), findsAtLeastNWidgets(1));
       expect(
-        tester.widget<FqButton>(find.widgetWithText(FqButton, 'Enviar a revision')).onPressed,
+        tester.widget<FqButton>(find.widgetWithText(FqButton, 'Publicar ruta')).onPressed,
         isNotNull,
       );
     });

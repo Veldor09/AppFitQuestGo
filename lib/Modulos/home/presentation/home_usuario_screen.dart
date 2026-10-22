@@ -5,6 +5,8 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/mapa/control_ubicacion.dart';
+import 'package:fit_quest_go/core/mapa/mapbox_directions_service.dart';
+import 'package:fit_quest_go/core/mapa/navegacion_destino.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
@@ -35,6 +37,7 @@ import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/capa_eventos_m
 import 'package:fit_quest_go/Modulos/home/application/busqueda_mapa.dart';
 import 'package:fit_quest_go/Modulos/home/application/cercanos.dart';
 import 'package:fit_quest_go/Modulos/home/application/filtro_mapa.dart';
+import 'package:fit_quest_go/Modulos/home/presentation/widgets/banner_guia.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/barra_busqueda_mapa.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/campana_notificaciones.dart';
 import 'package:fit_quest_go/Modulos/home/presentation/widgets/filtros_mapa.dart';
@@ -123,7 +126,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   MapboxMap? _mapa;
 
   /// Las alertas, como circulos rojos.
-  CircleAnnotationManager? _pines;
 
   /// Los puntos de interes y los locales de empresas: un pin con forma de gota
   /// y el icono de su categoria (como en Google Maps).
@@ -144,6 +146,13 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
 
   /// Pin del mapa -> nodo, para abrir su ficha al tocarlo.
   final Map<String, Nodo> _nodoPorPin = <String, Nodo>{};
+  final Map<String, Alerta> _alertaPorPin = <String, Alerta>{};
+
+  /// El camino a pie que "Como llegar" dibuja en el mapa, y su resumen.
+  PolylineAnnotationManager? _lineasGuia;
+  PointAnnotationManager? _pinGuia;
+  final ValueNotifier<GuiaActiva?> _guia = ValueNotifier<GuiaActiva?>(null);
+  final MapboxDirectionsService _directions = MapboxDirectionsService();
   List<Nodo> _nodos = <Nodo>[];
   List<Alerta> _alertas = <Alerta>[];
   bool _votando = false;
@@ -188,6 +197,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     );
     _focoBusqueda.addListener(_alCambiarFocoBusqueda);
     _proximidad.posicion.addListener(_alMoverseDestacados);
+    NavegacionApp.instancia.registrarMapa();
+    NavegacionApp.instancia.destino.addListener(_alPedirDestino);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _proximidad.iniciar();
@@ -227,6 +238,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _escuchaTapNodos?.cancel();
     _clima.dispose();
     _proximidad.posicion.removeListener(_alMoverseDestacados);
+    NavegacionApp.instancia.destino.removeListener(_alPedirDestino);
+    NavegacionApp.instancia.liberarMapa();
+    _guia.dispose();
     _destacados.dispose();
     _proximidad.dispose();
     _vozActiva?.detener();
@@ -429,7 +443,13 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       controller,
       alTocarRuta: _abrirRutaPorId,
     );
-    _pines = await controller.annotations.createCircleAnnotationManager();
+    // El camino de "Como llegar" va debajo de los pines de puntos y alertas.
+    _lineasGuia = await controller.annotations
+        .createPolylineAnnotationManager();
+    final PointAnnotationManager pinGuia = await controller.annotations
+        .createPointAnnotationManager();
+    await prepararPines(pinGuia);
+    _pinGuia = pinGuia;
     final PointAnnotationManager nodos = await controller.annotations
         .createPointAnnotationManager();
     await prepararPines(nodos);
@@ -446,9 +466,98 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     await centrarEnUbicacionActual(controller);
   }
 
+  // --- Como llegar (dentro de la app)
+
+  void _alPedirDestino() {
+    final DestinoNavegacion? d = NavegacionApp.instancia.destino.value;
+    if (d != null) unawaited(_iniciarGuia(d));
+  }
+
+  /// Traza en el mapa el camino a pie desde donde estas hasta [d] y muestra
+  /// cuanto falta. Una sola consulta a Mapbox; sin red, la linea directa.
+  Future<void> _iniciarGuia(DestinoNavegacion d) async {
+    if (_mapa == null || !mounted) return;
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final PosicionGps? origen =
+        _proximidad.ultimaPosicion ?? await obtenerPosicionActualRapida();
+    if (!mounted) return;
+    if (origen == null) {
+      notificarInfo(l10n.planificarActivaUbicacion);
+      return;
+    }
+    final RutaVial? ruta = await _directions.rutaHastaInicio(
+      origen: origen,
+      destino: (lat: d.lat, lng: d.lng),
+      perfil: 'walking',
+    );
+    if (!mounted) return;
+    if (ruta == null) {
+      notificarInfo(l10n.guiaYaEstasAqui);
+      return;
+    }
+    await _dibujarGuia(ruta, d);
+    if (!mounted) return;
+    _guia.value = GuiaActiva(
+      nombre: d.nombre,
+      metros: ruta.distanciaMetros,
+      segundos: ruta.duracionSegundos,
+      lineaRecta: ruta.esLineaRecta,
+    );
+    await _encuadrar(ruta.puntos);
+  }
+
+  Future<void> _dibujarGuia(RutaVial ruta, DestinoNavegacion d) async {
+    final PolylineAnnotationManager? lineas = _lineasGuia;
+    final PointAnnotationManager? pin = _pinGuia;
+    if (lineas == null || pin == null) return;
+    // Antes de las esperas: el context no se usa despues de un await.
+    final double densidad = MediaQuery.devicePixelRatioOf(context);
+    await lineas.deleteAll();
+    await pin.deleteAll();
+    await lineas.create(
+      PolylineAnnotationOptions(
+        geometry: LineString(
+          coordinates: <Position>[
+            for (final PosicionGps p in ruta.puntos) Position(p.lng, p.lat),
+          ],
+        ),
+        lineColor: FqColors.river.toARGB32(),
+        lineWidth: 6,
+        lineOpacity: ruta.esLineaRecta ? 0.6 : 1,
+      ),
+    );
+    if (!mounted) return;
+    await pin.create(
+      opcionesDePin(
+        lat: d.lat,
+        lng: d.lng,
+        imagen: await imagenPin(TipoPin.rutaFin),
+        densidad: densidad,
+        etiqueta: d.nombre,
+      ),
+    );
+  }
+
+  Future<void> _cerrarGuia() async {
+    _guia.value = null;
+    try {
+      await _lineasGuia?.deleteAll();
+      await _pinGuia?.deleteAll();
+    } catch (_) {
+      // El mapa se cerro mientras tanto: no importa.
+    }
+  }
+
   /// Tocar el pin de un punto de interes abre su ficha (con foto, si tiene) y,
   /// si estas cerca, deja votar si sigue ahi o ya no existe.
-  void _onTapNodo(PointAnnotation pin) => _abrirFicha(_nodoPorPin[pin.id]);
+  void _onTapNodo(PointAnnotation pin) {
+    final Alerta? alerta = _alertaPorPin[pin.id];
+    if (alerta != null) {
+      _abrirAlerta(alerta);
+      return;
+    }
+    _abrirFicha(_nodoPorPin[pin.id]);
+  }
 
   void _abrirNodoPorId(int nodoId) {
     for (final Nodo n in _nodos) {
@@ -468,7 +577,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         _nodoApi,
         posicionActual: () => _proximidad.ultimaPosicion,
         usuarioId: _usuarioId,
-        alVotar: _reemplazarNodo,
         alDestacar: _reemplazarNodo,
       ),
     );
@@ -588,12 +696,11 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   Future<void> _dibujarPines() => _redibujoPines.pedir();
 
   Future<void> _pintarPines() async {
-    final CircleAnnotationManager? alertasMgr = _pines;
     final PointAnnotationManager? nodosMgr = _iconosNodos;
-    if (alertasMgr == null || nodosMgr == null) return;
-    await alertasMgr.deleteAll();
+    if (nodosMgr == null) return;
     await nodosMgr.deleteAll();
     _nodoPorPin.clear();
+    _alertaPorPin.clear();
     // Copia: las listas pueden cambiar mientras se espera a Mapbox. Lo que el
     // filtro oculta se borra y no se vuelve a dibujar.
     final List<Nodo> nodos = _filtro.muestra(CapaMapa.pois)
@@ -603,21 +710,32 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         ? List<Alerta>.of(_alertas)
         : <Alerta>[];
 
+    if (!mounted) return;
+    final double densidad = MediaQuery.devicePixelRatioOf(context);
+
+    // Las alertas van primero (debajo de los puntos): cada una con el icono de
+    // su tipo y el color de su gravedad.
     if (alertas.isNotEmpty) {
-      await alertasMgr.createMulti(<CircleAnnotationOptions>[
-        for (final Alerta alerta in alertas)
-          CircleAnnotationOptions(
-            geometry: Point(coordinates: Position(alerta.lng, alerta.lat)),
-            circleColor: FqColors.risk.toARGB32(),
-            circleRadius: alerta.gravedad == 'alta' ? 10 : 8,
-            circleStrokeColor: FqColors.white.toARGB32(),
-            circleStrokeWidth: 2,
-          ),
-      ]);
+      final List<PointAnnotationOptions> opcionesAlertas =
+          <PointAnnotationOptions>[
+            for (final Alerta a in alertas)
+              opcionesDePin(
+                lat: a.lat,
+                lng: a.lng,
+                imagen: await imagenPinAlerta(a.tipo, a.gravedad),
+                densidad: densidad,
+              ),
+          ];
+      final List<PointAnnotation?> pinesAlertas = await nodosMgr.createMulti(
+        opcionesAlertas,
+      );
+      for (int i = 0; i < alertas.length && i < pinesAlertas.length; i++) {
+        final PointAnnotation? pin = pinesAlertas[i];
+        if (pin != null) _alertaPorPin[pin.id] = alertas[i];
+      }
     }
 
     if (!mounted) return;
-    final double densidad = MediaQuery.devicePixelRatioOf(context);
     // Los destacados van en su propia capa, encima de todo (y se borra si el
     // filtro oculta los puntos).
     final CapaDestacadosMapa? capaDestacados = _capaDestacados;
@@ -986,6 +1104,13 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                     padding: const EdgeInsets.fromLTRB(0, 0, 10, 8),
                     child: BotonMiUbicacion(mapa: () => _mapa),
                   ),
+                ),
+                ValueListenableBuilder<GuiaActiva?>(
+                  valueListenable: _guia,
+                  builder: (BuildContext context, GuiaActiva? guia, Widget? _) {
+                    if (guia == null) return const SizedBox.shrink();
+                    return BannerGuia(guia: guia, onCerrar: _cerrarGuia);
+                  },
                 ),
                 ListenableBuilder(
                   listenable: _proximidad,

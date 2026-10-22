@@ -156,6 +156,7 @@ class _FichaEventoState extends State<FichaEvento> {
                         context,
                         lat: destino.lat,
                         lng: destino.lng,
+                        nombre: evento.nombre,
                         abrir: widget.abrirUrl,
                       ),
                     ),

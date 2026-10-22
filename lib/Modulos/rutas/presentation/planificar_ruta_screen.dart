@@ -467,8 +467,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         unawaited(_tracking.limpiar());
         if (!mounted) return;
         final String msg = datos.visibilidad == 'publica'
-            ? 'Ruta enviada para revisión comunitaria.'
-            : 'Ruta guardada como ${datos.visibilidad == 'amigos' ? 'solo amigos' : 'privada'}.';
+            ? l10n.rutasPublicadaAviso
+            : 'Ruta guardada como privada.';
         notificarExito(msg);
       } on ApiException {
         rethrow; // el servidor respondio: no es un problema de red
@@ -626,10 +626,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                         DropdownMenuItem<String>(
                           value: 'privada',
                           child: Text(l10n.rutasVisibilidadPrivada),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'amigos',
-                          child: Text(l10n.rutasVisibilidadAmigos),
                         ),
                         DropdownMenuItem<String>(
                           value: 'publica',

@@ -16,6 +16,7 @@ import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/formulario_nodo.dart';
 
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 
 /// PRF-02 / RTE-02 - Mis aportes: Rutas creadas, Alertas y Nodos.
@@ -221,6 +222,7 @@ class _RutaFila extends StatelessWidget {
               ruta: ruta,
               api: rutaApi,
               puedeEnviarARevision: ruta.estado == 'Privada',
+              puedeEliminar: true,
               onCambio: onCambio,
             ),
           ),
@@ -281,6 +283,18 @@ class _RutaFila extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             EtiquetaEstadoRuta(ruta.estado),
+            IconButton(
+              key: ValueKey<String>('eliminar-aporte-ruta-${ruta.id}'),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  size: 20, color: FqColors.risk),
+              tooltip: AppLocalizations.of(context)!.rutasEliminar,
+              visualDensity: VisualDensity.compact,
+              onPressed: () async {
+                final bool eliminada =
+                    await confirmarYEliminarRuta(context, rutaApi, ruta);
+                if (eliminada) onCambio();
+              },
+            ),
           ],
         ),
       ),

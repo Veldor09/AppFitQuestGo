@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:fit_quest_go/core/mapa/navegacion_destino.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -10,14 +11,25 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 /// de cerrar, una linea de datos (pulgares, categoria...), una fila de
 /// acciones en pastilla y secciones de contenido.
 
-/// Abre la app de mapas con la ruta a pie hasta ([lat], [lng]). En pruebas se
-/// pasa [abrir] para no lanzar nada de verdad.
+/// "Como llegar" hasta ([lat], [lng]): cierra la ficha y el mapa de la app
+/// traza el camino a pie desde donde estas, sin salir de la aplicacion.
+///
+/// Solo si no hay un mapa de la app abierto (la cuenta de una empresa) o si se
+/// pasa [abrir] (las pruebas), abre en cambio la app de mapas del telefono.
 Future<void> abrirComoLlegar(
   BuildContext context, {
   required double lat,
   required double lng,
+  String nombre = '',
   Future<bool> Function(Uri uri)? abrir,
 }) async {
+  if (abrir == null && NavegacionApp.instancia.hayMapa) {
+    NavegacionApp.instancia.iniciar(
+      context,
+      DestinoNavegacion(lat: lat, lng: lng, nombre: nombre),
+    );
+    return;
+  }
   final AppLocalizations l10n = AppLocalizations.of(context)!;
   final Uri uri = Uri.https('www.google.com', '/maps/dir/', <String, String>{
     'api': '1',

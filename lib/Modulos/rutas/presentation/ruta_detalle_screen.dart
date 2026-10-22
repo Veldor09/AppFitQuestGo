@@ -16,6 +16,7 @@ import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/recorrido_ruta_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/mapa_trazo_ruta.dart';
 
@@ -29,6 +30,7 @@ class RutaDetalleScreen extends StatefulWidget {
     required this.ruta,
     this.api,
     this.puedeEnviarARevision = false,
+    this.puedeEliminar = false,
     this.onCambio,
     this.recorridoBuilder,
     this.calificaciones,
@@ -37,7 +39,11 @@ class RutaDetalleScreen extends StatefulWidget {
 
   final Ruta ruta;
   final RutaApi? api;
+  /// Muestra el boton de publicar (solo en una ruta propia que sigue privada).
   final bool puedeEnviarARevision;
+
+  /// Muestra el boton de eliminar (solo en una ruta propia).
+  final bool puedeEliminar;
   final VoidCallback? onCambio;
   final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
@@ -165,6 +171,17 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       setState(() => _enviando = false);
       notificarError(l10n.rutasNoSePudoEnviarRuta);
     }
+  }
+
+  Future<void> _eliminar() async {
+    final bool eliminada = await confirmarYEliminarRuta(
+      context,
+      _api,
+      widget.ruta,
+    );
+    if (!eliminada || !mounted) return;
+    widget.onCambio?.call();
+    Navigator.of(context).pop();
   }
 
   Future<void> _iniciarRecorrido() async {
@@ -356,6 +373,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                                 context,
                                 lat: ruta.puntos.first.lat,
                                 lng: ruta.puntos.first.lng,
+                                nombre: ruta.nombre,
                                 abrir: widget.abrirUrl,
                               ),
                       ),
@@ -600,8 +618,19 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                       label: _enviando
                           ? l10n.comunEnviando
                           : l10n.rutasEnviarARevision,
-                      icon: Icons.send_rounded,
+                      icon: Icons.public_rounded,
                       onPressed: _enviando ? null : _enviarARevision,
+                    ),
+                  ],
+
+                  // Eliminar (solo mis rutas)
+                  if (widget.puedeEliminar) ...<Widget>[
+                    const SizedBox(height: 12),
+                    FqButton.danger(
+                      key: const ValueKey<String>('eliminar-ruta'),
+                      label: l10n.rutasEliminar,
+                      icon: Icons.delete_outline_rounded,
+                      onPressed: _eliminar,
                     ),
                   ],
                 ],

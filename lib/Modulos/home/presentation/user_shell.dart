@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/mapa/navegacion_destino.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/eventos_screen.dart';
@@ -27,6 +28,18 @@ class _UserShellState extends State<UserShell> {
     // Sube en silencio las rutas guardadas sin conexion en sesiones anteriores.
     SyncRutasService.instancia.sincronizar();
     ActividadesService.instancia.sincronizar();
+    NavegacionApp.instancia.solicitudesMapa.addListener(_irAlMapa);
+  }
+
+  @override
+  void dispose() {
+    NavegacionApp.instancia.solicitudesMapa.removeListener(_irAlMapa);
+    super.dispose();
+  }
+
+  /// "Como llegar" desde cualquier pestaña: se vuelve al mapa, donde se traza el camino.
+  void _irAlMapa() {
+    if (mounted && _tab != 0) setState(() => _tab = 0);
   }
 
   Future<void> _cerrarSesion() => AuthScope.read(context).cerrarSesion();
