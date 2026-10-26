@@ -1,17 +1,20 @@
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 
-/// Cliente para consultar y archivar los registros
-/// de auditoría administrativa.
+/// Cliente de consulta de registros de auditoría administrativa.
+///
+/// Los registros son de solo lectura y no pueden
+/// eliminarse ni archivarse desde esta API.
 class AuditoriaApi {
   AuditoriaApi([ApiClient? client])
       : _client = client ?? ApiClient();
 
   final ApiClient _client;
 
-  /// Consulta los registros de auditoría no archivados.
+  /// Consulta el historial completo de auditoría.
   ///
-  /// Admite filtros y paginación.
+  /// Admite filtros por administrador, acción, entidad
+  /// y rango de fechas, además de paginación.
   Future<Map<String, dynamic>> consultar({
     int? administradorId,
     String? accion,
@@ -43,27 +46,6 @@ class AuditoriaApi {
 
     final dynamic respuesta =
         await _client.get(uri.toString());
-
-    return Map<String, dynamic>.from(respuesta as Map);
-  }
-
-  /// Archiva un registro de auditoría por su ID.
-  ///
-  /// El backend conserva el registro en PostgreSQL,
-  /// incluyendo el administrador responsable y la fecha.
-  ///
-  /// Solo puede ejecutarse con una sesión de administrador.
-  Future<Map<String, dynamic>> archivar(int id) async {
-    if (id <= 0) {
-      throw ArgumentError.value(
-        id,
-        'id',
-        'El ID del registro debe ser mayor que cero',
-      );
-    }
-
-    final dynamic respuesta =
-        await _client.delete('/admin/auditoria/$id');
 
     return Map<String, dynamic>.from(respuesta as Map);
   }
