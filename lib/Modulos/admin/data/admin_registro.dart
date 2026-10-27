@@ -1,11 +1,11 @@
 
 import 'package:flutter/material.dart';
 
-import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/admin_seccion.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/auditoria_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/catalogos_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/detalle_usuario/directorio_usuarios_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/insignias_admin_screen.dart';
@@ -17,8 +17,6 @@ import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_sc
 import 'package:fit_quest_go/Modulos/alertas/presentation/alertas_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/nodos_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart';
-import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
-import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart';
 
 /// Registro unico de las pantallas del panel de administracion (ADM-01..ADM-13).
@@ -29,11 +27,8 @@ import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart'
 /// [usuarioSeleccionado] y [onVerDetalle] conectan ADM-02 con ADM-03.
 /// Son opcionales para mantener compatibilidad con llamadas existentes.
 List<AdminSeccion> buildAdminSecciones(
-  AppLocalizations l10n, {
-  ValueNotifier<Usuario?>? usuarioSeleccionado,
-  ValueChanged<Usuario>? onVerDetalle,
-  VoidCallback? onVolverUsuarios,
-}) {
+  AppLocalizations l10n,
+) {
   return <AdminSeccion>[
     AdminSeccion(
       code: 'ADM-01',
@@ -49,7 +44,7 @@ List<AdminSeccion> buildAdminSecciones(
       headerTitle: l10n.admNavUsuarios,
       descripcion: l10n.admDescUsuarios,
       icono: Icons.people_outline,
-      builder: (_) => UsuariosScreen(onVerDetalle: onVerDetalle),
+      builder: (_) => UsuariosScreen(),
     ),
     AdminSeccion(
       code: 'ADM-03',
@@ -57,40 +52,7 @@ List<AdminSeccion> buildAdminSecciones(
       headerTitle: l10n.admDetalleUsuarioNav,
       descripcion: l10n.admDetalleUsuarioDesc,
       icono: Icons.badge_outlined,
-      builder: (_) {
-        if (usuarioSeleccionado == null) {
-          return FqEmptyState(
-            icon: Icons.person_search_outlined,
-            title: l10n.admDetalleUsuarioVacioTitulo,
-            message: l10n.admDetalleUsuarioVacioMensaje(
-              l10n.admNavUsuarios,
-              l10n.comunVer,
-            ),
-          );
-        }
-
-        return ValueListenableBuilder<Usuario?>(
-          valueListenable: usuarioSeleccionado,
-          builder: (context, usuario, _) {
-            if (usuario == null) {
-              return FqEmptyState(
-                icon: Icons.person_search_outlined,
-                title: l10n.admDetalleUsuarioVacioTitulo,
-                message: l10n.admDetalleUsuarioVacioMensaje(
-                  l10n.admNavUsuarios,
-                  l10n.comunVer,
-                ),
-              );
-            }
-
-            return UsuarioDetalleScreen(
-              key: ValueKey<int>(usuario.id),
-              usuario: usuario,
-              onVolver: onVolverUsuarios,
-            );
-          },
-        );
-      },
+      builder: (_) => const DirectorioUsuariosScreen(),
     ),
     AdminSeccion(
       code: 'ADM-04',

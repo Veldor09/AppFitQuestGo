@@ -23,16 +23,11 @@ import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/usuarios_tabl
 /// cuentas. Buscador, filtro por rol y paginacion se resuelven en el cliente
 /// sobre la lista real (sin datos quemados).
 class UsuariosScreen extends StatefulWidget {
-  const UsuariosScreen({super.key, this.api, this.onVerDetalle});
+  const UsuariosScreen({super.key, this.api});
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final UsuariosApi? api;
 
-  /// Permite abrir ADM-03 con el usuario seleccionado.
-  ///
-  /// Es opcional para mantener compatibilidad con las pantallas
-  /// y pruebas que ya utilizan UsuariosScreen.
-  final ValueChanged<Usuario>? onVerDetalle;
 
   @override
   State<UsuariosScreen> createState() => _UsuariosScreenState();
@@ -121,7 +116,6 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       usuario: usuario,
       api: _api,
       miId: _miId,
-      onVerDetalle: widget.onVerDetalle,
     );
 
     if (!mounted) return;

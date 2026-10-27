@@ -27,6 +27,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
   late final UsuariosApi _api = widget.api ?? UsuariosApi();
 
   late Future<_DetalleDatos> _futuro;
+  int _pestanaSeleccionada = 0;
 
   @override
   void initState() {
@@ -53,11 +54,21 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
       _api.obtenerAportes(widget.usuario.id),
       _api.obtenerReportes(widget.usuario.id),
     ]);
+    List<Map<String, dynamic>> insignias = [];
+    Object? errorInsignias;
+
+    try {
+      insignias = await _api.obtenerInsignias(widget.usuario.id);
+    } catch (error) {
+      errorInsignias = error;
+    }
 
     return _DetalleDatos(
       historial: resultados[0],
       aportes: resultados[1],
       reportes: resultados[2],
+      insignias: insignias,
+      errorInsignias: errorInsignias,
     );
   }
 
@@ -99,15 +110,161 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                 children: [
                   _resumen(datos),
                   const SizedBox(height: 20),
-                  _historial(datos.historial),
+                  _pestanas(),
                   const SizedBox(height: 20),
-                  _aportes(datos.aportes),
-                  const SizedBox(height: 20),
-                  _reportes(datos.reportes),
+                  switch (_pestanaSeleccionada) {
+                    0 => _historial(datos.historial),
+                    1 => _aportes(datos.aportes),
+                    2 => _reportes(datos.reportes),
+                    _ => datos.errorInsignias != null
+                        ? _estadoError(datos.errorInsignias)
+                        : _insignias(datos.insignias),
+                  },
                 ],
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pestanas() {
+    const etiquetas = <String>[
+      'Historial',
+      'Aportes',
+      'Reportes',
+      'Insignias',
+    ];
+    const iconos = <IconData>[
+      Icons.history,
+      Icons.add_location_alt_outlined,
+      Icons.report_problem_outlined,
+      Icons.emoji_events_outlined,
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: List<Widget>.generate(etiquetas.length, (indice) {
+        final seleccionado = _pestanaSeleccionada == indice;
+
+        return ChoiceChip(
+          label: Text(etiquetas[indice]),
+          avatar: Icon(iconos[indice], size: 18),
+          selected: seleccionado,
+          showCheckmark: false,
+          onSelected: (_) {
+            setState(() => _pestanaSeleccionada = indice);
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _insignias(List<Map<String, dynamic>> insignias) {
+    if (insignias.isEmpty) {
+      return _panel(
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('No hay insignias disponibles para este usuario.'),
+        ),
+      );
+    }
+
+    final ordenadas = [...insignias]
+      ..sort((a, b) {
+        final estadoA = a['desbloqueada'] == true ? 0 : 1;
+        final estadoB = b['desbloqueada'] == true ? 0 : 1;
+        return estadoA.compareTo(estadoB);
+      });
+
+    final obtenidas =
+        insignias.where((item) => item['desbloqueada'] == true).length;
+
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Insignias obtenidas: $obtenidas de ${insignias.length}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...ordenadas.map((insignia) {
+            final desbloqueada = insignia['desbloqueada'] == true;
+            final progreso = insignia['progreso'];
+            final meta = insignia['meta'];
+            final fecha = insignia['fechaObtenida'];
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (insignia['emoji'] ?? '??').toString(),
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (insignia['nombre'] ?? 'Insignia').toString(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              (insignia['descripcion'] ?? '').toString(),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              desbloqueada
+                                  ? 'Desbloqueada'
+                                  : 'Pendiente',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: desbloqueada
+                                    ? Colors.green.shade700
+                                    : FqColors.muted,
+                              ),
+                            ),
+                            if (desbloqueada && fecha != null) ...[
+                              const SizedBox(height: 4),
+                              Text('Obtenida: ${_fecha(fecha)}'),
+                            ],
+                            if (!desbloqueada &&
+                                progreso is num &&
+                                meta is num &&
+                                meta > 0) ...[
+                              const SizedBox(height: 8),
+                              LinearProgressIndicator(
+                                value: (progreso / meta)
+                                    .clamp(0.0, 1.0)
+                                    .toDouble(),
+                              ),
+                              const SizedBox(height: 4),
+                              Text('Progreso: $progreso / $meta'),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -570,9 +727,13 @@ class _DetalleDatos {
     required this.historial,
     required this.aportes,
     required this.reportes,
+    required this.insignias,
+    required this.errorInsignias,
   });
 
   final Map<String, dynamic> historial;
   final Map<String, dynamic> aportes;
   final Map<String, dynamic> reportes;
+  final List<Map<String, dynamic>> insignias;
+  final Object? errorInsignias;
 }

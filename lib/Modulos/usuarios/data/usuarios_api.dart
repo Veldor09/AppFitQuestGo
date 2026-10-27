@@ -64,4 +64,12 @@ class UsuariosApi {
     final dynamic data = await _client.get('/usuarios/$id/reportes');
     return Map<String, dynamic>.from(data as Map);
   }
+
+  /// ADM-03: insignias obtenidas y pendientes del usuario.
+  Future<List<Map<String, dynamic>>> obtenerInsignias(int id) async {
+    final dynamic data = await _client.get('/usuarios/$id/insignias');
+    return (data as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
 }

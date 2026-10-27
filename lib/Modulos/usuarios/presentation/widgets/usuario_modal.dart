@@ -24,7 +24,6 @@ class UsuarioModal extends StatefulWidget {
     this.usuario,
     this.api,
     this.miId,
-    this.onVerDetalle,
   });
 
   final ModoUsuarioModal modo;
@@ -34,8 +33,6 @@ class UsuarioModal extends StatefulWidget {
   /// Id del usuario en sesion: impide que se quite su propio rol.
   final int? miId;
 
-  /// Permite solicitar la apertura de ADM-03.
-  final ValueChanged<Usuario>? onVerDetalle;
 
   static Future<bool?> abrir(
     BuildContext context, {
@@ -43,7 +40,6 @@ class UsuarioModal extends StatefulWidget {
     Usuario? usuario,
     UsuariosApi? api,
     int? miId,
-    ValueChanged<Usuario>? onVerDetalle,
   }) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
@@ -58,7 +54,6 @@ class UsuarioModal extends StatefulWidget {
         usuario: usuario,
         api: api,
         miId: miId,
-        onVerDetalle: onVerDetalle,
       ),
       transitionBuilder: (_, Animation<double> anim, _, Widget child) {
         final double t = Curves.easeOutCubic.transform(anim.value);
@@ -144,16 +139,7 @@ class _UsuarioModalState extends State<UsuarioModal> {
     Navigator.of(context).pop(cambio);
   }
 
-  /// Cierra el modal y solicita abrir el detalle del usuario.
-  void _verDetalle() {
-    final Usuario? usuario = widget.usuario;
-    final ValueChanged<Usuario>? callback = widget.onVerDetalle;
 
-    if (usuario == null || callback == null) return;
-
-    _cerrar();
-    callback(usuario);
-  }
 
   void _cancelarEdicion() {
     if (widget.modo == ModoUsuarioModal.ver) {
@@ -392,13 +378,6 @@ class _UsuarioModalState extends State<UsuarioModal> {
             expand: false,
             onPressed: () => _cerrar(),
           ),
-          if (widget.usuario != null && widget.onVerDetalle != null)
-            FqButton.primary(
-              label: 'Ver historial y aportes',
-              icon: Icons.history,
-              expand: false,
-              onPressed: _verDetalle,
-            ),
         ],
       );
     }
