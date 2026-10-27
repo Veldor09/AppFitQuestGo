@@ -387,4 +387,117 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await gps.close();
   });
+
+  testWidgets(
+    'al avanzar en ruta se evalua progreso, al desviarse 20m o mas y al regresar',
+    (WidgetTester tester) async {
+      final StreamController<PosicionGps> gps =
+          StreamController<PosicionGps>.broadcast();
+      final _VozFalsa voz = _VozFalsa();
+      final _DirectionsFalso directions = _DirectionsFalso();
+      final _ServicioFalso servicio = _ServicioFalso();
+      DateTime reloj = DateTime(2026, 1, 1, 8);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecorridoRutaScreen(
+            ruta: _ruta,
+            accessToken: '',
+            posiciones: () => gps.stream,
+            directions: directions,
+            voz: voz,
+            servicio: servicio,
+            ahora: () => reloj,
+            idUsuario: 1,
+          ),
+        ),
+      );
+
+      // 1. Llega al inicio de la ruta.
+      gps.add((lat: 10.0, lng: -85.0001));
+      await tester.pump();
+      expect(find.textContaining('En ruta'), findsOneWidget);
+
+      // 2. Avanza por el sendero.
+      reloj = reloj.add(const Duration(minutes: 2));
+      gps.add((lat: 10.0, lng: -84.9960));
+      await tester.pump();
+      expect(find.textContaining('En ruta'), findsOneWidget);
+
+      // 3. Retrocede en el sendero (se vuelve a evaluar el segmento previo).
+      gps.add((lat: 10.0, lng: -84.9975));
+      await tester.pump();
+      expect(find.textContaining('En ruta'), findsOneWidget);
+
+      // 4. Se desvía ~60m de la ruta (activa tanto puntitos a >=20m como alerta fuera de ruta).
+      gps.add((lat: 10.0006, lng: -84.9975));
+      await tester.pump();
+      expect(find.textContaining('Fuera de ruta'), findsOneWidget);
+
+      // 5. Regresa al sendero.
+      gps.add((lat: 10.0, lng: -84.9975));
+      await tester.pump();
+      expect(find.textContaining('En ruta'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await gps.close();
+    },
+  );
+
+  testWidgets(
+    'al llegar al final de la ruta finaliza automáticamente y muestra estadísticas sin requerir pulsar el botón',
+    (WidgetTester tester) async {
+      final StreamController<PosicionGps> gps =
+          StreamController<PosicionGps>.broadcast();
+      final _VozFalsa voz = _VozFalsa();
+      final _DirectionsFalso directions = _DirectionsFalso();
+      final _ServicioFalso servicio = _ServicioFalso();
+      DateTime reloj = DateTime(2026, 1, 1, 8);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecorridoRutaScreen(
+            ruta: _ruta,
+            accessToken: '',
+            posiciones: () => gps.stream,
+            directions: directions,
+            voz: voz,
+            servicio: servicio,
+            ahora: () => reloj,
+            idUsuario: 1,
+          ),
+        ),
+      );
+
+      // 1. Llega al inicio de la ruta
+      gps.add((lat: 10.0, lng: -85.0001));
+      await tester.pump();
+      expect(find.textContaining('En ruta'), findsOneWidget);
+
+      // 2. Avanza por el sendero
+      reloj = reloj.add(const Duration(minutes: 5));
+      gps.add((lat: 10.0, lng: -84.9950));
+      await tester.pump();
+
+      // 3. Llega al final de la ruta (a menos de 30m del punto final -84.990)
+      reloj = reloj.add(const Duration(minutes: 5));
+      gps.add((lat: 10.0, lng: -84.9901));
+      await tester.pumpAndSettle();
+
+      // Finaliza automáticamente: muestra modal con felicitaciones y estadísticas sin tocar Finalizar
+      expect(voz.dichas.last, contains('Has llegado al final'));
+      expect(find.text('¡Felicidades!'), findsOneWidget);
+      expect(find.textContaining('Recorriste'), findsOneWidget);
+      expect(find.text('Listo'), findsOneWidget);
+      expect(servicio.kms, hasLength(1));
+      expect(servicio.kms.single, greaterThan(1.0));
+
+      await tester.tap(find.text('Listo'));
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(const SizedBox());
+      await gps.close();
+    },
+  );
 }
+

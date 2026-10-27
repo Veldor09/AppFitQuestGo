@@ -50,3 +50,6 @@ app.*.map.json
 
 # Respaldos locales de archivos fuente
 *.bak
+
+# Guía local para el asistente de IA
+AGENTS.md

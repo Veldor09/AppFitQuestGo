@@ -12,7 +12,7 @@ class AppDatabase {
   static final AppDatabase instancia = AppDatabase._();
 
   static const String _nombre = 'fitquestgo_local.db';
-  static const int _version = 3;
+  static const int _version = 5;
 
   Database? _db;
   Future<Database?>? _abriendo;
@@ -41,6 +41,14 @@ class AppDatabase {
           if (anterior < 3) {
             await db.execute('ALTER TABLE perfil_cache ADD COLUMN perfil_json TEXT');
           }
+          // v4: notificaciones en caché para consulta offline.
+          if (anterior < 4) {
+            await db.execute(_ddlNotificacionesCache);
+          }
+          // v5: insignias en caché para consulta offline.
+          if (anterior < 5) {
+            await db.execute(_ddlInsigniasCache);
+          }
         },
       );
       return _db;
@@ -61,6 +69,8 @@ class AppDatabase {
       'actividades_pendientes_sync',
       'rutas_offline',
       'perfil_cache',
+      'notificaciones_cache',
+      'insignias_cache',
     ]) {
       await db.delete(t);
     }
@@ -80,8 +90,36 @@ CREATE TABLE actividades_pendientes_sync (
   ultimo_error TEXT
 )''';
 
+  static const String _ddlNotificacionesCache = '''
+CREATE TABLE notificaciones_cache (
+  id_remoto INTEGER PRIMARY KEY,
+  categoria TEXT NOT NULL,
+  titulo TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  creada_en TEXT NOT NULL,
+  leida INTEGER NOT NULL DEFAULT 0,
+  referencia_tipo TEXT,
+  referencia_id INTEGER,
+  guardado_en TEXT NOT NULL
+)''';
+
+  static const String _ddlInsigniasCache = '''
+CREATE TABLE insignias_cache (
+  codigo TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  emoji TEXT NOT NULL DEFAULT '🏅',
+  desbloqueada INTEGER NOT NULL DEFAULT 0,
+  fecha_obtenida TEXT,
+  progreso REAL,
+  meta REAL,
+  guardado_en TEXT NOT NULL
+)''';
+
   static const List<String> _ddl = <String>[
     _ddlActividadesPendientes,
+    _ddlNotificacionesCache,
+    _ddlInsigniasCache,
     '''
 CREATE TABLE sesion_tracking_temp (
   id INTEGER PRIMARY KEY CHECK (id = 1),

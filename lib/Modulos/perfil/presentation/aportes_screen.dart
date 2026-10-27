@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
@@ -19,6 +20,11 @@ import 'package:fit_quest_go/Modulos/nodos/presentation/formulario_nodo.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_ruta.dart';
+
+String _mensajeErrorAporte(AppLocalizations l10n, Object error) {
+  if (error is ApiException) return error.message;
+  return l10n.rutasErrorConexionGenerico;
+}
 
 /// PRF-02 / RTE-02 - Mis aportes: Rutas creadas, Alertas y Nodos.
 class AportesScreen extends StatefulWidget {
@@ -168,9 +174,13 @@ class _TabMisRutasState extends State<_TabMisRutas> {
     return CargaListaVista<Ruta>(
       carga: _carga,
       error: (BuildContext ctx, Object error) => FqEmptyState(
-        icon: Icons.error_outline,
+        icon: Icons.wifi_off_rounded,
         title: l10n.aportesErrorRutas,
-        message: error.toString(),
+        message: _mensajeErrorAporte(l10n, error),
+        action: TextButton(
+          onPressed: _carga.cargar,
+          child: Text(l10n.comunReintentar),
+        ),
       ),
       datos: (BuildContext ctx, List<Ruta> rutas) {
         if (rutas.isEmpty) {
@@ -315,24 +325,41 @@ class _RutaFila extends StatelessWidget {
 
 // ── Tab 2: Alertas Comunitarias ───────────────────────────────────────────────
 
-class _TabMisAlertas extends StatelessWidget {
+class _TabMisAlertas extends StatefulWidget {
   const _TabMisAlertas({required this.alertaApi});
   final AlertaApi alertaApi;
+
+  @override
+  State<_TabMisAlertas> createState() => _TabMisAlertasState();
+}
+
+class _TabMisAlertasState extends State<_TabMisAlertas> {
+  late Future<List<Alerta>> _futuro = widget.alertaApi.misAlertas();
+
+  void _recargar() {
+    setState(() {
+      _futuro = widget.alertaApi.misAlertas();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<Alerta>>(
-      future: alertaApi.misAlertas(),
+      future: _futuro,
       builder: (BuildContext ctx, AsyncSnapshot<List<Alerta>> snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
         }
         if (snap.hasError) {
           return FqEmptyState(
-            icon: Icons.error_outline,
+            icon: Icons.wifi_off_rounded,
             title: l10n.aportesErrorAlertas,
-            message: snap.error.toString(),
+            message: _mensajeErrorAporte(l10n, snap.error!),
+            action: TextButton(
+              onPressed: _recargar,
+              child: Text(l10n.comunReintentar),
+            ),
           );
         }
         final List<Alerta> alertas = snap.data ?? <Alerta>[];
@@ -343,11 +370,14 @@ class _TabMisAlertas extends StatelessWidget {
             message: l10n.aportesSinAlertasMsg,
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: alertas.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (_, int i) => _AlertaFila(alerta: alertas[i]),
+        return RefreshIndicator(
+          onRefresh: () async => _recargar(),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: alertas.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            itemBuilder: (_, int i) => _AlertaFila(alerta: alertas[i]),
+          ),
         );
       },
     );
@@ -522,9 +552,13 @@ class _TabMisNodosState extends State<_TabMisNodos> {
     return CargaListaVista<Nodo>(
       carga: _carga,
       error: (BuildContext ctx, Object error) => FqEmptyState(
-        icon: Icons.error_outline,
+        icon: Icons.wifi_off_rounded,
         title: l10n.aportesErrorNodos,
-        message: error.toString(),
+        message: _mensajeErrorAporte(l10n, error),
+        action: TextButton(
+          onPressed: _carga.cargar,
+          child: Text(l10n.comunReintentar),
+        ),
       ),
       datos: (BuildContext ctx, List<Nodo> nodos) {
         if (nodos.isEmpty) {

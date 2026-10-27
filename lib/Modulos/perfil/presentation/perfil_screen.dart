@@ -8,6 +8,7 @@ import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
+import 'package:fit_quest_go/core/db/daos/notificaciones_cache_dao.dart';
 import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/rutas_pendientes_banner.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
@@ -29,12 +30,14 @@ class PerfilScreen extends StatefulWidget {
     super.key,
     this.api,
     this.notificacionesApi,
+    this.notificacionesCacheDao,
     this.cacheDao,
     this.onCerrarSesion,
   });
 
   final PerfilApi? api;
   final NotificacionesApi? notificacionesApi;
+  final NotificacionesCacheDao? notificacionesCacheDao;
   final PerfilCacheDao? cacheDao;
   final Future<void> Function()? onCerrarSesion;
 
@@ -46,6 +49,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
   late final PerfilApi _api = widget.api ?? PerfilApi();
   late final NotificacionesApi _notifApi =
       widget.notificacionesApi ?? NotificacionesApi();
+  late final NotificacionesCacheDao _notifCache =
+      widget.notificacionesCacheDao ?? NotificacionesCacheDao();
   late final PerfilCacheDao _cacheDao = widget.cacheDao ?? PerfilCacheDao();
 
   Usuario? _usuario;
@@ -126,18 +131,24 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
-  /// Contador del buzón; si falla simplemente no se muestra el indicador.
+  /// Contador del buzón; si falla intenta leer desde la caché local offline.
   Future<void> _cargarNoLeidas() async {
     try {
       final int n = await _notifApi.conteoNoLeidas();
       if (mounted) setState(() => _noLeidas = n);
-    } catch (_) {}
+    } catch (_) {
+      final int nLocal = await _notifCache.conteoNoLeidas();
+      if (mounted) setState(() => _noLeidas = nLocal);
+    }
   }
 
   Future<void> _abrirNotificaciones() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => NotificacionesScreen(api: _notifApi),
+        builder: (_) => NotificacionesScreen(
+          api: _notifApi,
+          cacheDao: _notifCache,
+        ),
       ),
     );
     _cargarNoLeidas();
@@ -352,8 +363,8 @@ class _PerfilContenido extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const RutasScreen(
-                          initialTab: 1,
+                        builder: (_) => RutasScreen(
+                          initialTab: esOffline ? 2 : 1,
                           showBackButton: true,
                         ),
                       ),

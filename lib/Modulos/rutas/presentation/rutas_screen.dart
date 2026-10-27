@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/widgets/carga_lista.dart';
 import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
+import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
@@ -18,17 +19,21 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/etiqueta_estado_
 /// RTE-01/02/03 · Rutas (vista de usuario).
 /// - "Explorar" (RTE-01): rutas publicadas comunitarias (`/rutas/explorar`).
 /// - "Mis rutas" (RTE-02): rutas propias (`/rutas/mias`).
-/// - "Guardadas" (RTE-03): rutas favoritas / guardadas (`/rutas/favoritas`).
+/// - "Guardadas" (RTE-03): rutas favoritas / guardadas (`/rutas/favoritas`) o descargadas offline.
 class RutasScreen extends StatefulWidget {
   const RutasScreen({
     super.key,
     this.api,
+    this.offlineDao,
     this.initialTab = 0,
     this.showBackButton,
   });
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
+
+  /// DAO de rutas descargadas para uso offline.
+  final RutasOfflineDao? offlineDao;
 
   /// Pestaña inicial (0: Explorar, 1: Mis rutas, 2: Guardadas).
   final int initialTab;
@@ -43,10 +48,13 @@ class RutasScreen extends StatefulWidget {
 
 class _RutasScreenState extends State<RutasScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
+  late final RutasOfflineDao _offlineDao =
+      widget.offlineDao ?? RutasOfflineDao();
   late final CargaLista<Ruta> _explorar = CargaLista<Ruta>(() => _api.explorar());
   late final CargaLista<Ruta> _misRutas = CargaLista<Ruta>(() => _api.misRutas());
-  late final CargaLista<Ruta> _favoritas = CargaLista<Ruta>(() => _api.favoritas());
+  late final CargaLista<Ruta> _favoritas = CargaLista<Ruta>(_cargarFavoritas);
   Set<int> _favoritasIds = <int>{};
+  bool _esOfflineGuardadas = false;
   late int _tab;
 
   @override
@@ -64,6 +72,19 @@ class _RutasScreenState extends State<RutasScreen> {
     super.dispose();
   }
 
+  Future<List<Ruta>> _cargarFavoritas() async {
+    try {
+      final List<Ruta> remotas = await _api.favoritas();
+      if (mounted) setState(() => _esOfflineGuardadas = false);
+      return remotas;
+    } catch (_) {
+      // Sin conexión: recurrir a las rutas guardadas/descargadas para offline
+      final List<Ruta> offline = await _offlineDao.listar();
+      if (mounted) setState(() => _esOfflineGuardadas = true);
+      return offline;
+    }
+  }
+
   /// [silencioso]: refresca sin volver a mostrar el circulo de carga ni
   /// repintar lo que ya se ve (cada lista cambia cuando llegan sus datos).
   void _cargar({bool silencioso = false}) {
@@ -72,7 +93,14 @@ class _RutasScreenState extends State<RutasScreen> {
     _favoritas.cargar(silencioso: silencioso);
     _api.favoritasIds().then((Set<int> ids) {
       if (mounted) setState(() => _favoritasIds = ids);
-    }).catchError((_) {});
+    }).catchError((_) async {
+      final List<Ruta> offline = await _offlineDao.listar();
+      if (mounted) {
+        setState(() {
+          _favoritasIds = offline.map((Ruta r) => r.id).toSet();
+        });
+      }
+    });
   }
 
   void _recargar() => _cargar(silencioso: true);
@@ -90,19 +118,29 @@ class _RutasScreenState extends State<RutasScreen> {
   }
 
   Future<void> _toggleFavorita(int rutaId) async {
-    final bool agregada = await _api.toggleFavorita(rutaId);
-    if (!mounted) return;
-    setState(() {
-      if (agregada) {
-        _favoritasIds.add(rutaId);
+    try {
+      final bool agregada = await _api.toggleFavorita(rutaId);
+      if (!mounted) return;
+      setState(() {
+        if (agregada) {
+          _favoritasIds.add(rutaId);
+        } else {
+          _favoritasIds.remove(rutaId);
+        }
+      });
+      _favoritas.cargar(silencioso: true);
+      notificarExito(
+        agregada ? 'Ruta guardada en tus favoritas' : 'Ruta eliminada de tus guardadas',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final bool estaOffline = await _offlineDao.estaGuardada(rutaId);
+      if (estaOffline) {
+        notificarInfo('Esta ruta está guardada para uso sin conexión');
       } else {
-        _favoritasIds.remove(rutaId);
+        notificarError('No se pudo modificar guardadas sin conexión');
       }
-    });
-    _favoritas.cargar(silencioso: true);
-    notificarExito(
-      agregada ? 'Ruta guardada en tus favoritas' : 'Ruta eliminada de tus guardadas',
-    );
+    }
   }
 
   @override
@@ -243,8 +281,11 @@ class _RutasScreenState extends State<RutasScreen> {
       onToggleFavorita: _toggleFavorita,
       onCambio: _recargar,
       onEliminada: _rutaEliminada,
+      esOffline: _esOfflineGuardadas,
       vacioTitulo: 'Sin rutas guardadas',
-      vacioMensaje: 'Guarda tus rutas favoritas desde el catalogo para verlas aqui.',
+      vacioMensaje: _esOfflineGuardadas
+          ? 'No tienes rutas descargadas para consultar sin conexión.'
+          : 'Guarda tus rutas favoritas desde el catalogo para verlas aqui.',
     );
   }
 }
@@ -322,6 +363,7 @@ class _ListaRutas extends StatelessWidget {
     required this.vacioTitulo,
     required this.vacioMensaje,
     this.mostrarEstado = false,
+    this.esOffline = false,
   });
 
   final RutaApi api;
@@ -331,6 +373,7 @@ class _ListaRutas extends StatelessWidget {
   final VoidCallback onCambio;
   final ValueChanged<int> onEliminada;
   final bool mostrarEstado;
+  final bool esOffline;
   final String vacioTitulo;
   final String vacioMensaje;
 
@@ -351,25 +394,61 @@ class _ListaRutas extends StatelessWidget {
       datos: (BuildContext context, List<Ruta> rutas) {
         if (rutas.isEmpty) {
           return FqEmptyState(
-            icon: Icons.route_outlined,
+            icon: esOffline ? Icons.wifi_off_rounded : Icons.route_outlined,
             title: vacioTitulo,
             message: vacioMensaje,
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          itemCount: rutas.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (BuildContext context, int i) => _TarjetaRuta(
-            key: ValueKey<int>(rutas[i].id),
-            api: api,
-            ruta: rutas[i],
-            esFavorita: favoritasIds.contains(rutas[i].id),
-            onToggleFavorita: () => onToggleFavorita(rutas[i].id),
-            mostrarEstado: mostrarEstado,
-            onCambio: onCambio,
-            onEliminada: () => onEliminada(rutas[i].id),
-          ),
+        return Column(
+          children: <Widget>[
+            if (esOffline)
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: const Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      size: 18,
+                      color: Color(0xFF92400E),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Modo sin conexión: mostrando rutas guardadas en tu dispositivo.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF92400E),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                itemCount: rutas.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (BuildContext context, int i) => _TarjetaRuta(
+                  key: ValueKey<int>(rutas[i].id),
+                  api: api,
+                  ruta: rutas[i],
+                  esFavorita: favoritasIds.contains(rutas[i].id),
+                  onToggleFavorita: () => onToggleFavorita(rutas[i].id),
+                  mostrarEstado: mostrarEstado,
+                  onCambio: onCambio,
+                  onEliminada: () => onEliminada(rutas[i].id),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
