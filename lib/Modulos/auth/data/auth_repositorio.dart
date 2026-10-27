@@ -6,6 +6,7 @@ import 'package:fit_quest_go/core/almacen_tokens.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/db/app_database.dart';
 import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
+import 'package:fit_quest_go/core/push/servicio_push.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 
@@ -136,6 +137,11 @@ class AuthRepositorio extends ChangeNotifier {
   }
 
   Future<void> cerrarSesion() async {
+    // Este telefono deja de recibir avisos de la cuenta. Va antes de borrar los
+    // tokens (hace falta la sesion) y sin esperar de mas si no hay red.
+    try {
+      await ServicioPush.instancia.quitar().timeout(const Duration(seconds: 3));
+    } catch (_) {}
     final String? refresh = await _tokens.leerRefresh();
     try {
       await _api.cerrarSesion(refresh);

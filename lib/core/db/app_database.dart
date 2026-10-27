@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
@@ -12,10 +13,19 @@ class AppDatabase {
   static final AppDatabase instancia = AppDatabase._();
 
   static const String _nombre = 'fitquestgo_local.db';
-  static const int _version = 5;
+  static const int _version = 6;
 
   Database? _db;
   Future<Database?>? _abriendo;
+
+  /// Olvida la base abierta (o el intento en curso). Cada prueba empieza de
+  /// cero: un intento que quedo a medias en la zona de una prueba anterior no
+  /// termina nunca y colgaria a las siguientes.
+  @visibleForTesting
+  void reiniciar() {
+    _db = null;
+    _abriendo = null;
+  }
 
   /// Abre (una sola vez) la base. Null si la plataforma no soporta SQLite.
   Future<Database?> abrir() {
@@ -49,6 +59,11 @@ class AppDatabase {
           if (anterior < 5) {
             await db.execute(_ddlInsigniasCache);
           }
+          // v6: avisos que la app genera sola (clima, alertas y destacados
+          // cerca) para que se encuentren en el centro de notificaciones.
+          if (anterior < 6) {
+            await db.execute(_ddlAvisosLocales);
+          }
         },
       );
       return _db;
@@ -71,6 +86,7 @@ class AppDatabase {
       'perfil_cache',
       'notificaciones_cache',
       'insignias_cache',
+      'avisos_locales',
     ]) {
       await db.delete(t);
     }
@@ -103,6 +119,17 @@ CREATE TABLE notificaciones_cache (
   guardado_en TEXT NOT NULL
 )''';
 
+  static const String _ddlAvisosLocales = '''
+CREATE TABLE avisos_locales (
+  id_local INTEGER PRIMARY KEY AUTOINCREMENT,
+  clave TEXT NOT NULL UNIQUE,
+  categoria TEXT NOT NULL,
+  titulo TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  creada_en TEXT NOT NULL,
+  leida INTEGER NOT NULL DEFAULT 0
+)''';
+
   static const String _ddlInsigniasCache = '''
 CREATE TABLE insignias_cache (
   codigo TEXT PRIMARY KEY,
@@ -120,6 +147,7 @@ CREATE TABLE insignias_cache (
     _ddlActividadesPendientes,
     _ddlNotificacionesCache,
     _ddlInsigniasCache,
+    _ddlAvisosLocales,
     '''
 CREATE TABLE sesion_tracking_temp (
   id INTEGER PRIMARY KEY CHECK (id = 1),

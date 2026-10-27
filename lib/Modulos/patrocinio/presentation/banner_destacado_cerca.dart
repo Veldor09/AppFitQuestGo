@@ -43,7 +43,11 @@ class BannerDestacadoCerca extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
                 child: Row(
                   children: <Widget>[
-                    const Icon(Icons.star_rounded, color: FqColors.amber, size: 24),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: FqColors.amber,
+                      size: 24,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(

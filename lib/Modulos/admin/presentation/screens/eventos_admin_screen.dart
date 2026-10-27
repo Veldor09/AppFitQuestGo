@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
 
@@ -20,6 +22,8 @@ class EventosAdminScreen extends StatefulWidget {
 }
 
 class _EventosAdminScreenState extends State<EventosAdminScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   late final ApiClient _api;
   late final bool _cerrarApi;
 
@@ -45,26 +49,37 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   static const Color _colorVerde = Color(0xFFB5E61D);
   static const Color _colorCrema = Color(0xFFFFFCF3);
 
-  static const List<String> _filtros = [
-    'Todos',
-    'Próximos',
-    'En curso',
-    'Finalizados',
+  List<String> get _filtros => [
+    _l10n.usuariosFiltroTodos,
+    _l10n.admEvtFiltroProximos,
+    _l10n.eventoEstadoEnCurso,
+    _l10n.admEvtFiltroFinalizados,
   ];
 
-  static const Map<String, String> _categorias = {
-    'benefico': 'Benéfico',
-    'caminata': 'Caminata',
-    'carrera': 'Carrera',
-    'ciclismo': 'Ciclismo',
-    'senderismo': 'Senderismo',
-    'otro': 'Otro',
+  static const List<String> _categorias = [
+    'benefico',
+    'caminata',
+    'carrera',
+    'ciclismo',
+    'senderismo',
+    'otro',
+  ];
+
+  static const List<String> _opcionesPresencia = ['todos', 'con', 'sin'];
+
+  String _nombrePresencia(String clave) => switch (clave) {
+    'con' => _l10n.admEvtPresCon,
+    'sin' => _l10n.admEvtPresSin,
+    _ => _l10n.usuariosFiltroTodos,
   };
 
-  static const Map<String, String> _opcionesPresencia = {
-    'todos': 'Todos',
-    'con': 'Con',
-    'sin': 'Sin',
+  /// El estado se calcula en español (es la clave interna); se muestra traducido.
+  String _nombreEstado(String estado) => switch (estado) {
+    'Próximo' => _l10n.admEvtEstadoProximo,
+    'En curso' => _l10n.eventoEstadoEnCurso,
+    'Finalizado' => _l10n.admEvtEstadoFinalizado,
+    'Sin fechas' => _l10n.admEvtSinFechas,
+    _ => estado,
   };
 
   @override
@@ -98,9 +113,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       final dynamic respuesta = await _api.get('/eventos/admin/todos');
 
       if (respuesta is! List) {
-        throw const FormatException(
-          'El servidor devolvió un formato de eventos inesperado.',
-        );
+        throw FormatException(_l10n.admEvtFormatoInesperado);
       }
 
       final eventos = respuesta.map((dynamic item) {
@@ -126,11 +139,11 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   String _mensajeError(Object error) {
     if (error is ApiException) {
       if (error.statusCode == 401) {
-        return 'Tu sesión expiró. Iniciá sesión nuevamente.';
+        return _l10n.admEvtSesionExpiro;
       }
 
       if (error.statusCode == 403) {
-        return 'No tenés permisos para administrar eventos.';
+        return _l10n.admEvtSinPermisos;
       }
 
       return error.message;
@@ -140,8 +153,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       return error.message;
     }
 
-    return 'No se pudieron cargar los eventos. '
-        'Verificá la conexión con el servidor.';
+    return _l10n.admEvtErrorCarga;
   }
 
   DateTime? _fecha(dynamic valor) {
@@ -153,7 +165,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   String _formatearFecha(dynamic valor) {
     final fecha = _fecha(valor);
 
-    if (fecha == null) return 'Sin fecha';
+    if (fecha == null) return _l10n.admEvtSinFecha;
 
     String dos(int numero) => numero.toString().padLeft(2, '0');
 
@@ -211,11 +223,11 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       final id = datos['id'];
 
       if (id != null) {
-        return 'Usuario #$id';
+        return _l10n.admEvtUsuarioN('$id');
       }
     }
 
-    return 'No disponible';
+    return _l10n.admEvtNoDisponible;
   }
 
   String _claveOrganizador(Map<String, dynamic> evento) {
@@ -330,7 +342,10 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       final categoria =
           (evento['categoria'] ?? '').toString().toLowerCase();
       final categoriaVisible =
-          (_categorias[evento['categoria']] ?? '').toLowerCase();
+          categoriaEventoLabel(
+            _l10n,
+            '${evento['categoria'] ?? ''}',
+          ).toLowerCase();
       final empresa = _empresa(evento).toLowerCase();
 
       return nombre.contains(texto) ||
@@ -366,7 +381,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        estado,
+        _nombreEstado(estado),
         style: TextStyle(
           color: color,
           fontSize: 11,
@@ -432,8 +447,8 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 initialDateRange: actual,
                 initialEntryMode: DatePickerEntryMode.calendar,
                 helpText: esInicio
-                    ? 'Rango de fecha de inicio'
-                    : 'Rango de fecha de finalización',
+                    ? _l10n.admEvtRangoInicio
+                    : _l10n.admEvtRangoFin,
               );
 
               if (!sheetContext.mounted || seleccionado == null) return;
@@ -459,10 +474,10 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                 ).copyWith(labelText: titulo),
-                items: _opcionesPresencia.entries.map((opcion) {
+                items: _opcionesPresencia.map((clave) {
                   return DropdownMenuItem<String>(
-                    value: opcion.key,
-                    child: Text(opcion.value),
+                    value: clave,
+                    child: Text(_nombrePresencia(clave)),
                   );
                 }).toList(),
                 onChanged: (nuevo) {
@@ -480,17 +495,17 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Filtros avanzados',
-                      style: TextStyle(
+                    Text(
+                      _l10n.admEvtFiltrosAvanzados,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Combiná criterios para encontrar eventos específicos.',
-                      style: TextStyle(fontSize: 12),
+                    Text(
+                      _l10n.admEvtFiltrosSub,
+                      style: const TextStyle(fontSize: 12),
                     ),
                     const SizedBox(height: 18),
                     Expanded(
@@ -500,19 +515,21 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                             key: ValueKey('categoria:$categoria'),
                             initialValue: categoria,
                             isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Categoría',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: _l10n.admEvtCategoria,
+                              border: const OutlineInputBorder(),
                             ),
                             items: [
-                              const DropdownMenuItem<String>(
+                              DropdownMenuItem<String>(
                                 value: null,
-                                child: Text('Todas las categorías'),
+                                child: Text(_l10n.admEvtTodasCategorias),
                               ),
-                              ..._categorias.entries.map((opcion) {
+                              ..._categorias.map((clave) {
                                 return DropdownMenuItem<String>(
-                                  value: opcion.key,
-                                  child: Text(opcion.value),
+                                  value: clave,
+                                  child: Text(
+                                    categoriaEventoLabel(_l10n, clave),
+                                  ),
                                 );
                               }),
                             ],
@@ -528,14 +545,14 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                                     ? organizador
                                     : null,
                             isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Organizador',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: _l10n.admEvtOrganizador,
+                              border: const OutlineInputBorder(),
                             ),
                             items: [
-                              const DropdownMenuItem<String>(
+                              DropdownMenuItem<String>(
                                 value: null,
-                                child: Text('Todos los organizadores'),
+                                child: Text(_l10n.admEvtTodosOrganizadores),
                               ),
                               ...organizadores.entries.map((opcion) {
                                 return DropdownMenuItem<String>(
@@ -549,9 +566,9 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                             },
                           ),
                           const SizedBox(height: 20),
-                          const Text(
-                            'Fechas',
-                            style: TextStyle(
+                          Text(
+                            _l10n.admEvtFechas,
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
@@ -566,9 +583,11 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                             icon: const Icon(Icons.calendar_month_outlined),
                             label: Text(
                               rangoInicio == null
-                                  ? 'Seleccionar rango de inicio'
-                                  : 'Inicio: ${_formatearDia(rangoInicio!.start)}'
-                                      ' - ${_formatearDia(rangoInicio!.end)}',
+                                  ? _l10n.admEvtSelRangoInicio
+                                  : _l10n.admEvtInicioRango(
+                                      _formatearDia(rangoInicio!.start),
+                                      _formatearDia(rangoInicio!.end),
+                                    ),
                             ),
                           ),
                           if (rangoInicio != null)
@@ -581,7 +600,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                                 onPressed: () {
                                   actualizarModal(() => rangoInicio = null);
                                 },
-                                child: const Text('Quitar rango de inicio'),
+                                child: Text(_l10n.admEvtQuitarInicio),
                               ),
                             ),
                           const SizedBox(height: 8),
@@ -594,9 +613,11 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                             icon: const Icon(Icons.event_available_outlined),
                             label: Text(
                               rangoFin == null
-                                  ? 'Seleccionar rango de finalización'
-                                  : 'Fin: ${_formatearDia(rangoFin!.start)}'
-                                      ' - ${_formatearDia(rangoFin!.end)}',
+                                  ? _l10n.admEvtSelRangoFin
+                                  : _l10n.admEvtFinRango(
+                                      _formatearDia(rangoFin!.start),
+                                      _formatearDia(rangoFin!.end),
+                                    ),
                             ),
                           ),
                           if (rangoFin != null)
@@ -609,27 +630,26 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                                 onPressed: () {
                                   actualizarModal(() => rangoFin = null);
                                 },
-                                child:
-                                    const Text('Quitar rango de finalización'),
+                                child: Text(_l10n.admEvtQuitarFin),
                               ),
                             ),
                           const SizedBox(height: 20),
-                          const Text(
-                            'Áreas y recorridos',
-                            style: TextStyle(
+                          Text(
+                            _l10n.admEvtAreasRecorridos,
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 12),
                           selectorPresencia(
-                            titulo: 'Áreas',
+                            titulo: _l10n.admEvtAreas,
                             valor: areas,
                             cambiar: (nuevo) => areas = nuevo,
                           ),
                           const SizedBox(height: 16),
                           selectorPresencia(
-                            titulo: 'Recorridos',
+                            titulo: _l10n.admEvtRecorridos,
                             valor: recorridos,
                             cambiar: (nuevo) => recorridos = nuevo,
                           ),
@@ -656,7 +676,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                               });
                             },
                             icon: const Icon(Icons.filter_alt_off_outlined),
-                            label: const Text('Limpiar filtros'),
+                            label: Text(_l10n.admLimpiarFiltros),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -669,7 +689,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                             onPressed: () {
                               Navigator.pop(sheetContext, true);
                             },
-                            child: const Text('Aplicar filtros'),
+                            child: Text(_l10n.admAplicarFiltros),
                           ),
                         ),
                       ],
@@ -705,7 +725,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
             borderRadius: BorderRadius.circular(24),
           ),
           title: Text(
-            (evento['nombre'] ?? 'Evento').toString(),
+            (evento['nombre'] ?? _l10n.admEvtEvento).toString(),
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
           content: SizedBox(
@@ -715,31 +735,39 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _detalle('Estado', _estado(evento)),
                   _detalle(
-                    'Categoría',
-                    evento['categoria']?.toString() ?? '-',
+                    _l10n.perfilEstado,
+                    _nombreEstado(_estado(evento)),
                   ),
-                  _detalle('Empresa', _empresa(evento)),
                   _detalle(
-                    'Inicio',
+                    _l10n.admEvtCategoria,
+                    evento['categoria'] == null
+                        ? '-'
+                        : categoriaEventoLabel(
+                            _l10n,
+                            evento['categoria'].toString(),
+                          ),
+                  ),
+                  _detalle(_l10n.rolEmpresa, _empresa(evento)),
+                  _detalle(
+                    _l10n.admEvtInicio,
                     _formatearFecha(evento['fechaInicio']),
                   ),
                   _detalle(
-                    'Fin',
+                    _l10n.admEvtFin,
                     _formatearFecha(evento['fechaFin']),
                   ),
                   _detalle(
-                    'Descripción',
+                    _l10n.admDescripcion,
                     evento['descripcion']?.toString() ??
-                        'Sin descripción',
+                        _l10n.admRepSinDescripcion,
                   ),
                   _detalle(
-                    'Áreas',
+                    _l10n.admEvtAreas,
                     '${(evento['areas'] as List?)?.length ?? 0}',
                   ),
                   _detalle(
-                    'Recorridos',
+                    _l10n.admEvtRecorridos,
                     '${(evento['recorridos'] as List?)?.length ?? 0}',
                   ),
                 ],
@@ -749,11 +777,11 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cerrar'),
+              child: Text(_l10n.comunCerrar),
             ),
             TextButton.icon(
               icon: const Icon(Icons.delete_outline),
-              label: const Text('Eliminar evento'),
+              label: Text(_l10n.admEvtEliminar),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.red.shade700,
               ),
@@ -785,22 +813,21 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          title: const Text('¿Eliminar este evento?'),
+          title: Text(_l10n.admEvtConfirmarTitulo),
           content: Text(
-            'Se eliminará "${evento['nombre']}".\n\n'
-            'Esta acción es permanente y no se puede deshacer.',
+            _l10n.admEvtConfirmarMsg('${evento['nombre']}'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar'),
+              child: Text(_l10n.comunCancelar),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.red.shade700,
               ),
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Eliminar definitivamente'),
+              child: Text(_l10n.admEvtEliminarDef),
             ),
           ],
         );
@@ -819,8 +846,8 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Evento eliminado correctamente.'),
+        SnackBar(
+          content: Text(_l10n.admEvtEliminado),
         ),
       );
 
@@ -843,7 +870,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     final eventos = _eventosFiltrados;
 
     return AdminListScaffold(
-      searchHint: 'Buscar eventos por nombre, categoría o empresa...',
+      searchHint: _l10n.admEvtBuscar,
       searchController: _busquedaController,
       onSearch: (texto) {
         setState(() => _busqueda = texto);
@@ -862,7 +889,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: Chip(
                 label: Text(
-                  '$_cantidadFiltrosActivos filtros activos',
+                  _l10n.admEvtFiltrosActivos(_cantidadFiltrosActivos),
                   style: const TextStyle(fontSize: 11),
                 ),
                 onDeleted: _limpiarFiltrosAplicados,
@@ -870,7 +897,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
               ),
             ),
           IconButton(
-            tooltip: 'Actualizar eventos',
+            tooltip: _l10n.admEvtActualizar,
             icon: const Icon(Icons.refresh),
             onPressed: _cargando || _eliminando ? null : _cargarEventos,
           ),
@@ -880,15 +907,17 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         loading: _cargando,
         error: _error,
         onRetry: _cargarEventos,
-        emptyTitle: 'Sin eventos',
+        emptyTitle: _l10n.admEvtSin,
         emptyMessage: _busqueda.isNotEmpty ||
                 _filtro != 0 ||
                 _cantidadFiltrosActivos > 0
-            ? 'No hay eventos que coincidan con los filtros.'
-            : 'Todavía no hay eventos registrados.',
+            ? _l10n.admEvtSinCoincidencias
+            : _l10n.admEvtSinRegistrados,
         rows: eventos.map((evento) {
-          final nombre = (evento['nombre'] ?? 'Sin nombre').toString();
-          final categoria = (evento['categoria'] ?? '-').toString();
+          final nombre = (evento['nombre'] ?? _l10n.admEvtSinNombre).toString();
+          final categoria = evento['categoria'] == null
+              ? '-'
+              : categoriaEventoLabel(_l10n, evento['categoria'].toString());
           final empresa = _empresa(evento);
           final estado = _estado(evento);
 

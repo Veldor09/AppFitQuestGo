@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Barra de paginacion tipica de tabla: selector de filas por pagina, rango
 /// visible y flechas anterior / siguiente.
@@ -45,8 +46,8 @@ class PaginacionBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
-          const Text(
-            'Filas por pagina',
+          Text(
+            AppLocalizations.of(context)!.paginacionFilasPorPagina,
             style: TextStyle(fontSize: 10, color: FqColors.muted),
           ),
           const SizedBox(width: 8),

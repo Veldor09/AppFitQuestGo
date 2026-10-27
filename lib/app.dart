@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/idioma/idioma_app.dart';
+import 'package:fit_quest_go/core/navegador_app.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
+import 'package:fit_quest_go/core/push/registro_push.dart';
 import 'package:fit_quest_go/core/theme/fq_theme.dart';
+import 'package:fit_quest_go/core/validaciones/validadores.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/admin_shell.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
@@ -13,30 +17,44 @@ import 'package:fit_quest_go/Modulos/home/presentation/user_shell.dart';
 
 /// Widget raiz. Publica el [AuthRepositorio] al arbol y monta el `MaterialApp`.
 class FitQuestGoApp extends StatelessWidget {
-  const FitQuestGoApp({super.key, required this.auth});
+  const FitQuestGoApp({super.key, required this.auth, this.idioma});
 
   final AuthRepositorio auth;
 
+  /// El idioma elegido en Preferencias; por defecto el de toda la app.
+  final ControladorIdioma? idioma;
+
   @override
   Widget build(BuildContext context) {
+    final ControladorIdioma controlador = idioma ?? ControladorIdioma.instancia;
     return AuthScope(
       auth: auth,
-      child: MaterialApp(
-        title: 'FitQuest Go',
-        debugShowCheckedModeBanner: false,
-        theme: buildFqTheme(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        // `es` primero: si el idioma del dispositivo no esta en esta lista,
-        // la app cae en espanol (el idioma con el que se construyo y probo
-        // el resto de la UI), no en ingles.
-        supportedLocales: const <Locale>[
-          Locale('es'),
-          Locale('en'),
-          Locale('pt', 'BR'),
-        ],
-        home: const _RootGate(),
-        builder: (BuildContext context, Widget? child) =>
-            NotificacionesHost(child: child ?? const SizedBox.shrink()),
+      child: ListenableBuilder(
+        listenable: controlador,
+        builder: (BuildContext context, Widget? _) => MaterialApp(
+          title: 'FitQuest Go',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: navegadorApp,
+          theme: buildFqTheme(),
+          // Nulo = el idioma del telefono; si la persona eligio uno, manda ese.
+          locale: controlador.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          // `es` primero: si el idioma del dispositivo no esta en esta lista,
+          // la app cae en espanol (el idioma con el que se construyo y probo
+          // el resto de la UI), no en ingles.
+          supportedLocales: const <Locale>[
+            Locale('es'),
+            Locale('en'),
+            Locale('pt', 'BR'),
+          ],
+          home: const _RootGate(),
+          builder: (BuildContext context, Widget? child) {
+            // Los validadores de formularios no tienen contexto: se les pasa
+            // aqui el idioma vigente cada vez que cambia.
+            usarTextosDeValidacion(AppLocalizations.of(context));
+            return NotificacionesHost(child: child ?? const SizedBox.shrink());
+          },
+        ),
       ),
     );
   }
@@ -66,10 +84,12 @@ class _RootGate extends StatelessWidget {
     switch (pantallaRaizDe(auth.usuario!)) {
       case PantallaRaiz.admin:
         return const AdminShell();
+      // Avisos fuera de la app: para quien publica y para quien hace deporte.
+      // El admin no los recibe (no hay nada que avisarle).
       case PantallaRaiz.empresa:
-        return const EmpresaShell();
+        return const RegistroPush(child: EmpresaShell());
       case PantallaRaiz.usuario:
-        return const UserShell();
+        return const RegistroPush(child: UserShell());
     }
   }
 }

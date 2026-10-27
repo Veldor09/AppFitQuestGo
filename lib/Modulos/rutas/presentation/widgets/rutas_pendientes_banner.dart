@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/application/sync_rutas_service.dart';
 
 /// Aviso "Tienes N rutas pendientes de subir" con boton Sincronizar. Intenta
@@ -65,12 +66,10 @@ class _RutasPendientesBannerState extends State<RutasPendientesBanner> {
       _pendientes = restantes;
     });
     if (subidas > 0) {
-      notificarExito(
-        subidas == 1 ? 'Ruta pendiente subida' : '$subidas rutas pendientes subidas',
-      );
+      notificarExito(AppLocalizations.of(context)!.rutasPendientesSubidas(subidas));
       widget.alSincronizar?.call();
     } else if (!silencioso && restantes > 0) {
-      notificarError('Aún sin conexión. Se reintentará automáticamente.');
+      notificarError(AppLocalizations.of(context)!.rutasSinConexionReintento);
     }
   }
 
@@ -91,9 +90,7 @@ class _RutasPendientesBannerState extends State<RutasPendientesBanner> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              _pendientes == 1
-                  ? 'Tienes 1 ruta pendiente de subir'
-                  : 'Tienes $_pendientes rutas pendientes de subir',
+              AppLocalizations.of(context)!.rutasPendientesSubir(_pendientes),
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ),
@@ -105,7 +102,7 @@ class _RutasPendientesBannerState extends State<RutasPendientesBanner> {
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Sincronizar'),
+                : Text(AppLocalizations.of(context)!.rutasSincronizar),
           ),
         ],
       ),

@@ -3060,5 +3060,1392 @@
   "fotoNoSubida": "Se guardó, pero no se pudo subir la foto.",
   "@fotoNoSubida": {
     "description": "Toast when the photo upload fails after saving a route or event."
+  },
+  "preferenciasIdiomaTitulo": "Idioma de la app",
+  "@preferenciasIdiomaTitulo": {
+    "description": "Language section title in preferences"
+  },
+  "preferenciasIdiomaDesc": "Usa la app en el idioma que prefieras, aunque tu celular esté en otro.",
+  "@preferenciasIdiomaDesc": {
+    "description": "Language section description in preferences"
+  },
+  "preferenciasIdiomaAuto": "Igual que el celular",
+  "@preferenciasIdiomaAuto": {
+    "description": "Language option: follow the phone language"
+  },
+  "eventoRecorridoVozLlegoInicio": "Has llegado al inicio del evento. Comienza el recorrido",
+  "@eventoRecorridoVozLlegoInicio": {
+    "description": "Voice: arrived at the event route start"
+  },
+  "eventoRecorridoVozLlegoEvento": "Has llegado al evento {nombre}",
+  "@eventoRecorridoVozLlegoEvento": {
+    "description": "Voice: arrived at the event",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "eventoRecorridoVozDesviado": "Atención: te has desviado del recorrido del evento",
+  "@eventoRecorridoVozDesviado": {
+    "description": "Voice: off the event route"
+  },
+  "eventoRecorridoVozRegreso": "Has regresado al recorrido del evento",
+  "@eventoRecorridoVozRegreso": {
+    "description": "Voice: back on the event route"
+  },
+  "eventoRecorridoVozCompletado": "¡Has completado el recorrido del evento!",
+  "@eventoRecorridoVozCompletado": {
+    "description": "Voice: event route finished"
+  },
+  "eventoRecorridoNotifTitulo": "Rumbo al evento: {nombre}",
+  "@eventoRecorridoNotifTitulo": {
+    "description": "Background GPS notification title",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "eventoRecorridoNotifMensaje": "Navegando con FitQuest Go",
+  "@eventoRecorridoNotifMensaje": {
+    "description": "Background GPS notification body"
+  },
+  "eventoRecorridoFinalizarMensaje": "¿Quieres terminar tu recorrido del evento?",
+  "@eventoRecorridoFinalizarMensaje": {
+    "description": "Confirm finishing the event route"
+  },
+  "eventoRecorridoCompletadoTitulo": "¡Has completado el recorrido!",
+  "@eventoRecorridoCompletadoTitulo": {
+    "description": "Arrival sheet title with a route"
+  },
+  "eventoRecorridoLlegasteTitulo": "¡Has llegado al evento!",
+  "@eventoRecorridoLlegasteTitulo": {
+    "description": "Arrival sheet title without a route"
+  },
+  "eventoRecorridoEstadoCompletaste": "¡Completaste el recorrido!",
+  "@eventoRecorridoEstadoCompletaste": {
+    "description": "Status chip: route finished"
+  },
+  "eventoRecorridoEstadoLlegaste": "¡Llegaste al evento!",
+  "@eventoRecorridoEstadoLlegaste": {
+    "description": "Status chip: arrived"
+  },
+  "eventoRecorridoEstadoRumboEvento": "Rumbo al evento · {distancia}",
+  "@eventoRecorridoEstadoRumboEvento": {
+    "description": "Status chip: heading to the event",
+    "placeholders": {"distancia":{"type":"String"}}
+  },
+  "eventoRecorridoVerCompleto": "Ver evento completo",
+  "@eventoRecorridoVerCompleto": {
+    "description": "Map button tooltip"
+  },
+  "eventoRecorridoMetricaEvento": "EVENTO",
+  "@eventoRecorridoMetricaEvento": {
+    "description": "Metric label: distance to the event"
+  },
+  "eventoRecorridoMetricaAPie": "A PIE",
+  "@eventoRecorridoMetricaAPie": {
+    "description": "Metric label: walking time"
+  },
+  "eventoRecorridoMetricaEstado": "ESTADO",
+  "@eventoRecorridoMetricaEstado": {
+    "description": "Metric label: status"
+  },
+  "eventoRecorridoMinutos": "{min} min",
+  "@eventoRecorridoMinutos": {
+    "description": "Approximate walking minutes",
+    "placeholders": {"min":{"type":"int"}}
+  },
+  "eventoRecorridoValorLlegaste": "Llegaste",
+  "@eventoRecorridoValorLlegaste": {
+    "description": "Status value: arrived"
+  },
+  "eventoRecorridoValorEnCamino": "En camino",
+  "@eventoRecorridoValorEnCamino": {
+    "description": "Status value: on the way"
+  },
+  "eventoRecorridoGuiaInicio": "Sigue la línea verde hasta el inicio del recorrido",
+  "@eventoRecorridoGuiaInicio": {
+    "description": "Hint while heading to the route start"
+  },
+  "eventoRecorridoEmpezar": "Empezar recorrido",
+  "@eventoRecorridoEmpezar": {
+    "description": "Start button"
+  },
+  "eventoRecorridoVerDetalles": "Ver detalles del evento",
+  "@eventoRecorridoVerDetalles": {
+    "description": "Button: open event details"
+  },
+  "eventoRecorridoDestinoLlegado": "¡Has llegado al destino del evento!",
+  "@eventoRecorridoDestinoLlegado": {
+    "description": "Hint after arriving"
+  },
+  "eventoRecorridoGuiaDestino": "Sigue la línea y los puntos verdes hasta el evento",
+  "@eventoRecorridoGuiaDestino": {
+    "description": "Hint while heading to the event"
+  },
+  "eventoRecorridoYaLlegue": "¡Ya llegué!",
+  "@eventoRecorridoYaLlegue": {
+    "description": "Button: mark arrival"
+  },
+  "recorridoNotifTitulo": "Navegando: {ruta}",
+  "@recorridoNotifTitulo": {
+    "description": "Background GPS notification title while following a route",
+    "placeholders": {"ruta":{"type":"String"}}
+  },
+  "recorridoNotifMensaje": "Siguiendo ruta en FitQuest Go",
+  "@recorridoNotifMensaje": {
+    "description": "Background GPS notification body while following a route"
+  },
+  "recorridoTooltipVerRutaCompleta": "Ver ruta completa",
+  "@recorridoTooltipVerRutaCompleta": {
+    "description": "Map button tooltip: fit the whole route"
+  },
+  "rutasFavoritaAgregada": "Ruta guardada en tus favoritas",
+  "@rutasFavoritaAgregada": {
+    "description": "Toast: route bookmarked"
+  },
+  "rutasFavoritaQuitada": "Ruta eliminada de tus guardadas",
+  "@rutasFavoritaQuitada": {
+    "description": "Toast: route un-bookmarked"
+  },
+  "rutasGuardadaSinConexion": "Esta ruta está guardada para uso sin conexión",
+  "@rutasGuardadaSinConexion": {
+    "description": "Toast: cannot unsave while offline because it is downloaded"
+  },
+  "rutasErrorGuardadasSinConexion": "No se pudo modificar guardadas sin conexión",
+  "@rutasErrorGuardadasSinConexion": {
+    "description": "Toast: bookmark failed offline"
+  },
+  "rutasSinGuardadas": "Sin rutas guardadas",
+  "@rutasSinGuardadas": {
+    "description": "Empty state title for saved routes"
+  },
+  "rutasSinGuardadasOffline": "No tienes rutas descargadas para consultar sin conexión.",
+  "@rutasSinGuardadasOffline": {
+    "description": "Empty state message offline"
+  },
+  "rutasSinGuardadasMensaje": "Guarda tus rutas favoritas desde el catálogo para verlas aquí.",
+  "@rutasSinGuardadasMensaje": {
+    "description": "Empty state message for saved routes"
+  },
+  "rutasModoSinConexion": "Modo sin conexión: mostrando rutas guardadas en tu dispositivo.",
+  "@rutasModoSinConexion": {
+    "description": "Banner shown while offline in routes"
+  },
+  "rutasQuitarGuardada": "Quitar de guardadas",
+  "@rutasQuitarGuardada": {
+    "description": "Tooltip of the bookmark button when saved"
+  },
+  "rutasGuardarRuta": "Guardar ruta",
+  "@rutasGuardarRuta": {
+    "description": "Tooltip of the bookmark button when not saved"
+  },
+  "rutasCreadaPor": "Creada por {nombre}",
+  "@rutasCreadaPor": {
+    "description": "Route detail: author",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "rutasSincronizar": "Sincronizar",
+  "@rutasSincronizar": {
+    "description": "Button: upload pending routes"
+  },
+  "rutasPendientesSubir": "{n, plural, =1{Tienes 1 ruta pendiente de subir} other{Tienes {n} rutas pendientes de subir}}",
+  "@rutasPendientesSubir": {
+    "description": "Banner: routes waiting to upload",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "rutasPendientesSubidas": "{n, plural, =1{Ruta pendiente subida} other{{n} rutas pendientes subidas}}",
+  "@rutasPendientesSubidas": {
+    "description": "Toast: routes uploaded",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "rutasSinConexionReintento": "Aún sin conexión. Se reintentará automáticamente.",
+  "@rutasSinConexionReintento": {
+    "description": "Toast: sync failed"
+  },
+  "grabacionNotifTitulo": "FitQuest Go · Grabando ruta",
+  "@grabacionNotifTitulo": {
+    "description": "Background GPS notification title while recording"
+  },
+  "grabacionNotifMensaje": "Grabación de recorrido GPS en curso...",
+  "@grabacionNotifMensaje": {
+    "description": "Background GPS notification body while recording"
+  },
+  "notificacionesSinConexionTitulo": "Sin notificaciones sin conexión",
+  "@notificacionesSinConexionTitulo": {
+    "description": "Empty state title offline"
+  },
+  "notificacionesSinConexionMensaje": "No tienes notificaciones guardadas en tu dispositivo.",
+  "@notificacionesSinConexionMensaje": {
+    "description": "Empty state message offline"
+  },
+  "notificacionesModoSinConexion": "Modo sin conexión: mostrando notificaciones guardadas en tu dispositivo.",
+  "@notificacionesModoSinConexion": {
+    "description": "Banner shown while offline in notifications"
+  },
+  "notificacionesTiempoAhora": "Justo ahora",
+  "@notificacionesTiempoAhora": {
+    "description": "Relative time under a minute"
+  },
+  "notificacionesTiempoMinutos": "Hace {n} min",
+  "@notificacionesTiempoMinutos": {
+    "description": "Relative time in minutes",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "notificacionesTiempoHoras": "{n, plural, =1{Hace 1 hora} other{Hace {n} horas}}",
+  "@notificacionesTiempoHoras": {
+    "description": "Relative time in hours",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "notificacionesTiempoAyer": "Ayer",
+  "@notificacionesTiempoAyer": {
+    "description": "Relative time: yesterday"
+  },
+  "notificacionesTiempoDias": "Hace {n} días",
+  "@notificacionesTiempoDias": {
+    "description": "Relative time in days",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "insigniasModoSinConexion": "Modo sin conexión: mostrando insignias guardadas en tu dispositivo.",
+  "@insigniasModoSinConexion": {
+    "description": "Banner shown while offline in badges"
+  },
+  "insigniasSinConexionMensaje": "No tienes insignias guardadas en tu dispositivo.",
+  "@insigniasSinConexionMensaje": {
+    "description": "Empty state message offline"
+  },
+  "perfilModoSinConexion": "Modo sin conexión: mostrando datos guardados. Tus rutas descargadas siguen disponibles.",
+  "@perfilModoSinConexion": {
+    "description": "Banner shown while offline in profile"
+  },
+  "actividadesErrorCarga": "No se pudieron cargar las actividades.",
+  "@actividadesErrorCarga": {
+    "description": "Activity picker error"
+  },
+  "actividadesVacio": "No hay actividades disponibles.",
+  "@actividadesVacio": {
+    "description": "Activity picker empty"
+  },
+  "actividadesSinConexionCatalogo": "Sin conexión: usando catálogo de actividades guardado.",
+  "@actividadesSinConexionCatalogo": {
+    "description": "Activity picker offline note"
+  },
+  "alertaTiposErrorCarga": "No se pudieron cargar los tipos de alerta.",
+  "@alertaTiposErrorCarga": {
+    "description": "Alert form error"
+  },
+  "alertaTiposVacio": "No hay tipos de alerta disponibles.",
+  "@alertaTiposVacio": {
+    "description": "Alert form empty"
+  },
+  "nodoCategoriasErrorCarga": "No se pudieron cargar las categorías.",
+  "@nodoCategoriasErrorCarga": {
+    "description": "Node form error"
+  },
+  "nodoCategoriasVacio": "No hay categorías disponibles actualmente.",
+  "@nodoCategoriasVacio": {
+    "description": "Node form empty"
+  },
+  "paginacionFilasPorPagina": "Filas por página",
+  "@paginacionFilasPorPagina": {
+    "description": "Pagination bar label"
+  },
+  "validacionObligatorio": "Este campo es obligatorio",
+  "@validacionObligatorio": {
+    "description": "Default required message"
+  },
+  "validacionNombreObligatorio": "El nombre es obligatorio",
+  "@validacionNombreObligatorio": {
+    "description": "Name required"
+  },
+  "validacionMaximo": "Maximo {n} caracteres",
+  "@validacionMaximo": {
+    "description": "Max length",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "validacionMinimo": "Minimo {n} caracteres",
+  "@validacionMinimo": {
+    "description": "Min length",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "validacionSinNumeros": "No se pueden digitar numeros",
+  "@validacionSinNumeros": {
+    "description": "No digits allowed"
+  },
+  "validacionSinEspeciales": "No se admiten caracteres especiales",
+  "@validacionSinEspeciales": {
+    "description": "No special characters"
+  },
+  "validacionCorreoFormato": "El correo no tiene un formato valido",
+  "@validacionCorreoFormato": {
+    "description": "Email format"
+  },
+  "comunActualizar": "Actualizar",
+  "@comunActualizar": {
+    "description": "Generic refresh button"
+  },
+  "notificacionesFiltroPatrocinio": "Patrocinio",
+  "@notificacionesFiltroPatrocinio": {
+    "description": "Notification filter chip: sponsorship"
+  },
+  "notificacionesFiltroClima": "Clima",
+  "@notificacionesFiltroClima": {
+    "description": "Notification filter chip: weather"
+  },
+  "planTitulo": "Plan de patrocinio",
+  "@planTitulo": {
+    "description": "Title of the sponsorship plan screen"
+  },
+  "planIntro": "Con un plan puedes destacar tus comercios y eventos en el mapa. El equipo revisa cada solicitud antes de activarla.",
+  "@planIntro": {
+    "description": "Intro text"
+  },
+  "planActivoTitulo": "Plan activo",
+  "@planActivoTitulo": {
+    "description": "Status card title when the plan is active"
+  },
+  "planActivoDetalle": "{plan} · vence el {fecha}",
+  "@planActivoDetalle": {
+    "description": "Active plan detail",
+    "placeholders": {"plan":{"type":"String"},"fecha":{"type":"String"}}
+  },
+  "planDiasRestantes": "{n, plural, =0{Vence hoy} =1{Queda 1 día} other{Quedan {n} días}}",
+  "@planDiasRestantes": {
+    "description": "Days left in the active plan",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "planActivoAyuda": "Ya puedes activar \"Destacar\" en tus eventos y puntos desde Mis eventos y las fichas de cada uno.",
+  "@planActivoAyuda": {
+    "description": "Help under the active plan"
+  },
+  "planPendienteTitulo": "Solicitud en revisión",
+  "@planPendienteTitulo": {
+    "description": "Status card title while waiting for the admin"
+  },
+  "planPendienteDetalle": "Pediste \"{plan}\". El equipo la revisará y te avisaremos aquí y en tu celular cuando tenga respuesta.",
+  "@planPendienteDetalle": {
+    "description": "Pending request detail",
+    "placeholders": {"plan":{"type":"String"}}
+  },
+  "planRechazadaAviso": "Tu última solicitud no fue aprobada. El motivo está en tus notificaciones; puedes pedir un plan de nuevo.",
+  "@planRechazadaAviso": {
+    "description": "Shown after a rejected request"
+  },
+  "planVencidoAviso": "Tu plan venció. Solicita uno nuevo para volver a destacar.",
+  "@planVencidoAviso": {
+    "description": "Shown after the plan expired"
+  },
+  "planSuspendidoAviso": "El equipo suspendió tu plan. Si crees que es un error, escríbenos.",
+  "@planSuspendidoAviso": {
+    "description": "Shown after the plan was suspended"
+  },
+  "planDisponibles": "Planes disponibles",
+  "@planDisponibles": {
+    "description": "Section title"
+  },
+  "planDuracion": "{dias} días",
+  "@planDuracion": {
+    "description": "Plan duration",
+    "placeholders": {"dias":{"type":"int"}}
+  },
+  "planSolicitar": "Solicitar plan",
+  "@planSolicitar": {
+    "description": "Button"
+  },
+  "planConfirmarTitulo": "¿Solicitar este plan?",
+  "@planConfirmarTitulo": {
+    "description": "Dialog title"
+  },
+  "planConfirmarMensaje": "{plan} · {precio} por {dias} días. El equipo revisará tu solicitud antes de activarlo.",
+  "@planConfirmarMensaje": {
+    "description": "Dialog message",
+    "placeholders": {"plan":{"type":"String"},"precio":{"type":"String"},"dias":{"type":"int"}}
+  },
+  "planSolicitudEnviada": "Solicitud enviada. Te avisaremos cuando la revisen.",
+  "@planSolicitudEnviada": {
+    "description": "Success toast"
+  },
+  "planYaTiene": "Ya tienes una solicitud pendiente o un plan activo.",
+  "@planYaTiene": {
+    "description": "Conflict toast"
+  },
+  "planErrorSolicitar": "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+  "@planErrorSolicitar": {
+    "description": "Generic error toast"
+  },
+  "planSinPlanes": "Por ahora no hay planes disponibles para tu país.",
+  "@planSinPlanes": {
+    "description": "Empty state"
+  },
+  "planErrorCarga": "No se pudo cargar tu plan.",
+  "@planErrorCarga": {
+    "description": "Load error"
+  },
+  "admActivo": "Activo",
+  "@admActivo": {
+    "description": "Admin: active (masculine)"
+  },
+  "admInactivo": "Inactivo",
+  "@admInactivo": {
+    "description": "Admin: inactive (masculine)"
+  },
+  "admActiva": "Activa",
+  "@admActiva": {
+    "description": "Admin: active (feminine)"
+  },
+  "admInactiva": "Inactiva",
+  "@admInactiva": {
+    "description": "Admin: inactive (feminine)"
+  },
+  "admSinRegistros": "Sin registros",
+  "@admSinRegistros": {
+    "description": "Admin table default empty title"
+  },
+  "admDescripcion": "Descripción",
+  "@admDescripcion": {
+    "description": "Admin field label"
+  },
+  "admConfirmar": "Confirmar",
+  "@admConfirmar": {
+    "description": "Admin confirm button"
+  },
+  "admArchivar": "Archivar",
+  "@admArchivar": {
+    "description": "Admin archive button"
+  },
+  "admResolver": "Resolver",
+  "@admResolver": {
+    "description": "Admin resolve button"
+  },
+  "admDetalle": "Detalle",
+  "@admDetalle": {
+    "description": "Admin column: details"
+  },
+  "admFecha": "Fecha",
+  "@admFecha": {
+    "description": "Admin column: date"
+  },
+  "admAccion": "Acción",
+  "@admAccion": {
+    "description": "Admin column: action"
+  },
+  "admEntidad": "Entidad",
+  "@admEntidad": {
+    "description": "Admin column: entity"
+  },
+  "admMeta": "Meta",
+  "@admMeta": {
+    "description": "Admin field: goal"
+  },
+  "admMetrica": "Métrica",
+  "@admMetrica": {
+    "description": "Admin field: metric"
+  },
+  "admEmoji": "Emoji",
+  "@admEmoji": {
+    "description": "Admin field: emoji"
+  },
+  "admMotivo": "Motivo",
+  "@admMotivo": {
+    "description": "Admin field: reason"
+  },
+  "admSiguiente": "Siguiente",
+  "@admSiguiente": {
+    "description": "Admin: next"
+  },
+  "admAnterior": "Anterior",
+  "@admAnterior": {
+    "description": "Admin: previous"
+  },
+  "admPaginaAnterior": "Página anterior",
+  "@admPaginaAnterior": {
+    "description": "Admin pagination tooltip"
+  },
+  "admPaginaSiguiente": "Página siguiente",
+  "@admPaginaSiguiente": {
+    "description": "Admin pagination tooltip"
+  },
+  "admPaginaDe": "Página {pagina} de {total}",
+  "@admPaginaDe": {
+    "description": "Admin pagination label",
+    "placeholders": {"pagina":{"type":"int"},"total":{"type":"int"}}
+  },
+  "admAplicarFiltros": "Aplicar filtros",
+  "@admAplicarFiltros": {
+    "description": "Admin filters button"
+  },
+  "admLimpiarFiltros": "Limpiar filtros",
+  "@admLimpiarFiltros": {
+    "description": "Admin filters button"
+  },
+  "admCrear": "Crear",
+  "@admCrear": {
+    "description": "Admin create button"
+  },
+  "admFiltrosPendiente": "Filtros: pendiente de backend.",
+  "@admFiltrosPendiente": {
+    "description": "Admin toolbar placeholder"
+  },
+  "admDashErrorEstadisticas": "No se pudieron cargar las estadísticas: {error}",
+  "@admDashErrorEstadisticas": {
+    "description": "Dashboard error",
+    "placeholders": {"error":{"type":"String"}}
+  },
+  "admCatTipoAlertas": "Tipos de alertas",
+  "@admCatTipoAlertas": {
+    "description": "Catalog name"
+  },
+  "admCatCategoriasNodos": "Categorías de nodos",
+  "@admCatCategoriasNodos": {
+    "description": "Catalog name"
+  },
+  "admCatActividadesRutas": "Actividades de rutas",
+  "@admCatActividadesRutas": {
+    "description": "Catalog name"
+  },
+  "admCatCreado": "Elemento creado correctamente.",
+  "@admCatCreado": {
+    "description": "Toast"
+  },
+  "admCatActualizado": "Elemento actualizado correctamente.",
+  "@admCatActualizado": {
+    "description": "Toast"
+  },
+  "admSinElementos": "No hay elementos",
+  "@admSinElementos": {
+    "description": "Empty title"
+  },
+  "admSinElementosMsg": "No se encontraron elementos para este filtro.",
+  "@admSinElementosMsg": {
+    "description": "Empty message"
+  },
+  "admCatCompletaCampos": "Completa los campos obligatorios.",
+  "@admCatCompletaCampos": {
+    "description": "Form error"
+  },
+  "admCatNuevo": "Nuevo elemento",
+  "@admCatNuevo": {
+    "description": "Dialog title"
+  },
+  "admCatEditar": "Editar elemento",
+  "@admCatEditar": {
+    "description": "Dialog title"
+  },
+  "admCatClave": "Clave",
+  "@admCatClave": {
+    "description": "Field label"
+  },
+  "admCatClaveAyuda": "Identificador único. No se puede modificar después.",
+  "@admCatClaveAyuda": {
+    "description": "Field help"
+  },
+  "admCatActivoTitulo": "Elemento activo",
+  "@admCatActivoTitulo": {
+    "description": "Switch title"
+  },
+  "admDisponibleUsuarios": "Disponible para los usuarios",
+  "@admDisponibleUsuarios": {
+    "description": "Switch on"
+  },
+  "admCatActivoNo": "No disponible para nuevas selecciones",
+  "@admCatActivoNo": {
+    "description": "Switch off"
+  },
+  "admRepEstadoPendiente": "Pendiente",
+  "@admRepEstadoPendiente": {
+    "description": "Report status"
+  },
+  "admRepEstadoResuelta": "Resuelta",
+  "@admRepEstadoResuelta": {
+    "description": "Report status"
+  },
+  "admRepEstadoArchivada": "Archivada",
+  "@admRepEstadoArchivada": {
+    "description": "Report status"
+  },
+  "admRepTipoRuta": "Ruta",
+  "@admRepTipoRuta": {
+    "description": "Report content type"
+  },
+  "admRepTipoNodo": "Nodo",
+  "@admRepTipoNodo": {
+    "description": "Report content type"
+  },
+  "admRepTipoAlerta": "Alerta",
+  "@admRepTipoAlerta": {
+    "description": "Report content type"
+  },
+  "admRepConfirmarTitulo": "Confirmar acción",
+  "@admRepConfirmarTitulo": {
+    "description": "Dialog title"
+  },
+  "admRepConfirmarResolver": "¿Deseas resolver el reporte #{id}?\n\nEsta acción actualizará el estado del reporte.",
+  "@admRepConfirmarResolver": {
+    "description": "Dialog message",
+    "placeholders": {"id":{"type":"int"}}
+  },
+  "admRepConfirmarArchivar": "¿Deseas archivar el reporte #{id}?\n\nEsta acción actualizará el estado del reporte.",
+  "@admRepConfirmarArchivar": {
+    "description": "Dialog message",
+    "placeholders": {"id":{"type":"int"}}
+  },
+  "admRepActualizado": "Reporte #{id} actualizado a {estado}",
+  "@admRepActualizado": {
+    "description": "Toast",
+    "placeholders": {"id":{"type":"int"},"estado":{"type":"String"}}
+  },
+  "admRepErrorActualizar": "No se pudo actualizar el reporte: {error}",
+  "@admRepErrorActualizar": {
+    "description": "Toast",
+    "placeholders": {"error":{"type":"String"}}
+  },
+  "admRepTitulo": "Reporte #{id}",
+  "@admRepTitulo": {
+    "description": "Title",
+    "placeholders": {"id":{"type":"int"}}
+  },
+  "admRepInfo": "Información del reporte",
+  "@admRepInfo": {
+    "description": "Section title"
+  },
+  "admRepTipoContenido": "Tipo de contenido",
+  "@admRepTipoContenido": {
+    "description": "Field label"
+  },
+  "admRepIdContenido": "ID del contenido",
+  "@admRepIdContenido": {
+    "description": "Field label"
+  },
+  "admRepBuscar": "Buscar reportes...",
+  "@admRepBuscar": {
+    "description": "Search hint"
+  },
+  "admRepSin": "Sin reportes",
+  "@admRepSin": {
+    "description": "Empty title"
+  },
+  "admRepSinMsg": "No hay reportes para este estado.",
+  "@admRepSinMsg": {
+    "description": "Empty message"
+  },
+  "admRepSinMotivo": "Sin motivo",
+  "@admRepSinMotivo": {
+    "description": "Fallback"
+  },
+  "admDirErrorCarga": "No se pudieron cargar los usuarios: {error}",
+  "@admDirErrorCarga": {
+    "description": "Error",
+    "placeholders": {"error":{"type":"String"}}
+  },
+  "admDirTitulo": "Detalle de usuarios",
+  "@admDirTitulo": {
+    "description": "Title"
+  },
+  "admDirSubtitulo": "Consulte la actividad, los aportes y los reportes de cada usuario.",
+  "@admDirSubtitulo": {
+    "description": "Subtitle"
+  },
+  "admDirActualizar": "Actualizar usuarios",
+  "@admDirActualizar": {
+    "description": "Tooltip"
+  },
+  "admDirBuscar": "Buscar usuario",
+  "@admDirBuscar": {
+    "description": "Field label"
+  },
+  "admDirBuscarHint": "Nombre o correo electrónico",
+  "@admDirBuscarHint": {
+    "description": "Field hint"
+  },
+  "admDirActivados": "Activados",
+  "@admDirActivados": {
+    "description": "Filter option"
+  },
+  "admDirDesactivados": "Desactivados",
+  "@admDirDesactivados": {
+    "description": "Filter option"
+  },
+  "admDirNombreAZ": "Nombre A–Z",
+  "@admDirNombreAZ": {
+    "description": "Sort chip"
+  },
+  "admDirNombreZA": "Nombre Z–A",
+  "@admDirNombreZA": {
+    "description": "Sort chip"
+  },
+  "admDirSinResultados": "No se encontraron usuarios.",
+  "@admDirSinResultados": {
+    "description": "Empty"
+  },
+  "admDirColCorreo": "Correo electrónico",
+  "@admDirColCorreo": {
+    "description": "Column"
+  },
+  "admDirVerDetalle": "Ver detalle",
+  "@admDirVerDetalle": {
+    "description": "Button"
+  },
+  "admDirTotal": "Total de usuarios: {n}",
+  "@admDirTotal": {
+    "description": "Footer",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "admInsCreada": "Insignia creada correctamente.",
+  "@admInsCreada": {
+    "description": "Toast"
+  },
+  "admInsActualizada": "Insignia actualizada correctamente.",
+  "@admInsActualizada": {
+    "description": "Toast"
+  },
+  "admInsSinMeta": "Sin meta",
+  "@admInsSinMeta": {
+    "description": "Goal fallback"
+  },
+  "admInsSinMetrica": "Sin métrica",
+  "@admInsSinMetrica": {
+    "description": "Metric fallback"
+  },
+  "admInsResumen": "{codigo} · {metrica} · Meta: {meta}",
+  "@admInsResumen": {
+    "description": "Badge row subtitle",
+    "placeholders": {"codigo":{"type":"String"},"metrica":{"type":"String"},"meta":{"type":"String"}}
+  },
+  "admInsTipoHito": "Hito",
+  "@admInsTipoHito": {
+    "description": "Badge type"
+  },
+  "admInsTipoKm": "Kilómetros",
+  "@admInsTipoKm": {
+    "description": "Badge type"
+  },
+  "admInsMetricaKm": "Kilómetros recorridos",
+  "@admInsMetricaKm": {
+    "description": "Badge metric"
+  },
+  "admInsMetricaRutas": "Rutas completadas",
+  "@admInsMetricaRutas": {
+    "description": "Badge metric"
+  },
+  "admInsMetricaAlertas": "Alertas registradas",
+  "@admInsMetricaAlertas": {
+    "description": "Badge metric"
+  },
+  "admInsMetricaNodos": "Nodos visitados",
+  "@admInsMetricaNodos": {
+    "description": "Badge metric"
+  },
+  "admInsMetricaEspecial": "Especial",
+  "@admInsMetricaEspecial": {
+    "description": "Badge metric"
+  },
+  "admInsErrCampos": "Completa todos los campos obligatorios.",
+  "@admInsErrCampos": {
+    "description": "Form error"
+  },
+  "admInsErrCodigo": "El código debe iniciar con una letra y contener solo letras mayúsculas, números o guiones bajos.",
+  "@admInsErrCodigo": {
+    "description": "Form error"
+  },
+  "admInsErrLongitudes": "Revisá las longitudes máximas de los campos.",
+  "@admInsErrLongitudes": {
+    "description": "Form error"
+  },
+  "admInsErrMeta": "La meta debe ser positiva y tener como máximo dos decimales.",
+  "@admInsErrMeta": {
+    "description": "Form error"
+  },
+  "admInsErrKm": "Las insignias de tipo kilómetros deben utilizar la métrica kilómetros.",
+  "@admInsErrKm": {
+    "description": "Form error"
+  },
+  "admInsNueva": "Nueva insignia",
+  "@admInsNueva": {
+    "description": "Dialog title"
+  },
+  "admInsEditar": "Editar insignia",
+  "@admInsEditar": {
+    "description": "Dialog title"
+  },
+  "admInsConfig": "Configuración de la insignia",
+  "@admInsConfig": {
+    "description": "Section title"
+  },
+  "admInsCodigo": "Código único",
+  "@admInsCodigo": {
+    "description": "Field label"
+  },
+  "admInsCodigoAyuda": "El código no se puede modificar después.",
+  "@admInsCodigoAyuda": {
+    "description": "Field help"
+  },
+  "admInsTipo": "Tipo",
+  "@admInsTipo": {
+    "description": "Field label"
+  },
+  "admInsMetaAyudaVacia": "Opcional: dejá vacío para conservar la meta nula.",
+  "@admInsMetaAyudaVacia": {
+    "description": "Field help"
+  },
+  "admInsMetaAyuda": "Número positivo, máximo dos decimales.",
+  "@admInsMetaAyuda": {
+    "description": "Field help"
+  },
+  "admInsActivoTitulo": "Insignia activa",
+  "@admInsActivoTitulo": {
+    "description": "Switch title"
+  },
+  "admInsActivoNo": "No disponible para nuevos desbloqueos",
+  "@admInsActivoNo": {
+    "description": "Switch off"
+  },
+  "admInsCrear": "Crear insignia",
+  "@admInsCrear": {
+    "description": "Button"
+  },
+  "admSinDatosMsg": "Aun no hay datos. Se mostraran aqui cuando el backend los provea.",
+  "@admSinDatosMsg": {
+    "description": "Admin table default empty message"
+  },
+  "admTabResueltas": "Resueltas",
+  "@admTabResueltas": {
+    "description": "Admin tab"
+  },
+  "admTabArchivadas": "Archivadas",
+  "@admTabArchivadas": {
+    "description": "Admin tab"
+  },
+  "admTabActivos": "Activos",
+  "@admTabActivos": {
+    "description": "Admin tab (masculine)"
+  },
+  "admTabInactivos": "Inactivos",
+  "@admTabInactivos": {
+    "description": "Admin tab (masculine)"
+  },
+  "admTabActivas": "Activas",
+  "@admTabActivas": {
+    "description": "Admin tab (feminine)"
+  },
+  "admTabInactivas": "Inactivas",
+  "@admTabInactivas": {
+    "description": "Admin tab (feminine)"
+  },
+  "admRepSinDescripcion": "Sin descripción",
+  "@admRepSinDescripcion": {
+    "description": "Fallback"
+  },
+  "admSi": "Sí",
+  "@admSi": {
+    "description": "Yes"
+  },
+  "admNo": "No",
+  "@admNo": {
+    "description": "No"
+  },
+  "admBuscar": "Buscar",
+  "@admBuscar": {
+    "description": "Search button"
+  },
+  "admTelefono": "Teléfono",
+  "@admTelefono": {
+    "description": "Field label"
+  },
+  "admAudIdInvalido": "Ingrese un ID de administrador válido.",
+  "@admAudIdInvalido": {
+    "description": "Filter error"
+  },
+  "admAudErrorConsulta": "No se pudieron consultar los registros: {error}",
+  "@admAudErrorConsulta": {
+    "description": "Error",
+    "placeholders": {"error":{"type":"String"}}
+  },
+  "admAudAccUsuarioCreado": "Usuario creado",
+  "@admAudAccUsuarioCreado": {
+    "description": "Audit action"
+  },
+  "admAudAccUsuarioActualizado": "Usuario actualizado",
+  "@admAudAccUsuarioActualizado": {
+    "description": "Audit action"
+  },
+  "admAudAccEstado": "Estado modificado",
+  "@admAudAccEstado": {
+    "description": "Audit action"
+  },
+  "admAudCampoNombre": "Nombre del usuario",
+  "@admAudCampoNombre": {
+    "description": "Audit field"
+  },
+  "admAudSinValor": "Sin valor",
+  "@admAudSinValor": {
+    "description": "Audit value"
+  },
+  "admAudVacio": "(Vacío)",
+  "@admAudVacio": {
+    "description": "Audit value"
+  },
+  "admAudTitulo": "Auditoría administrativa",
+  "@admAudTitulo": {
+    "description": "Title"
+  },
+  "admAudSubtitulo": "Historial de acciones realizadas por administradores.",
+  "@admAudSubtitulo": {
+    "description": "Subtitle"
+  },
+  "admAudAuto": "Actualización automática cada 5 segundos",
+  "@admAudAuto": {
+    "description": "Live note"
+  },
+  "admAudUltimaConsulta": "Última consulta: {hora}",
+  "@admAudUltimaConsulta": {
+    "description": "Live note",
+    "placeholders": {"hora":{"type":"String"}}
+  },
+  "admAudIdAdmin": "ID administrador",
+  "@admAudIdAdmin": {
+    "description": "Filter label"
+  },
+  "admAudEjemploId": "Ej. 1",
+  "@admAudEjemploId": {
+    "description": "Filter example"
+  },
+  "admAudActualizar": "Actualizar registros",
+  "@admAudActualizar": {
+    "description": "Tooltip"
+  },
+  "admAudSinRegistros": "No hay registros de auditoría para mostrar.",
+  "@admAudSinRegistros": {
+    "description": "Empty"
+  },
+  "admAudAdministrador": "Administrador",
+  "@admAudAdministrador": {
+    "description": "Column"
+  },
+  "admAudIdAfectado": "ID afectado",
+  "@admAudIdAfectado": {
+    "description": "Column"
+  },
+  "admAudTotal": "Total de registros: {n}",
+  "@admAudTotal": {
+    "description": "Footer",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "admAudSinCambios": "No se detectaron cambios en los campos auditables.",
+  "@admAudSinCambios": {
+    "description": "Empty diff"
+  },
+  "admAudCampoModificado": "Campo modificado",
+  "@admAudCampoModificado": {
+    "description": "Column"
+  },
+  "admAudValorAnterior": "Valor anterior",
+  "@admAudValorAnterior": {
+    "description": "Column"
+  },
+  "admAudValorNuevo": "Valor nuevo",
+  "@admAudValorNuevo": {
+    "description": "Column"
+  },
+  "admAudInfoGeneral": "Información general",
+  "@admAudInfoGeneral": {
+    "description": "Section"
+  },
+  "admAudCambios": "Cambios realizados",
+  "@admAudCambios": {
+    "description": "Section"
+  },
+  "admAudDetalleRegistro": "Detalle del registro",
+  "@admAudDetalleRegistro": {
+    "description": "Section"
+  },
+  "admAudSinDetalles": "Este registro no contiene detalles. Puede haberse generado antes de habilitar el historial de cambios.",
+  "@admAudSinDetalles": {
+    "description": "Note"
+  },
+  "admAudContrasena": "La contraseña fue modificada. Su contenido no se almacena por seguridad.",
+  "@admAudContrasena": {
+    "description": "Note"
+  },
+  "admAudSoloCambios": "Solo se muestran los campos que tuvieron cambios. Los demás permanecen sin modificaciones.",
+  "@admAudSoloCambios": {
+    "description": "Note"
+  },
+  "admAudCerrarDetalle": "Cerrar detalle",
+  "@admAudCerrarDetalle": {
+    "description": "Barrier label"
+  },
+  "admEvtFiltroProximos": "Próximos",
+  "@admEvtFiltroProximos": {
+    "description": "Events tab"
+  },
+  "admEvtFiltroFinalizados": "Finalizados",
+  "@admEvtFiltroFinalizados": {
+    "description": "Events tab"
+  },
+  "admEvtEstadoProximo": "Próximo",
+  "@admEvtEstadoProximo": {
+    "description": "Event state"
+  },
+  "admEvtEstadoFinalizado": "Finalizado",
+  "@admEvtEstadoFinalizado": {
+    "description": "Event state"
+  },
+  "admEvtSinFechas": "Sin fechas",
+  "@admEvtSinFechas": {
+    "description": "Event state"
+  },
+  "admEvtPresCon": "Con",
+  "@admEvtPresCon": {
+    "description": "Presence filter"
+  },
+  "admEvtPresSin": "Sin",
+  "@admEvtPresSin": {
+    "description": "Presence filter"
+  },
+  "admEvtFormatoInesperado": "El servidor devolvió un formato de eventos inesperado.",
+  "@admEvtFormatoInesperado": {
+    "description": "Error"
+  },
+  "admEvtSesionExpiro": "Tu sesión expiró. Iniciá sesión nuevamente.",
+  "@admEvtSesionExpiro": {
+    "description": "Error"
+  },
+  "admEvtSinPermisos": "No tenés permisos para administrar eventos.",
+  "@admEvtSinPermisos": {
+    "description": "Error"
+  },
+  "admEvtErrorCarga": "No se pudieron cargar los eventos. Verificá la conexión con el servidor.",
+  "@admEvtErrorCarga": {
+    "description": "Error"
+  },
+  "admEvtSinFecha": "Sin fecha",
+  "@admEvtSinFecha": {
+    "description": "Date fallback"
+  },
+  "admEvtUsuarioN": "Usuario #{id}",
+  "@admEvtUsuarioN": {
+    "description": "Organizer fallback",
+    "placeholders": {"id":{"type":"String"}}
+  },
+  "admEvtNoDisponible": "No disponible",
+  "@admEvtNoDisponible": {
+    "description": "Organizer fallback"
+  },
+  "admEvtRangoInicio": "Rango de fecha de inicio",
+  "@admEvtRangoInicio": {
+    "description": "Date picker help"
+  },
+  "admEvtRangoFin": "Rango de fecha de finalización",
+  "@admEvtRangoFin": {
+    "description": "Date picker help"
+  },
+  "admEvtFiltrosAvanzados": "Filtros avanzados",
+  "@admEvtFiltrosAvanzados": {
+    "description": "Sheet title"
+  },
+  "admEvtFiltrosSub": "Combiná criterios para encontrar eventos específicos.",
+  "@admEvtFiltrosSub": {
+    "description": "Sheet subtitle"
+  },
+  "admEvtCategoria": "Categoría",
+  "@admEvtCategoria": {
+    "description": "Field label"
+  },
+  "admEvtTodasCategorias": "Todas las categorías",
+  "@admEvtTodasCategorias": {
+    "description": "Option"
+  },
+  "admEvtOrganizador": "Organizador",
+  "@admEvtOrganizador": {
+    "description": "Field label"
+  },
+  "admEvtTodosOrganizadores": "Todos los organizadores",
+  "@admEvtTodosOrganizadores": {
+    "description": "Option"
+  },
+  "admEvtFechas": "Fechas",
+  "@admEvtFechas": {
+    "description": "Section"
+  },
+  "admEvtSelRangoInicio": "Seleccionar rango de inicio",
+  "@admEvtSelRangoInicio": {
+    "description": "Button"
+  },
+  "admEvtInicioRango": "Inicio: {desde} - {hasta}",
+  "@admEvtInicioRango": {
+    "description": "Button",
+    "placeholders": {"desde":{"type":"String"},"hasta":{"type":"String"}}
+  },
+  "admEvtSelRangoFin": "Seleccionar rango de finalización",
+  "@admEvtSelRangoFin": {
+    "description": "Button"
+  },
+  "admEvtFinRango": "Fin: {desde} - {hasta}",
+  "@admEvtFinRango": {
+    "description": "Button",
+    "placeholders": {"desde":{"type":"String"},"hasta":{"type":"String"}}
+  },
+  "admEvtQuitarInicio": "Quitar rango de inicio",
+  "@admEvtQuitarInicio": {
+    "description": "Button"
+  },
+  "admEvtQuitarFin": "Quitar rango de finalización",
+  "@admEvtQuitarFin": {
+    "description": "Button"
+  },
+  "admEvtAreasRecorridos": "Áreas y recorridos",
+  "@admEvtAreasRecorridos": {
+    "description": "Section"
+  },
+  "admEvtAreas": "Áreas",
+  "@admEvtAreas": {
+    "description": "Field"
+  },
+  "admEvtRecorridos": "Recorridos",
+  "@admEvtRecorridos": {
+    "description": "Field"
+  },
+  "admEvtInicio": "Inicio",
+  "@admEvtInicio": {
+    "description": "Detail"
+  },
+  "admEvtFin": "Fin",
+  "@admEvtFin": {
+    "description": "Detail"
+  },
+  "admEvtEvento": "Evento",
+  "@admEvtEvento": {
+    "description": "Fallback title"
+  },
+  "admEvtSinNombre": "Sin nombre",
+  "@admEvtSinNombre": {
+    "description": "Fallback name"
+  },
+  "admEvtEliminar": "Eliminar evento",
+  "@admEvtEliminar": {
+    "description": "Button"
+  },
+  "admEvtConfirmarTitulo": "¿Eliminar este evento?",
+  "@admEvtConfirmarTitulo": {
+    "description": "Dialog title"
+  },
+  "admEvtConfirmarMsg": "Se eliminará \"{nombre}\".\n\nEsta acción es permanente y no se puede deshacer.",
+  "@admEvtConfirmarMsg": {
+    "description": "Dialog message",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "admEvtEliminarDef": "Eliminar definitivamente",
+  "@admEvtEliminarDef": {
+    "description": "Button"
+  },
+  "admEvtEliminado": "Evento eliminado correctamente.",
+  "@admEvtEliminado": {
+    "description": "Toast"
+  },
+  "admEvtBuscar": "Buscar eventos por nombre, categoría o empresa...",
+  "@admEvtBuscar": {
+    "description": "Search hint"
+  },
+  "admEvtFiltrosActivos": "{n, plural, =1{1 filtro activo} other{{n} filtros activos}}",
+  "@admEvtFiltrosActivos": {
+    "description": "Chip",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "admEvtActualizar": "Actualizar eventos",
+  "@admEvtActualizar": {
+    "description": "Tooltip"
+  },
+  "admEvtSin": "Sin eventos",
+  "@admEvtSin": {
+    "description": "Empty title"
+  },
+  "admEvtSinCoincidencias": "No hay eventos que coincidan con los filtros.",
+  "@admEvtSinCoincidencias": {
+    "description": "Empty message"
+  },
+  "admEvtSinRegistrados": "Todavía no hay eventos registrados.",
+  "@admEvtSinRegistrados": {
+    "description": "Empty message"
+  },
+  "admUsrNoInfo": "No se pudo obtener la información.",
+  "@admUsrNoInfo": {
+    "description": "Error"
+  },
+  "admUsrTabHistorial": "Historial",
+  "@admUsrTabHistorial": {
+    "description": "Tab"
+  },
+  "admUsrTabAportes": "Aportes",
+  "@admUsrTabAportes": {
+    "description": "Tab"
+  },
+  "admUsrTabReportes": "Reportes",
+  "@admUsrTabReportes": {
+    "description": "Tab"
+  },
+  "admUsrTabInsignias": "Insignias",
+  "@admUsrTabInsignias": {
+    "description": "Tab"
+  },
+  "admUsrSinInsignias": "No hay insignias disponibles para este usuario.",
+  "@admUsrSinInsignias": {
+    "description": "Empty"
+  },
+  "admUsrInsigniasObtenidas": "Insignias obtenidas: {obtenidas} de {total}",
+  "@admUsrInsigniasObtenidas": {
+    "description": "Header",
+    "placeholders": {"obtenidas":{"type":"int"},"total":{"type":"int"}}
+  },
+  "admUsrDesbloqueada": "Desbloqueada",
+  "@admUsrDesbloqueada": {
+    "description": "Badge state"
+  },
+  "admUsrPendiente": "Pendiente",
+  "@admUsrPendiente": {
+    "description": "Badge state"
+  },
+  "admUsrObtenida": "Obtenida: {fecha}",
+  "@admUsrObtenida": {
+    "description": "Badge date",
+    "placeholders": {"fecha":{"type":"String"}}
+  },
+  "admUsrProgreso": "Progreso: {progreso} / {meta}",
+  "@admUsrProgreso": {
+    "description": "Badge progress",
+    "placeholders": {"progreso":{"type":"String"},"meta":{"type":"String"}}
+  },
+  "admUsrVolver": "Volver a usuarios",
+  "@admUsrVolver": {
+    "description": "Button"
+  },
+  "admUsrRolEstado": "Rol: {rol}  ·  Estado: {estado}",
+  "@admUsrRolEstado": {
+    "description": "Header line",
+    "placeholders": {"rol":{"type":"String"},"estado":{"type":"String"}}
+  },
+  "admUsrActualizar": "Actualizar información",
+  "@admUsrActualizar": {
+    "description": "Tooltip"
+  },
+  "admUsrIndInteracciones": "Interacciones",
+  "@admUsrIndInteracciones": {
+    "description": "Indicator"
+  },
+  "admUsrIndRutas": "Rutas creadas",
+  "@admUsrIndRutas": {
+    "description": "Indicator"
+  },
+  "admUsrIndNodos": "Nodos creados",
+  "@admUsrIndNodos": {
+    "description": "Indicator"
+  },
+  "admUsrIndReportes": "Reportes",
+  "@admUsrIndReportes": {
+    "description": "Indicator"
+  },
+  "admUsrHistorialTitulo": "Historial de actividad",
+  "@admUsrHistorialTitulo": {
+    "description": "Section"
+  },
+  "admUsrFavoritos": "Favoritos",
+  "@admUsrFavoritos": {
+    "description": "Summary"
+  },
+  "admUsrVotosNodos": "Votos de nodos",
+  "@admUsrVotosNodos": {
+    "description": "Summary"
+  },
+  "admUsrVotosAlertas": "Votos de alertas",
+  "@admUsrVotosAlertas": {
+    "description": "Summary"
+  },
+  "admUsrHistorialVacio": "Este usuario todavía no registra actividad.",
+  "@admUsrHistorialVacio": {
+    "description": "Empty"
+  },
+  "admUsrActividad": "Actividad",
+  "@admUsrActividad": {
+    "description": "Fallback"
+  },
+  "admUsrTipoReferencia": "Tipo: {tipo}  ·  Referencia: {referencia}",
+  "@admUsrTipoReferencia": {
+    "description": "Row subtitle",
+    "placeholders": {"tipo":{"type":"String"},"referencia":{"type":"String"}}
+  },
+  "admUsrAportesTitulo": "Aportes del usuario",
+  "@admUsrAportesTitulo": {
+    "description": "Section"
+  },
+  "admUsrRutasCreadas": "Rutas creadas ({n})",
+  "@admUsrRutasCreadas": {
+    "description": "Subsection",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "admUsrSinRutas": "No ha creado rutas.",
+  "@admUsrSinRutas": {
+    "description": "Empty"
+  },
+  "admUsrRutaSinNombre": "Ruta sin nombre",
+  "@admUsrRutaSinNombre": {
+    "description": "Fallback"
+  },
+  "admUsrRutaDetalle": "Estado: {estado}  ·  Distancia: {km} km",
+  "@admUsrRutaDetalle": {
+    "description": "Row subtitle",
+    "placeholders": {"estado":{"type":"String"},"km":{"type":"String"}}
+  },
+  "admUsrNodosCreados": "Nodos creados ({n})",
+  "@admUsrNodosCreados": {
+    "description": "Subsection",
+    "placeholders": {"n":{"type":"int"}}
+  },
+  "admUsrSinNodos": "No ha creado nodos.",
+  "@admUsrSinNodos": {
+    "description": "Empty"
+  },
+  "admUsrNodoSinNombre": "Nodo sin nombre",
+  "@admUsrNodoSinNombre": {
+    "description": "Fallback"
+  },
+  "admUsrNodoDetalle": "Categoría: {categoria}  ·  Estado: {estado}",
+  "@admUsrNodoDetalle": {
+    "description": "Row subtitle",
+    "placeholders": {"categoria":{"type":"String"},"estado":{"type":"String"}}
+  },
+  "admUsrReportesTitulo": "Reportes de incidentes",
+  "@admUsrReportesTitulo": {
+    "description": "Section"
+  },
+  "admUsrReportesNota": "Alertas e incidentes registrados por este usuario.",
+  "@admUsrReportesNota": {
+    "description": "Note"
+  },
+  "admUsrPorEstado": "Por estado",
+  "@admUsrPorEstado": {
+    "description": "Breakdown"
+  },
+  "admUsrPorGravedad": "Por gravedad",
+  "@admUsrPorGravedad": {
+    "description": "Breakdown"
+  },
+  "admUsrReportesVacio": "Este usuario no ha reportado incidentes.",
+  "@admUsrReportesVacio": {
+    "description": "Empty"
+  },
+  "admUsrIncidente": "Incidente",
+  "@admUsrIncidente": {
+    "description": "Fallback"
+  },
+  "admUsrIncidenteDetalle": "{descripcion}\nGravedad: {gravedad}  ·  Estado: {estado}  ·  Confirmaciones: {confirmaciones}",
+  "@admUsrIncidenteDetalle": {
+    "description": "Row subtitle",
+    "placeholders": {"descripcion":{"type":"String"},"gravedad":{"type":"String"},"estado":{"type":"String"},"confirmaciones":{"type":"String"}}
+  },
+  "admUsrSinDatos": "{titulo}: sin datos",
+  "@admUsrSinDatos": {
+    "description": "Breakdown empty",
+    "placeholders": {"titulo":{"type":"String"}}
+  },
+  "admUsrErrorDetalle": "No se pudo cargar el detalle del usuario.",
+  "@admUsrErrorDetalle": {
+    "description": "Error"
+  },
+  "admUsrErrorDesconocido": "Error desconocido",
+  "@admUsrErrorDesconocido": {
+    "description": "Error fallback"
   }
 }

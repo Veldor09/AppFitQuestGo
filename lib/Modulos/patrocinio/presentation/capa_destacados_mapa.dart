@@ -49,14 +49,15 @@ class CapaDestacadosMapa {
     _escuchas.clear();
   }
 
-
   /// Quita del mapa los administradores de anotaciones de esta capa: hace falta
   /// al cambiar de estilo, para volver a crearla limpia sobre el estilo nuevo.
   Future<void> quitar(MapboxMap mapa) async {
     liberar();
     for (final Object m in <Object>[_iconos]) {
       try {
-        await mapa.annotations.removeAnnotationManager(m as BaseAnnotationManager);
+        await mapa.annotations.removeAnnotationManager(
+          m as BaseAnnotationManager,
+        );
       } catch (_) {
         // Ya no estaba (el estilo nuevo se lo llevo): no importa.
       }
@@ -73,18 +74,17 @@ class CapaDestacadosMapa {
     // Copia: la lista puede cambiar mientras se espera a Mapbox.
     final List<Nodo> destacados = soloDestacados(nodos);
     if (destacados.isEmpty) return;
-    final List<PointAnnotation?> creados = await _iconos.createMulti(
-      <PointAnnotationOptions>[
-        for (final Nodo n in destacados)
-          opcionesDePin(
-            lat: n.lat,
-            lng: n.lng,
-            imagen: await imagenPin(TipoPin.destacado),
-            densidad: densidad,
-            etiqueta: n.nombre,
-          ),
-      ],
-    );
+    final List<PointAnnotation?> creados = await _iconos
+        .createMulti(<PointAnnotationOptions>[
+          for (final Nodo n in destacados)
+            opcionesDePin(
+              lat: n.lat,
+              lng: n.lng,
+              imagen: await imagenPin(TipoPin.destacado),
+              densidad: densidad,
+              etiqueta: n.nombre,
+            ),
+        ]);
     for (int i = 0; i < creados.length; i++) {
       final PointAnnotation? pin = creados[i];
       if (pin != null) _porPin[pin.id] = destacados[i].id;

@@ -265,7 +265,7 @@ void main() {
       expect(find.byKey(_contador), findsNothing);
     });
 
-    testWidgets('cada minuto vuelve a preguntar si hay notificaciones nuevas', (
+    testWidgets('cada intervalo de refresco vuelve a preguntar si hay notificaciones nuevas', (
       WidgetTester tester,
     ) async {
       final _Escenario e = _Escenario();
@@ -273,7 +273,7 @@ void main() {
       expect(find.byKey(_contador), findsNothing);
 
       e.notificacionesApi.noLeidas = 2;
-      await tester.pump(const Duration(seconds: 60));
+      await tester.pump(refrescoAlertasHome);
       await tester.pump();
 
       expect(find.descendant(of: find.byKey(_contador), matching: find.text('2')), findsOneWidget);
@@ -535,28 +535,24 @@ void main() {
   });
 
   group('refresco', () {
-    testWidgets('las rutas se piden al abrir y cada 5 minutos (cada una trae todo su trazo)', (
+    testWidgets('las rutas se piden al abrir y cada intervalo de refresco (cada una trae todo su trazo)', (
       WidgetTester tester,
     ) async {
       final _Escenario e = _Escenario();
       await _montar(tester, e);
       expect(e.rutaApi.cargas, 1);
 
-      await tester.pump(const Duration(seconds: 60));
-      await tester.pump();
-      expect(e.rutaApi.cargas, 1);
-
-      await tester.pump(const Duration(minutes: 4));
+      await tester.pump(refrescoRutasHome);
       await tester.pump();
       expect(e.rutaApi.cargas, 2);
     });
 
-    testWidgets('los eventos se piden al abrir y cada minuto', (WidgetTester tester) async {
+    testWidgets('los eventos se piden al abrir y cada intervalo de refresco', (WidgetTester tester) async {
       final _Escenario e = _Escenario();
       await _montar(tester, e);
       expect(e.eventoApi.cargas, 1);
 
-      await tester.pump(const Duration(seconds: 60));
+      await tester.pump(refrescoAlertasHome);
       await tester.pump();
 
       expect(e.eventoApi.cargas, 2);

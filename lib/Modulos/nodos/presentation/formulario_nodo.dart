@@ -357,21 +357,19 @@ class _FormularioNodoState extends State<FormularioNodo> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text('No se pudieron cargar las categorías.'),
+          Text(AppLocalizations.of(context)!.nodoCategoriasErrorCarga),
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: _cargarCategorias,
             icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
+            label: Text(AppLocalizations.of(context)!.comunReintentar),
           ),
         ],
       );
     }
 
     if (_categoriasActivas.isEmpty) {
-      return const Text(
-        'No hay categorías disponibles actualmente.',
-      );
+      return Text(AppLocalizations.of(context)!.nodoCategoriasVacio);
     }
 
     return FqSelectorOpciones(

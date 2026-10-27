@@ -74,7 +74,10 @@ class _InterruptorDestacarState extends State<InterruptorDestacar> {
           Flexible(
             child: Text(
               l10n.patrocinioDestacar,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         const SizedBox(width: 4),

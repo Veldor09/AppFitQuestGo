@@ -1,6 +1,7 @@
 ﻿
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
@@ -110,6 +111,9 @@ Future<void> _montar(
 ) async {
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('es'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: EventosAdminScreen(api: api),
       ),

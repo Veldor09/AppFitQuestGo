@@ -24,15 +24,24 @@ class CatalogosScreen extends StatefulWidget {
 }
 
 class _CatalogosScreenState extends State<CatalogosScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
+  String _nombreCatalogo(String clave) => switch (clave) {
+    'alertas' => _l10n.admCatTipoAlertas,
+    'nodos' => _l10n.admCatCategoriasNodos,
+    'actividades' => _l10n.admCatActividadesRutas,
+    _ => clave,
+  };
+
   late final CatalogosApi _api;
 
   final TextEditingController _busquedaController = TextEditingController();
 
-  static const Map<String, String> _catalogos = <String, String>{
-    'alertas': 'Tipos de alertas',
-    'nodos': 'Categorías de nodos',
-    'actividades': 'Actividades de rutas',
-  };
+  static const List<String> _catalogos = <String>[
+    'alertas',
+    'nodos',
+    'actividades',
+  ];
 
   String _catalogoSeleccionado = 'alertas';
   String _busqueda = '';
@@ -123,7 +132,7 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         return _FormularioCatalogo(
           api: _api,
           catalogo: catalogo,
-          nombreCatalogo: _catalogos[catalogo] ?? catalogo,
+          nombreCatalogo: _nombreCatalogo(catalogo),
           item: item,
         );
       },
@@ -135,8 +144,8 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
       SnackBar(
         content: Text(
           item == null
-              ? 'Elemento creado correctamente.'
-              : 'Elemento actualizado correctamente.',
+              ? _l10n.admCatCreado
+              : _l10n.admCatActualizado,
         ),
       ),
     );
@@ -158,7 +167,7 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         title: item.nombre,
         subtitle: item.clave,
         trailing: Chip(
-          label: Text(item.activo ? 'Activo' : 'Inactivo'),
+          label: Text(item.activo ? _l10n.admActivo : _l10n.admInactivo),
           backgroundColor: item.activo
               ? Colors.green.shade50
               : Colors.grey.shade200,
@@ -180,7 +189,7 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
       onSearch: (String valor) {
         setState(() => _busqueda = valor);
       },
-      tabs: const <String>['Todos', 'Activos', 'Inactivos'],
+      tabs: <String>[l10n.usuariosFiltroTodos, l10n.admTabActivos, l10n.admTabInactivos],
       tabIndex: _filtroEstado,
       onTab: (int indice) {
         setState(() => _filtroEstado = indice);
@@ -192,10 +201,10 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         children: <Widget>[
           DropdownButton<String>(
             value: _catalogoSeleccionado,
-            items: _catalogos.entries.map((MapEntry<String, String> entry) {
+            items: _catalogos.map((String clave) {
               return DropdownMenuItem<String>(
-                value: entry.key,
-                child: Text(entry.value),
+                value: clave,
+                child: Text(_nombreCatalogo(clave)),
               );
             }).toList(),
             onChanged: (String? valor) {
@@ -216,8 +225,8 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         loading: _cargando,
         error: _error,
         onRetry: _cargarItems,
-        emptyTitle: 'No hay elementos',
-        emptyMessage: 'No se encontraron elementos para este filtro.',
+        emptyTitle: _l10n.admSinElementos,
+        emptyMessage: _l10n.admSinElementosMsg,
       ),
     );
   }
@@ -256,6 +265,8 @@ class _FormularioCatalogo extends StatefulWidget {
 }
 
 class _FormularioCatalogoState extends State<_FormularioCatalogo> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   late final TextEditingController _claveController;
   late final TextEditingController _nombreController;
 
@@ -295,7 +306,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
 
     if (nombre.isEmpty || (_creando && clave.isEmpty)) {
       setState(() {
-        _errorFormulario = 'Completa los campos obligatorios.';
+        _errorFormulario = _l10n.admCatCompletaCampos;
       });
       return;
     }
@@ -338,7 +349,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        _creando ? 'Nuevo elemento' : 'Editar elemento',
+        _creando ? _l10n.admCatNuevo : _l10n.admCatEditar,
       ),
       content: SizedBox(
         width: 420,
@@ -358,12 +369,11 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
               TextField(
                 controller: _claveController,
                 enabled: _creando && !_guardando,
-                decoration: const InputDecoration(
-                  labelText: 'Clave',
+                decoration: InputDecoration(
+                  labelText: _l10n.admCatClave,
                   hintText: 'ejemplo_nuevo',
-                  helperText:
-                      'Identificador único. No se puede modificar después.',
-                  border: OutlineInputBorder(),
+                  helperText: _l10n.admCatClaveAyuda,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -371,20 +381,20 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
                 controller: _nombreController,
                 enabled: !_guardando,
                 maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: _l10n.comunNombre,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               if (!_creando) ...<Widget>[
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Elemento activo'),
+                  title: Text(_l10n.admCatActivoTitulo),
                   subtitle: Text(
                     _activo
-                        ? 'Disponible para los usuarios'
-                        : 'No disponible para nuevas selecciones',
+                        ? _l10n.admDisponibleUsuarios
+                        : _l10n.admCatActivoNo,
                   ),
                   value: _activo,
                   onChanged: _guardando
@@ -410,7 +420,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
           onPressed: _guardando
               ? null
               : () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
+          child: Text(_l10n.comunCancelar),
         ),
         FilledButton(
           onPressed: _guardando ? null : _guardar,
@@ -422,7 +432,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
                     strokeWidth: 2,
                   ),
                 )
-              : Text(_creando ? 'Crear' : 'Guardar cambios'),
+              : Text(_creando ? _l10n.admCrear : _l10n.comunGuardarCambios),
         ),
       ],
     );

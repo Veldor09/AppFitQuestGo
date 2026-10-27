@@ -289,7 +289,7 @@ void main() {
     expect(find.text('Alerta cerca de ti'), findsOneWidget);
   });
 
-  testWidgets('recarga las alertas cada minuto y avisa de una nueva', (
+  testWidgets('recarga las alertas cada intervalo de refresco y avisa de una nueva', (
     WidgetTester tester,
   ) async {
     await montarConAlertas(tester, <Alerta>[]);
@@ -297,7 +297,7 @@ void main() {
 
     // Otra persona la reporta mientras caminas.
     e.api.alertas = <Alerta>[_alerta()];
-    await tester.pump(const Duration(seconds: 61));
+    await tester.pump(refrescoAlertasHome);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -305,14 +305,14 @@ void main() {
     expect(e.voz.dichos, hasLength(1));
   });
 
-  testWidgets('vuelve a pedir los puntos de interes cada minuto', (
+  testWidgets('vuelve a pedir los puntos de interes cada intervalo de refresco', (
     WidgetTester tester,
   ) async {
     await montarConAlertas(tester, <Alerta>[], en: _lejos);
     expect(e.nodoApi.cargas, 1);
 
     // Otra persona pudo votar un punto como obsoleto mientras caminas.
-    await tester.pump(const Duration(seconds: 61));
+    await tester.pump(refrescoAlertasHome);
     await tester.pump();
 
     expect(e.nodoApi.cargas, 2);

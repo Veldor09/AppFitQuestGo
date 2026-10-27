@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/auditoria_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/auditoria_screen.dart';
@@ -111,6 +112,9 @@ Future<void> _montar(
 ) async {
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('es'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: AuditoriaScreen(api: api),
       ),
@@ -302,4 +306,31 @@ void main() {
 
     expect(api.consultas.length, greaterThanOrEqualTo(2));
   });
+
+  for (final (Locale locale, String titulo, String accion)
+      in <(Locale, String, String)>[
+    (const Locale('en'), 'Administrative audit', 'User created'),
+    (const Locale('pt', 'BR'), 'Auditoria administrativa', 'Usuário criado'),
+  ]) {
+    testWidgets('el panel sale en ${locale.languageCode} si la app esta en ese idioma', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: AuditoriaScreen(api: _AuditoriaApiFake())),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(titulo), findsOneWidget);
+      expect(find.text(accion), findsWidgets);
+      // Nada del español quedo pegado.
+      expect(find.text('Auditoría administrativa'), findsNothing);
+      expect(find.text('Usuario creado'), findsNothing);
+    });
+  }
 }

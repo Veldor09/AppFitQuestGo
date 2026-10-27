@@ -118,8 +118,8 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       SnackBar(
         content: Text(
           insignia == null
-              ? 'Insignia creada correctamente.'
-              : 'Insignia actualizada correctamente.',
+              ? AppLocalizations.of(context)!.admInsCreada
+              : AppLocalizations.of(context)!.admInsActualizada,
         ),
       ),
     );
@@ -127,8 +127,8 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     await _cargarInsignias();
   }
 
-  String _formatearMeta(double? meta) {
-    if (meta == null) return 'Sin meta';
+  String _formatearMeta(AppLocalizations l10n, double? meta) {
+    if (meta == null) return l10n.admInsSinMeta;
 
     if (meta == meta.roundToDouble()) {
       return meta.toStringAsFixed(0);
@@ -155,16 +155,18 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
     final List<AdminRow> filas =
         filtradas.sublist(inicio, fin).map((InsigniaAdminItem insignia) {
-      final String descripcion =
-          '${insignia.codigo} · ${insignia.metrica ?? "Sin métrica"}'
-          ' · Meta: ${_formatearMeta(insignia.meta)}';
+      final String descripcion = l10n.admInsResumen(
+        insignia.codigo,
+        insignia.metrica ?? l10n.admInsSinMetrica,
+        _formatearMeta(l10n, insignia.meta),
+      );
 
       return AdminRow(
         icon: Icons.military_tech_outlined,
         title: '${insignia.emoji} ${insignia.nombre}',
         subtitle: descripcion,
         trailing: Chip(
-          label: Text(insignia.activa ? 'Activa' : 'Inactiva'),
+          label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva),
           backgroundColor: insignia.activa
               ? Colors.green.shade50
               : Colors.grey.shade200,
@@ -186,7 +188,7 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       onSearch: (String valor) {
         setState(() { _busqueda = valor; _paginaActual = 0; });
       },
-      tabs: const <String>['Todas', 'Activas', 'Inactivas'],
+      tabs: <String>[l10n.notificacionesFiltroTodas, l10n.admTabActivas, l10n.admTabInactivas],
       tabIndex: _filtroEstado,
       onTab: (int indice) {
         setState(() { _filtroEstado = indice; _paginaActual = 0; });
@@ -222,15 +224,15 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
                       ? () => setState(() => _paginaActual = paginaVisible - 1)
                       : null,
                   icon: const Icon(Icons.chevron_left),
-                  label: const Text('Anterior'),
+                  label: Text(l10n.admAnterior),
                 ),
-                Text('Página ${paginaVisible + 1} de $totalPaginas'),
+                Text(l10n.admPaginaDe(paginaVisible + 1, totalPaginas)),
                 OutlinedButton.icon(
                   onPressed: paginaVisible < totalPaginas - 1
                       ? () => setState(() => _paginaActual = paginaVisible + 1)
                       : null,
                   icon: const Icon(Icons.chevron_right),
-                  label: const Text('Siguiente'),
+                  label: Text(l10n.admSiguiente),
                 ),
               ],
             ),
@@ -264,17 +266,31 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
   late final TextEditingController _emojiController;
   late final TextEditingController _metaController;
 
-  static const Map<String, String> _tipos = <String, String>{
-    'hito': 'Hito',
-    'km': 'Kilómetros',
+  static const List<String> _tipos = <String>['hito', 'km'];
+
+  static const List<String> _metricas = <String>[
+    'km',
+    'rutas',
+    'alertas',
+    'nodos',
+    'especial',
+  ];
+
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
+  String _nombreTipo(String clave) => switch (clave) {
+    'hito' => _l10n.admInsTipoHito,
+    'km' => _l10n.admInsTipoKm,
+    _ => clave,
   };
 
-  static const Map<String, String> _metricas = <String, String>{
-    'km': 'Kilómetros recorridos',
-    'rutas': 'Rutas completadas',
-    'alertas': 'Alertas registradas',
-    'nodos': 'Nodos visitados',
-    'especial': 'Especial',
+  String _nombreMetrica(String clave) => switch (clave) {
+    'km' => _l10n.admInsMetricaKm,
+    'rutas' => _l10n.admInsMetricaRutas,
+    'alertas' => _l10n.admInsMetricaAlertas,
+    'nodos' => _l10n.admInsMetricaNodos,
+    'especial' => _l10n.admInsMetricaEspecial,
+    _ => clave,
   };
 
   String _tipo = 'hito';
@@ -312,11 +328,11 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
       text: insignia?.meta?.toString() ?? '',
     );
 
-    _tipo = _tipos.containsKey(insignia?.tipo)
+    _tipo = _tipos.contains(insignia?.tipo)
         ? insignia!.tipo
         : 'hito';
 
-    _metrica = _metricas.containsKey(insignia?.metrica)
+    _metrica = _metricas.contains(insignia?.metrica)
         ? insignia!.metrica!
         : 'rutas';
 
@@ -353,7 +369,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         (_creando && codigo.isEmpty)) {
       setState(() {
         _errorFormulario =
-            'Completa todos los campos obligatorios.';
+            _l10n.admInsErrCampos;
       });
       return;
     }
@@ -362,8 +378,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         !RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(codigo)) {
       setState(() {
         _errorFormulario =
-            'El código debe iniciar con una letra y contener '
-            'solo letras mayúsculas, números o guiones bajos.';
+            _l10n.admInsErrCodigo;
       });
       return;
     }
@@ -373,7 +388,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         emoji.runes.length > 10) {
       setState(() {
         _errorFormulario =
-            'Revisá las longitudes máximas de los campos.';
+            _l10n.admInsErrLongitudes;
       });
       return;
     }
@@ -400,8 +415,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 0.000001)) {
       setState(() {
         _errorFormulario =
-            'La meta debe ser positiva y tener como máximo '
-            'dos decimales.';
+            _l10n.admInsErrMeta;
       });
       return;
     }
@@ -409,8 +423,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
     if (_tipo == 'km' && _metrica != 'km') {
       setState(() {
         _errorFormulario =
-            'Las insignias de tipo kilómetros deben utilizar '
-            'la métrica kilómetros.';
+            _l10n.admInsErrKm;
       });
       return;
     }
@@ -477,7 +490,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
       ),
       child: AlertDialog(
       title: Text(
-        _creando ? 'Nueva insignia' : 'Editar insignia',
+        _creando ? _l10n.admInsNueva : _l10n.admInsEditar,
       ),
       content: SizedBox(
         width: 480,
@@ -486,9 +499,9 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text(
-                'Configuración de la insignia',
-                style: TextStyle(
+              Text(
+                _l10n.admInsConfig,
+                style: const TextStyle(
                   color: FqColors.muted,
                   fontWeight: FontWeight.w600,
                 ),
@@ -498,12 +511,11 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 controller: _codigoController,
                 enabled: _creando && !_guardando,
                 maxLength: 50,
-                decoration: const InputDecoration(
-                  labelText: 'Código único',
+                decoration: InputDecoration(
+                  labelText: _l10n.admInsCodigo,
                   hintText: 'RUTAS_10',
-                  helperText:
-                      'El código no se puede modificar después.',
-                  border: OutlineInputBorder(),
+                  helperText: _l10n.admInsCodigoAyuda,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -511,9 +523,9 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 controller: _nombreController,
                 enabled: !_guardando,
                 maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: _l10n.comunNombre,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -521,17 +533,17 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 controller: _descripcionController,
                 enabled: !_guardando,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Descripción',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: _l10n.admDescripcion,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _emojiController,
                 enabled: !_guardando,
-                decoration: const InputDecoration(
-                  labelText: 'Emoji',
+                decoration: InputDecoration(
+                  labelText: _l10n.admEmoji,
                   hintText: '🏅',
                   border: OutlineInputBorder(),
                 ),
@@ -539,14 +551,14 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _tipo,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: _l10n.admInsTipo,
+                  border: const OutlineInputBorder(),
                 ),
-                items: _tipos.entries.map((entry) {
+                items: _tipos.map((String clave) {
                   return DropdownMenuItem<String>(
-                    value: entry.key,
-                    child: Text(entry.value),
+                    value: clave,
+                    child: Text(_nombreTipo(clave)),
                   );
                 }).toList(),
                 onChanged: _guardando
@@ -569,19 +581,19 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 // cuando cambia el tipo de insignia.
                 key: ValueKey<String>('metrica_$_tipo'),
                 initialValue: _metrica,
-                decoration: const InputDecoration(
-                  labelText: 'Métrica',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: _l10n.admMetrica,
+                  border: const OutlineInputBorder(),
                 ),
-                items: _metricas.entries
+                items: _metricas
                     .where(
-                      (entry) =>
-                          _tipo != 'km' || entry.key == 'km',
+                      (String clave) =>
+                          _tipo != 'km' || clave == 'km',
                     )
-                    .map((entry) {
+                    .map((String clave) {
                   return DropdownMenuItem<String>(
-                    value: entry.key,
-                    child: Text(entry.value),
+                    value: clave,
+                    child: Text(_nombreMetrica(clave)),
                   );
                 }).toList(),
                 onChanged: _guardando
@@ -601,26 +613,25 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                   decimal: true,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Meta',
+                  labelText: _l10n.admMeta,
                   hintText: '10',
                   helperText: !_creando &&
                           widget.insignia?.meta == null &&
                           _tipo == 'hito' &&
                           _metrica == 'especial'
-                      ? 'Opcional: dejá vacío para conservar '
-                          'la meta nula.'
-                      : 'Número positivo, máximo dos decimales.',
+                      ? _l10n.admInsMetaAyudaVacia
+                      : _l10n.admInsMetaAyuda,
                   border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Insignia activa'),
+                title: Text(_l10n.admInsActivoTitulo),
                 subtitle: Text(
                   _activa
-                      ? 'Disponible para los usuarios'
-                      : 'No disponible para nuevos desbloqueos',
+                      ? _l10n.admDisponibleUsuarios
+                      : _l10n.admInsActivoNo,
                 ),
                 value: _activa,
                 onChanged: _guardando
@@ -646,7 +657,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
           onPressed: _guardando
               ? null
               : () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
+          child: Text(_l10n.comunCancelar),
         ),
         FilledButton(
           onPressed: _guardando ? null : _guardar,
@@ -660,8 +671,8 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                 )
               : Text(
                   _creando
-                      ? 'Crear insignia'
-                      : 'Guardar cambios',
+                      ? _l10n.admInsCrear
+                      : _l10n.comunGuardarCambios,
                 ),
         ),
       ],

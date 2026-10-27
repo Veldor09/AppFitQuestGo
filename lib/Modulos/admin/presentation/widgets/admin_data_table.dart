@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Una fila de la tabla del panel (`.fq-admin-table > button`).
 @immutable
@@ -35,7 +36,7 @@ class AdminDataTable extends StatelessWidget {
     this.loading = false,
     this.error,
     this.onRetry,
-    this.emptyTitle = 'Sin registros',
+    this.emptyTitle,
     this.emptyMessage,
     this.emptyAction,
   });
@@ -44,7 +45,8 @@ class AdminDataTable extends StatelessWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
-  final String emptyTitle;
+  /// Sin dato: "Sin registros" en el idioma de la app.
+  final String? emptyTitle;
   final String? emptyMessage;
   final Widget? emptyAction;
 
@@ -59,19 +61,18 @@ class AdminDataTable extends StatelessWidget {
     if (error != null) {
       return FqEmptyState(
         icon: Icons.wifi_off_rounded,
-        title: 'No se pudo cargar',
+        title: AppLocalizations.of(context)!.rutasNoSePudoCargar,
         message: error,
         action: onRetry == null
             ? null
-            : TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+            : TextButton(onPressed: onRetry, child: Text(AppLocalizations.of(context)!.comunReintentar)),
       );
     }
     if (rows.isEmpty) {
       return FqEmptyState(
         icon: Icons.inbox_outlined,
-        title: emptyTitle,
-        message: emptyMessage ??
-            'Aun no hay datos. Se mostraran aqui cuando el backend los provea.',
+        title: emptyTitle ?? AppLocalizations.of(context)!.admSinRegistros,
+        message: emptyMessage ?? AppLocalizations.of(context)!.admSinDatosMsg,
         action: emptyAction,
       );
     }
@@ -157,12 +158,12 @@ class _AdminTableRowState extends State<_AdminTableRow> {
               ],
               if (row.onTap != null) ...<Widget>[
                 const SizedBox(width: 10),
-                const Row(
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      'Ver',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.comunVer,
+                      style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
                         color: FqColors.river,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 
@@ -24,6 +25,8 @@ class UsuarioDetalleScreen extends StatefulWidget {
 }
 
 class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   late final UsuariosApi _api = widget.api ?? UsuariosApi();
 
   late Future<_DetalleDatos> _futuro;
@@ -102,7 +105,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
               final datos = snapshot.data;
 
               if (datos == null) {
-                return _estadoError('No se pudo obtener la información.');
+                return _estadoError(_l10n.admUsrNoInfo);
               }
 
               return Column(
@@ -130,11 +133,11 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
   }
 
   Widget _pestanas() {
-    const etiquetas = <String>[
-      'Historial',
-      'Aportes',
-      'Reportes',
-      'Insignias',
+    final etiquetas = <String>[
+      _l10n.admUsrTabHistorial,
+      _l10n.admUsrTabAportes,
+      _l10n.admUsrTabReportes,
+      _l10n.admUsrTabInsignias,
     ];
     const iconos = <IconData>[
       Icons.history,
@@ -165,9 +168,9 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
   Widget _insignias(List<Map<String, dynamic>> insignias) {
     if (insignias.isEmpty) {
       return _panel(
-        child: const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('No hay insignias disponibles para este usuario.'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(_l10n.admUsrSinInsignias),
         ),
       );
     }
@@ -187,7 +190,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Insignias obtenidas: $obtenidas de ${insignias.length}',
+            _l10n.admUsrInsigniasObtenidas(obtenidas, insignias.length),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -230,8 +233,8 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                             const SizedBox(height: 8),
                             Text(
                               desbloqueada
-                                  ? 'Desbloqueada'
-                                  : 'Pendiente',
+                                  ? _l10n.admUsrDesbloqueada
+                                  : _l10n.admUsrPendiente,
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: desbloqueada
@@ -241,7 +244,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                             ),
                             if (desbloqueada && fecha != null) ...[
                               const SizedBox(height: 4),
-                              Text('Obtenida: ${_fecha(fecha)}'),
+                              Text(_l10n.admUsrObtenida(_fecha(fecha))),
                             ],
                             if (!desbloqueada &&
                                 progreso is num &&
@@ -254,7 +257,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                                     .toDouble(),
                               ),
                               const SizedBox(height: 4),
-                              Text('Progreso: $progreso / $meta'),
+                              Text(_l10n.admUsrProgreso('$progreso', '$meta')),
                             ],
                           ],
                         ),
@@ -281,7 +284,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
             TextButton.icon(
               onPressed: widget.onVolver,
               icon: const Icon(Icons.arrow_back, size: 18),
-              label: const Text('Volver a usuarios'),
+              label: Text(_l10n.admUsrVolver),
             ),
             const SizedBox(height: 12),
           ],
@@ -318,8 +321,10 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Rol: ${usuario.etiquetaRol}  ·  '
-                      'Estado: ${usuario.estado}',
+                      _l10n.admUsrRolEstado(
+                        usuario.etiquetaRol,
+                        usuario.estado,
+                      ),
                       style: const TextStyle(
                         fontSize: 12,
                         color: FqColors.muted,
@@ -329,7 +334,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                 ),
               ),
               IconButton(
-                tooltip: 'Actualizar información',
+                tooltip: _l10n.admUsrActualizar,
                 onPressed: _actualizar,
                 icon: const Icon(Icons.refresh),
               ),
@@ -350,18 +355,22 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
       runSpacing: 12,
       children: [
         _indicador(
-          'Interacciones',
+          _l10n.admUsrIndInteracciones,
           historial['totalInteracciones'],
           Icons.history,
         ),
-        _indicador('Rutas creadas', aportes['totalRutas'], Icons.route),
         _indicador(
-          'Nodos creados',
+          _l10n.admUsrIndRutas,
+          aportes['totalRutas'],
+          Icons.route,
+        ),
+        _indicador(
+          _l10n.admUsrIndNodos,
           aportes['totalNodos'],
           Icons.place_outlined,
         ),
         _indicador(
-          'Reportes',
+          _l10n.admUsrIndReportes,
           reportes['totalReportes'],
           Icons.report_outlined,
         ),
@@ -401,24 +410,28 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
     final actividades = _lista(datos['actividades']);
 
     return _seccion(
-      titulo: 'Historial de actividad',
+      titulo: _l10n.admUsrHistorialTitulo,
       icono: Icons.history,
       resumen: Wrap(
         spacing: 14,
         runSpacing: 8,
         children: [
-          _datoResumen('Favoritos', resumen['totalFavoritos']),
-          _datoResumen('Votos de nodos', resumen['totalVotosNodos']),
-          _datoResumen('Votos de alertas', resumen['totalVotosAlertas']),
+          _datoResumen(_l10n.admUsrFavoritos, resumen['totalFavoritos']),
+          _datoResumen(_l10n.admUsrVotosNodos, resumen['totalVotosNodos']),
+          _datoResumen(
+            _l10n.admUsrVotosAlertas,
+            resumen['totalVotosAlertas'],
+          ),
         ],
       ),
       elementos: actividades,
-      vacio: 'Este usuario todavía no registra actividad.',
+      vacio: _l10n.admUsrHistorialVacio,
       construir: (elemento) => _fila(
-        titulo: _texto(elemento['accion'], 'Actividad'),
-        subtitulo:
-            'Tipo: ${_texto(elemento['tipo'])}  ·  '
-            'Referencia: ${_texto(elemento['referenciaId'])}',
+        titulo: _texto(elemento['accion'], _l10n.admUsrActividad),
+        subtitulo: _l10n.admUsrTipoReferencia(
+          _texto(elemento['tipo']),
+          _texto(elemento['referenciaId']),
+        ),
         detalle: _fecha(elemento['fecha']),
         icono: Icons.bolt_outlined,
       ),
@@ -434,12 +447,12 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _tituloSeccion(
-            'Aportes del usuario',
+            _l10n.admUsrAportesTitulo,
             Icons.add_location_alt_outlined,
           ),
           const SizedBox(height: 16),
           Text(
-            'Rutas creadas (${rutas.length})',
+            _l10n.admUsrRutasCreadas(rutas.length),
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               color: FqColors.ink,
@@ -447,21 +460,22 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
           ),
           const SizedBox(height: 10),
           if (rutas.isEmpty)
-            _mensajeVacio('No ha creado rutas.')
+            _mensajeVacio(_l10n.admUsrSinRutas)
           else
             ...rutas.map(
               (ruta) => _fila(
-                titulo: _texto(ruta['nombre'], 'Ruta sin nombre'),
-                subtitulo:
-                    'Estado: ${_texto(ruta['estado'])}  ·  '
-                    'Distancia: ${_texto(ruta['distanciaKm'], '—')} km',
+                titulo: _texto(ruta['nombre'], _l10n.admUsrRutaSinNombre),
+                subtitulo: _l10n.admUsrRutaDetalle(
+                  _texto(ruta['estado']),
+                  _texto(ruta['distanciaKm'], '—'),
+                ),
                 detalle: _fecha(ruta['creadoEn']),
                 icono: Icons.route,
               ),
             ),
           const SizedBox(height: 20),
           Text(
-            'Nodos creados (${nodos.length})',
+            _l10n.admUsrNodosCreados(nodos.length),
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               color: FqColors.ink,
@@ -469,14 +483,15 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
           ),
           const SizedBox(height: 10),
           if (nodos.isEmpty)
-            _mensajeVacio('No ha creado nodos.')
+            _mensajeVacio(_l10n.admUsrSinNodos)
           else
             ...nodos.map(
               (nodo) => _fila(
-                titulo: _texto(nodo['nombre'], 'Nodo sin nombre'),
-                subtitulo:
-                    'Categoría: ${_texto(nodo['categoria'])}  ·  '
-                    'Estado: ${_texto(nodo['estado'])}',
+                titulo: _texto(nodo['nombre'], _l10n.admUsrNodoSinNombre),
+                subtitulo: _l10n.admUsrNodoDetalle(
+                  _texto(nodo['categoria']),
+                  _texto(nodo['estado']),
+                ),
                 detalle: _fecha(nodo['creadoEn']),
                 icono: Icons.place_outlined,
               ),
@@ -491,30 +506,31 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
     final resumen = _mapa(datos['resumen']);
 
     return _seccion(
-      titulo: 'Reportes de incidentes',
+      titulo: _l10n.admUsrReportesTitulo,
       icono: Icons.report_problem_outlined,
       resumen: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Alertas e incidentes registrados por este usuario.',
-            style: TextStyle(fontSize: 12, color: FqColors.muted),
+          Text(
+            _l10n.admUsrReportesNota,
+            style: const TextStyle(fontSize: 12, color: FqColors.muted),
           ),
           const SizedBox(height: 10),
-          _desglose('Por estado', _mapa(resumen['porEstado'])),
+          _desglose(_l10n.admUsrPorEstado, _mapa(resumen['porEstado'])),
           const SizedBox(height: 6),
-          _desglose('Por gravedad', _mapa(resumen['porGravedad'])),
+          _desglose(_l10n.admUsrPorGravedad, _mapa(resumen['porGravedad'])),
         ],
       ),
       elementos: reportes,
-      vacio: 'Este usuario no ha reportado incidentes.',
+      vacio: _l10n.admUsrReportesVacio,
       construir: (reporte) => _fila(
-        titulo: _texto(reporte['tipo'], 'Incidente'),
-        subtitulo:
-            '${_texto(reporte['descripcion'], 'Sin descripción')}\n'
-            'Gravedad: ${_texto(reporte['gravedad'])}  ·  '
-            'Estado: ${_texto(reporte['estado'])}  ·  '
-            'Confirmaciones: ${_texto(reporte['confirmacionesNo'], '0')}',
+        titulo: _texto(reporte['tipo'], _l10n.admUsrIncidente),
+        subtitulo: _l10n.admUsrIncidenteDetalle(
+          _texto(reporte['descripcion'], _l10n.admRepSinDescripcion),
+          _texto(reporte['gravedad']),
+          _texto(reporte['estado']),
+          _texto(reporte['confirmacionesNo'], '0'),
+        ),
         detalle: _fecha(reporte['creadoEn']),
         icono: Icons.warning_amber_outlined,
       ),
@@ -581,7 +597,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
   Widget _desglose(String titulo, Map<String, dynamic> valores) {
     if (valores.isEmpty) {
       return Text(
-        '$titulo: sin datos',
+        _l10n.admUsrSinDatos(titulo),
         style: const TextStyle(fontSize: 12, color: FqColors.muted),
       );
     }
@@ -656,17 +672,20 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
         children: [
           const Icon(Icons.error_outline, size: 35, color: Colors.redAccent),
           const SizedBox(height: 12),
-          const Text(
-            'No se pudo cargar el detalle del usuario.',
-            style: TextStyle(fontWeight: FontWeight.w700),
+          Text(
+            _l10n.admUsrErrorDetalle,
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          Text('${error ?? 'Error desconocido'}', textAlign: TextAlign.center),
+          Text(
+            '${error ?? _l10n.admUsrErrorDesconocido}',
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _actualizar,
             icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
+            label: Text(_l10n.comunReintentar),
           ),
         ],
       ),

@@ -204,8 +204,8 @@ class _FormularioAlertaState extends State<FormularioAlerta> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
-            'No se pudieron cargar los tipos de alerta.',
+          Text(
+            AppLocalizations.of(context)!.alertaTiposErrorCarga,
             style: TextStyle(
               color: FqColors.risk,
               fontSize: 12,
@@ -216,7 +216,7 @@ class _FormularioAlertaState extends State<FormularioAlerta> {
           OutlinedButton.icon(
             onPressed: _cargarTiposAlerta,
             icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
+            label: Text(AppLocalizations.of(context)!.comunReintentar),
           ),
         ],
       );
@@ -226,8 +226,8 @@ class _FormularioAlertaState extends State<FormularioAlerta> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
-            'No hay tipos de alerta disponibles.',
+          Text(
+            AppLocalizations.of(context)!.alertaTiposVacio,
             style: TextStyle(
               color: FqColors.muted,
               fontSize: 12,
@@ -237,7 +237,7 @@ class _FormularioAlertaState extends State<FormularioAlerta> {
           OutlinedButton.icon(
             onPressed: _cargarTiposAlerta,
             icon: const Icon(Icons.refresh),
-            label: const Text('Actualizar'),
+            label: Text(AppLocalizations.of(context)!.comunActualizar),
           ),
         ],
       );
