@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/db/daos/insignias_cache_dao.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/insignia.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 
-/// BDG-01 - Insignias del usuario, consumidas desde el backend.
+/// BDG-01 - Insignias del usuario, consumidas desde el backend o caché local offline.
 ///
 /// Si se indica [idUsuario] muestra las insignias de ese usuario (perfil
 /// público); si no, las del usuario autenticado.
 class InsigniasScreen extends StatefulWidget {
-  const InsigniasScreen({super.key, this.api, this.idUsuario, this.nombre});
+  const InsigniasScreen({
+    super.key,
+    this.api,
+    this.cacheDao,
+    this.idUsuario,
+    this.nombre,
+  });
+
   final PerfilApi? api;
+  final InsigniasCacheDao? cacheDao;
   final int? idUsuario;
   final String? nombre;
 
@@ -22,11 +31,32 @@ class InsigniasScreen extends StatefulWidget {
 
 class _InsigniasScreenState extends State<InsigniasScreen> {
   late final PerfilApi _api = widget.api ?? PerfilApi();
+  late final InsigniasCacheDao _cacheDao =
+      widget.cacheDao ?? InsigniasCacheDao();
   late Future<List<Insignia>> _futuro = _cargar();
+  bool _esOffline = false;
 
-  Future<List<Insignia>> _cargar() => widget.idUsuario == null
-      ? _api.misInsignias()
-      : _api.insigniasDeUsuario(widget.idUsuario!);
+  Future<List<Insignia>> _cargar() async {
+    final bool propio = widget.idUsuario == null;
+    if (propio) {
+      try {
+        final List<Insignia> remotas = await _api.misInsignias();
+        if (mounted) setState(() => _esOffline = false);
+        await _cacheDao.guardarTodas(remotas);
+        return remotas;
+      } catch (_) {
+        final List<Insignia> enCache = await _cacheDao.listar();
+        if (mounted) setState(() => _esOffline = true);
+        if (enCache.isNotEmpty) {
+          return enCache;
+        }
+        rethrow;
+      }
+    } else {
+      if (mounted) setState(() => _esOffline = false);
+      return _api.insigniasDeUsuario(widget.idUsuario!);
+    }
+  }
 
   Future<void> _recargar() async {
     final Future<List<Insignia>> nuevo = _cargar();
@@ -67,6 +97,36 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
               ],
             ),
           ),
+          if (_esOffline)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: const Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    size: 18,
+                    color: Color(0xFF92400E),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Modo sin conexión: mostrando insignias guardadas en tu dispositivo.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: FutureBuilder<List<Insignia>>(
               future: _futuro,
@@ -76,9 +136,11 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                 }
                 if (snap.hasError) {
                   return FqEmptyState(
-                    icon: Icons.error_outline,
+                    icon: Icons.wifi_off_rounded,
                     title: l10n.insigniasErrorCarga,
-                    message: l10n.insigniasErrorCargaMsg,
+                    message: _esOffline
+                        ? 'No tienes insignias guardadas en tu dispositivo.'
+                        : l10n.insigniasErrorCargaMsg,
                     action: TextButton(onPressed: _recargar, child: Text(l10n.comunReintentar)),
                   );
                 }

@@ -141,13 +141,6 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                _Tarjeta(
-                  icono: Icons.download_outlined,
-                  titulo: l10n.mapasOfflineTitulo,
-                  bajada: l10n.preferenciasMapasDesc,
-                  child: _MapasPanel(l10n: l10n),
-                ),
                 const SizedBox(height: 24),
                 FqButton.primary(
                   label: l10n.preferenciasGuardarBtn,
@@ -270,46 +263,6 @@ class _OpcionVisibilidad extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _MapasPanel extends StatelessWidget {
-  const _MapasPanel({required this.l10n});
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: FqColors.cloud, borderRadius: BorderRadius.circular(10)),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.info_outline, size: 16, color: FqColors.muted),
-              const SizedBox(width: 8),
-              Expanded(child: Text(l10n.preferenciasSinMapasDescargados, style: const TextStyle(fontSize: 10, color: FqColors.muted))),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: () => notificarInfo(l10n.preferenciasDescargaPronto),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            decoration: BoxDecoration(border: Border.all(color: FqColors.border), borderRadius: BorderRadius.circular(10), color: FqColors.white),
-            child: Row(
-              children: <Widget>[
-                const Icon(Icons.add_circle_outline, size: 18, color: FqColors.river),
-                const SizedBox(width: 8),
-                Expanded(child: Text(l10n.preferenciasDescargarZona, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: FqColors.river))),
-                const Icon(Icons.chevron_right, size: 16, color: FqColors.stone),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

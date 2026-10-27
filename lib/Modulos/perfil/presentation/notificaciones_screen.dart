@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/db/daos/notificaciones_cache_dao.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
@@ -12,11 +12,16 @@ import 'package:fit_quest_go/Modulos/perfil/presentation/insignias_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 
 /// NOT-01: Centro de notificaciones.
-/// Muestra el buzón del usuario autenticado, consumido desde el backend.
+/// Muestra el buzón del usuario autenticado, consumido desde el backend o la caché local offline.
 class NotificacionesScreen extends StatefulWidget {
-  const NotificacionesScreen({super.key, this.api});
+  const NotificacionesScreen({
+    super.key,
+    this.api,
+    this.cacheDao,
+  });
 
   final NotificacionesApi? api;
+  final NotificacionesCacheDao? cacheDao;
 
   @override
   State<NotificacionesScreen> createState() => _NotificacionesScreenState();
@@ -24,9 +29,12 @@ class NotificacionesScreen extends StatefulWidget {
 
 class _NotificacionesScreenState extends State<NotificacionesScreen> {
   late final NotificacionesApi _api = widget.api ?? NotificacionesApi();
+  late final NotificacionesCacheDao _cacheDao =
+      widget.cacheDao ?? NotificacionesCacheDao();
   List<Notificacion>? _items;
   String? _error;
   String _filtro = 'todas';
+  bool _esOffline = false;
 
   @override
   void initState() {
@@ -35,20 +43,33 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   }
 
   Future<void> _cargar() async {
+    // Si aún no tenemos items, intentamos cargar desde la caché local primero
+    final List<Notificacion> enCache = await _cacheDao.listar();
+    if (enCache.isNotEmpty && mounted && _items == null) {
+      setState(() {
+        _items = enCache;
+        _error = null;
+        _esOffline = true;
+      });
+    }
+
     try {
       final List<Notificacion> datos = await _api.listar();
       if (!mounted) return;
       setState(() {
         _items = datos;
         _error = null;
+        _esOffline = false;
       });
+      await _cacheDao.guardarTodas(datos);
     } catch (e) {
       if (!mounted) return;
-      final AppLocalizations? l10n = AppLocalizations.of(context);
+      final List<Notificacion> fallback =
+          enCache.isNotEmpty ? enCache : await _cacheDao.listar();
       setState(() {
-        _error = e is ApiException
-            ? e.message
-            : (l10n?.notificacionesErrorCarga ?? 'No se pudieron cargar tus notificaciones.');
+        _items = fallback;
+        _esOffline = true;
+        _error = null;
       });
     }
   }
@@ -72,27 +93,32 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
         n.leida = true;
       }
     });
+    await _cacheDao.marcarTodasLeidas();
     try {
       await _api.marcarTodasLeidas();
       notificarInfo(l10n?.notificacionesTodasMarcadas ?? 'Todas las notificaciones marcadas como leídas');
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        for (final Notificacion n in pendientes) {
-          n.leida = false;
-        }
-      });
-      notificarError(l10n?.notificacionesErrorMarcar ?? 'No se pudieron marcar como leídas');
+      if (!_esOffline && mounted) {
+        setState(() {
+          for (final Notificacion n in pendientes) {
+            n.leida = false;
+          }
+        });
+        notificarError(l10n?.notificacionesErrorMarcar ?? 'No se pudieron marcar como leídas');
+      } else {
+        notificarInfo(l10n?.notificacionesTodasMarcadas ?? 'Marcadas como leídas');
+      }
     }
   }
 
   Future<void> _abrir(Notificacion n) async {
     if (!n.leida) {
       setState(() => n.leida = true);
+      await _cacheDao.marcarLeida(n.id);
       try {
         await _api.marcarLeida(n.id);
       } catch (_) {
-        if (mounted) setState(() => n.leida = false);
+        if (!_esOffline && mounted) setState(() => n.leida = false);
       }
     }
     if (!mounted) return;
@@ -127,12 +153,14 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     final List<Notificacion> lista = _items!;
     final int indice = lista.indexOf(n);
     setState(() => lista.remove(n));
+    await _cacheDao.eliminar(n.id);
     try {
       await _api.eliminar(n.id);
     } catch (_) {
-      if (!mounted) return;
-      setState(() => lista.insert(indice.clamp(0, lista.length), n));
-      notificarError(l10n?.notificacionesErrorEliminar ?? 'No se pudo eliminar la notificación');
+      if (!_esOffline && mounted) {
+        setState(() => lista.insert(indice.clamp(0, lista.length), n));
+        notificarError(l10n?.notificacionesErrorEliminar ?? 'No se pudo eliminar la notificación');
+      }
     }
   }
 
@@ -256,11 +284,17 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                 SizedBox(
                   height: 360,
                   child: FqEmptyState(
-                    icon: Icons.notifications_off_outlined,
-                    title: l10n.notificacionesVacioTitulo,
-                    message: _filtro == 'todas'
-                        ? l10n.notificacionesVacioAlDia
-                        : l10n.notificacionesVacioCategoria,
+                    icon: _esOffline
+                        ? Icons.wifi_off_rounded
+                        : Icons.notifications_off_outlined,
+                    title: _esOffline
+                        ? 'Sin notificaciones sin conexión'
+                        : l10n.notificacionesVacioTitulo,
+                    message: _esOffline
+                        ? 'No tienes notificaciones guardadas en tu dispositivo.'
+                        : (_filtro == 'todas'
+                            ? l10n.notificacionesVacioAlDia
+                            : l10n.notificacionesVacioCategoria),
                     action: _filtro != 'todas'
                         ? TextButton(
                             onPressed: () => setState(() => _filtro = 'todas'),
@@ -271,12 +305,45 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                 ),
               ],
             )
-          : ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              itemCount: lista.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (BuildContext context, int index) {
+          : Column(
+              children: <Widget>[
+                if (_esOffline)
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(14, 12, 14, 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: const Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.wifi_off_rounded,
+                          size: 18,
+                          color: Color(0xFF92400E),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Modo sin conexión: mostrando notificaciones guardadas en tu dispositivo.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    itemCount: lista.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (BuildContext context, int index) {
                 final Notificacion item = lista[index];
                 return Dismissible(
                   key: ValueKey<int>(item.id),
@@ -296,9 +363,12 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                     l10n: l10n,
                     onTap: () => _abrir(item),
                   ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
     );
   }
 }

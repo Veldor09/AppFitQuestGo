@@ -94,6 +94,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   /// Distancia maxima en metros para considerar que el usuario sigue sobre el camino vial de aproximacion.
   static const double _umbralDesviacionCaminoM = 30;
 
+  /// Umbral en metros a partir del cual se muestran puntitos para volver a reincorporarse a la ruta oficial.
+  static const double _umbralPuntitosRetornoM = 20;
+
   /// Intervalo minimo entre solicitudes sucesivas a Directions para reconstruir la ruta de aproximacion.
   static const Duration _intervaloMinimoRepedir = Duration(seconds: 4);
 
@@ -114,7 +117,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   PolylineAnnotationManager? _lineasAcercamiento;
   CircleAnnotationManager? _puntosAcercamiento;
   PolylineAnnotationManager? _lineasRuta;
-  PolylineAnnotationManager? _lineasRecorrido;
+  int _indiceSegmentoRuta = 0;
 
   StreamSubscription<PosicionGps>? _suscripcion;
   Timer? _reloj;
@@ -221,8 +224,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (!_enRuta) {
       final double aInicio =
           distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
-      final double distRuta = distanciaATrazoM(p, widget.ruta.puntos);
-      if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
+      if (aInicio <= _radioLlegadaM) {
         await _comenzarRecorrido(avisar: true);
       } else {
         _actualizarGuia(p);
@@ -230,30 +232,25 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     } else if (!_pausado) {
       final double aInicio =
           distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
-      final double distRuta = distanciaATrazoM(p, widget.ruta.puntos);
       if (!_alcanzoRuta) {
-        if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
+        if (aInicio <= _radioLlegadaM) {
           _alcanzoRuta = true;
           _camino = null;
+          _indiceSegmentoRuta = 0;
           await _lineasAcercamiento?.deleteAll();
           await _puntosAcercamiento?.deleteAll();
           final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
           _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
           _registrarPunto(p);
           _evaluarRuta(p);
+          await _actualizarTrazoRutaEnMarcha(p);
         } else {
           _actualizarGuia(p);
         }
       } else {
         _registrarPunto(p);
         _evaluarRuta(p);
-        if (_detector.desviado) {
-          _actualizarGuiaRetorno(p);
-        } else if (_camino != null) {
-          _camino = null;
-          unawaited(_lineasAcercamiento?.deleteAll());
-          unawaited(_puntosAcercamiento?.deleteAll());
-        }
+        await _actualizarTrazoRutaEnMarcha(p);
       }
     }
 
@@ -330,24 +327,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     }
   }
 
-  void _actualizarGuiaRetorno(PosicionGps p) {
-    final PosicionGps puntoCercano = puntoMasCercanoEnTrazo(p, widget.ruta.puntos);
-    _camino = RutaVial(
-      puntos: <PosicionGps>[p, puntoCercano],
-      distanciaMetros: _detector.distanciaAlTrazoM,
-      duracionSegundos: 0,
-      esLineaRecta: true,
-    );
-    unawaited(_dibujarCamino());
-  }
-
   void _registrarPunto(PosicionGps p) {
     if (_recorrido.isNotEmpty) {
       final PuntoRuta u = _recorrido.last;
       if (distanciaMetros(u.lat, u.lng, p.lat, p.lng) < _pasoMinimoM) return;
     }
     _recorrido.add(PuntoRuta(lat: p.lat, lng: p.lng));
-    unawaited(_dibujarRecorrido());
   }
 
   void _evaluarRuta(PosicionGps p) {
@@ -364,9 +349,15 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     }
 
     final ProgresoEnRuta pr = _progreso!;
-    if (!_llegoAlFinal && pr.restanteM <= _radioFinalM && pr.progresoM > 0) {
+    final double distAlFin = distanciaMetros(p.lat, p.lng, _fin.lat, _fin.lng);
+    if (!_llegoAlFinal &&
+        (pr.restanteM <= _radioFinalM || distAlFin <= _radioFinalM) &&
+        pr.progresoM > 0) {
       _llegoAlFinal = true;
       _decir(l10n?.recorridoVozFinal ?? 'Has llegado al final de la ruta');
+      unawaited(_lineasRuta?.deleteAll());
+      unawaited(_puntosAcercamiento?.deleteAll());
+      unawaited(_finalizar(confirmar: false));
     }
   }
 
@@ -529,22 +520,25 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
     if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
       _alcanzoRuta = true;
+      _indiceSegmentoRuta = 0;
       if (avisar) {
         _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
       } else {
         _decir(l10n?.recorridoVozComienza ?? 'Comienza el recorrido');
       }
-      if (p != null) {
-        _registrarPunto(p);
-        _evaluarRuta(p);
-      }
       _camino = null;
       await _lineasAcercamiento?.deleteAll();
       await _puntosAcercamiento?.deleteAll();
+      if (p != null) {
+        _registrarPunto(p);
+        _evaluarRuta(p);
+        await _actualizarTrazoRutaEnMarcha(p);
+      }
     } else {
       // Inicia el cronómetro de la sesión, pero mantiene la guía vial verde
-      // hacia la ruta y no empieza a trazar la línea azul hasta alcanzarla.
+      // hacia la ruta y no empieza el recorrido hasta alcanzarla.
       _alcanzoRuta = false;
+      _indiceSegmentoRuta = 0;
       _decir(l10n?.recorridoVozComienza ?? 'Comienza el recorrido');
       if (p != null) {
         _actualizarGuia(p);
@@ -587,17 +581,20 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     _lineasAcercamiento = await mapa.annotations.createPolylineAnnotationManager();
     _puntosAcercamiento = await mapa.annotations.createCircleAnnotationManager();
     _lineasRuta = await mapa.annotations.createPolylineAnnotationManager();
-    _lineasRecorrido = await mapa.annotations.createPolylineAnnotationManager();
     final PointAnnotationManager iconos =
         await mapa.annotations.createPointAnnotationManager();
     await prepararPines(iconos);
 
     await _dibujarRuta(iconos);
     await _dibujarCamino();
-    await _dibujarRecorrido();
 
     final PosicionGps? p = _ultima;
-    if (p != null) await _seguirCamara(p);
+    if (p != null) {
+      if (_enRuta && _alcanzoRuta) {
+        await _actualizarTrazoRutaEnMarcha(p);
+      }
+      await _seguirCamara(p);
+    }
   }
 
   Future<void> _dibujarRuta(PointAnnotationManager iconos) async {
@@ -646,25 +643,13 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (camino == null) return;
 
     final PosicionGps? usuario = _ultima;
-    final PosicionGps destino = (lat: _inicio.lat, lng: _inicio.lng);
+    final PosicionGps destino = camino.puntos.isNotEmpty
+        ? camino.puntos.last
+        : (lat: _inicio.lat, lng: _inicio.lng);
 
     if (camino.esLineaRecta) {
-      // No hay carretera disponible o se está muy cerca: dibujar los puntitos
-      // desde la posición actual del usuario hasta el inicio de la ruta (estilo Google Maps).
-      final PosicionGps desde = usuario ?? camino.puntos.first;
-      final List<PosicionGps> dots = _generarPuntitos(desde, destino);
-      if (puntosCirculo != null && dots.isNotEmpty) {
-        await puntosCirculo.createMulti(<CircleAnnotationOptions>[
-          for (final PosicionGps pt in dots)
-            CircleAnnotationOptions(
-              geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-              circleColor: FqColors.volt.toARGB32(),
-              circleRadius: 4.5,
-              circleStrokeColor: FqColors.night.toARGB32(),
-              circleStrokeWidth: 1.5,
-            ),
-        ]);
-      }
+      // Modo sin red o sin carretera vial: no se dibuja una línea recta artificial
+      // que atraviese casas o edificios. El usuario ve su pin GPS y el punto de inicio.
       return;
     }
 
@@ -736,21 +721,161 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     }
   }
 
-  /// Lo que ya caminaste sobre el trazo oficial, en cian brillante.
-  Future<void> _dibujarRecorrido() async {
-    final PolylineAnnotationManager? lineas = _lineasRecorrido;
+  static ({
+    double distanciaMinima,
+    int indiceSegmento,
+    PosicionGps puntoProyectado,
+  }) _distanciaYMasCercanoEnRuta(
+    PosicionGps p,
+    List<PuntoRuta> puntos, {
+    int? indiceReferencia,
+  }) {
+    if (puntos.length < 2) {
+      if (puntos.isEmpty) {
+        return (
+          distanciaMinima: double.infinity,
+          indiceSegmento: 0,
+          puntoProyectado: p,
+        );
+      }
+      return (
+        distanciaMinima:
+            distanciaMetros(p.lat, p.lng, puntos.first.lat, puntos.first.lng),
+        indiceSegmento: 0,
+        puntoProyectado: (lat: puntos.first.lat, lng: puntos.first.lng),
+      );
+    }
+
+    double minDist = double.infinity;
+    int segMin = 0;
+    PosicionGps proyMin = (lat: puntos.first.lat, lng: puntos.first.lng);
+
+    // Si hay un índice de referencia, buscar primero en una ventana local [ref - 3 .. ref + 5]
+    // para evitar saltos indeseados en circuitos cerrados o de ida y vuelta.
+    if (indiceReferencia != null) {
+      final int inicio = math.max(0, indiceReferencia - 3);
+      final int fin = math.min(puntos.length - 2, indiceReferencia + 5);
+      for (int i = inicio; i <= fin; i++) {
+        final PosicionGps proy = _puntoMasCercanoEnSegmentoGps(
+          p,
+          (lat: puntos[i].lat, lng: puntos[i].lng),
+          (lat: puntos[i + 1].lat, lng: puntos[i + 1].lng),
+        );
+        final double d = distanciaMetros(p.lat, p.lng, proy.lat, proy.lng);
+        if (d < minDist) {
+          minDist = d;
+          segMin = i;
+          proyMin = proy;
+        }
+      }
+      if (minDist <= 50) {
+        return (
+          distanciaMinima: minDist,
+          indiceSegmento: segMin,
+          puntoProyectado: proyMin,
+        );
+      }
+    }
+
+    // Búsqueda global si no hay referencia o si el usuario se alejó más de 50m.
+    minDist = double.infinity;
+    for (int i = 0; i < puntos.length - 1; i++) {
+      final PosicionGps proy = _puntoMasCercanoEnSegmentoGps(
+        p,
+        (lat: puntos[i].lat, lng: puntos[i].lng),
+        (lat: puntos[i + 1].lat, lng: puntos[i + 1].lng),
+      );
+      final double d = distanciaMetros(p.lat, p.lng, proy.lat, proy.lng);
+      if (d < minDist) {
+        minDist = d;
+        segMin = i;
+        proyMin = proy;
+      }
+    }
+
+    return (
+      distanciaMinima: minDist,
+      indiceSegmento: segMin,
+      puntoProyectado: proyMin,
+    );
+  }
+
+  /// Actualiza dinámicamente la ruta oficial en azul recortándola hacia adelante
+  /// conforme avanza el usuario, restaurándola si retrocede, y proyectando
+  /// puntitos de reincorporación si se desvía 20m o más.
+  Future<void> _actualizarTrazoRutaEnMarcha(PosicionGps p) async {
+    final List<PuntoRuta> puntosRuta = widget.ruta.puntos;
+    if (puntosRuta.length < 2) return;
+
+    final ({
+      double distanciaMinima,
+      int indiceSegmento,
+      PosicionGps puntoProyectado,
+    }) info = _distanciaYMasCercanoEnRuta(
+      p,
+      puntosRuta,
+      indiceReferencia: _indiceSegmentoRuta,
+    );
+
+    _indiceSegmentoRuta = info.indiceSegmento;
+
+    // 1. Puntitos para reincorporarse si el usuario se desvía >= 20 metros.
+    final CircleAnnotationManager? puntosCirculo = _puntosAcercamiento;
+    if (puntosCirculo != null) {
+      await puntosCirculo.deleteAll();
+      if (info.distanciaMinima >= _umbralPuntitosRetornoM) {
+        final List<PosicionGps> dots =
+            _generarPuntitos(p, info.puntoProyectado);
+        if (dots.isNotEmpty) {
+          await puntosCirculo.createMulti(<CircleAnnotationOptions>[
+            for (final PosicionGps pt in dots)
+              CircleAnnotationOptions(
+                geometry: Point(coordinates: Position(pt.lng, pt.lat)),
+                circleColor: FqColors.volt.toARGB32(),
+                circleRadius: 4.5,
+                circleStrokeColor: FqColors.night.toARGB32(),
+                circleStrokeWidth: 1.5,
+              ),
+          ]);
+        }
+      }
+    }
+
+    // 2. Trazo oficial en azul: se recorta dinámicamente desde el punto
+    // proyectado hacia adelante, y se restaura si el usuario retrocede.
+    final PolylineAnnotationManager? lineas = _lineasRuta;
     if (lineas == null) return;
+
+    if (_llegoAlFinal || _finalizando) {
+      await lineas.deleteAll();
+      return;
+    }
+
+    final List<Position> restantes = <Position>[
+      Position(info.puntoProyectado.lng, info.puntoProyectado.lat),
+      for (int i = info.indiceSegmento + 1; i < puntosRuta.length; i++)
+        Position(puntosRuta[i].lng, puntosRuta[i].lat),
+    ];
+
+    final double distAlFin = distanciaMetros(
+      info.puntoProyectado.lat,
+      info.puntoProyectado.lng,
+      puntosRuta.last.lat,
+      puntosRuta.last.lng,
+    );
+
+    // Si ya estamos a menos de _radioFinalM del final o no quedan puntos por recorrer:
+    if (restantes.length < 2 || distAlFin <= _radioFinalM) {
+      await lineas.deleteAll();
+      return;
+    }
+
     await lineas.deleteAll();
-    if (_recorrido.length < 2) return;
     await lineas.create(
       PolylineAnnotationOptions(
-        geometry: LineString(
-          coordinates: <Position>[
-            for (final PuntoRuta p in _recorrido) Position(p.lng, p.lat),
-          ],
-        ),
-        lineColor: const Color(0xFF00E5FF).toARGB32(),
-        lineWidth: 5,
+        geometry: LineString(coordinates: restantes),
+        lineColor: FqColors.river.toARGB32(),
+        lineWidth: 6,
       ),
     );
   }
@@ -846,24 +971,28 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (salir && mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _finalizar() async {
+  Future<void> _finalizar({bool confirmar = true}) async {
     if (_finalizando) return;
     // Antes de cualquier await: el context no se usa despues de una espera.
     final int idUsuarioSesion = AuthScope.maybeOf(context)?.usuario?.id ?? 0;
     final AppLocalizations? l10n = AppLocalizations.of(context);
-    final bool ok = await _confirmar(
-      titulo: l10n?.recorridoFinalizarTitulo ?? 'Finalizar recorrido',
-      mensaje: l10n?.recorridoFinalizarMensaje ?? '¿Quieres terminar y guardar tu recorrido?',
-      aceptar: l10n?.recorridoFinalizarBtn ?? 'Finalizar',
-    );
-    if (!ok || !mounted) return;
+    if (confirmar) {
+      final bool ok = await _confirmar(
+        titulo: l10n?.recorridoFinalizarTitulo ?? 'Finalizar recorrido',
+        mensaje: l10n?.recorridoFinalizarMensaje ?? '¿Quieres terminar y guardar tu recorrido?',
+        aceptar: l10n?.recorridoFinalizarBtn ?? 'Finalizar',
+      );
+      if (!ok || !mounted) return;
+    }
 
     setState(() => _finalizando = true);
     _cronometro.detener();
     _reloj?.cancel();
     unawaited(_suscripcion?.cancel());
     _suscripcion = null;
-    unawaited(_voz.detener());
+    if (confirmar) {
+      unawaited(_voz.detener());
+    }
 
     final double km = _distanciaRecorridaKm;
     final int segundos = _cronometro.transcurrido.inSeconds;
