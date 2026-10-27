@@ -129,16 +129,18 @@ class _RutasScreenState extends State<RutasScreen> {
         }
       });
       _favoritas.cargar(silencioso: true);
+      final AppLocalizations l10nOk = AppLocalizations.of(context)!;
       notificarExito(
-        agregada ? 'Ruta guardada en tus favoritas' : 'Ruta eliminada de tus guardadas',
+        agregada ? l10nOk.rutasFavoritaAgregada : l10nOk.rutasFavoritaQuitada,
       );
     } catch (_) {
       if (!mounted) return;
+      final AppLocalizations l10nErr = AppLocalizations.of(context)!;
       final bool estaOffline = await _offlineDao.estaGuardada(rutaId);
       if (estaOffline) {
-        notificarInfo('Esta ruta está guardada para uso sin conexión');
+        notificarInfo(l10nErr.rutasGuardadaSinConexion);
       } else {
-        notificarError('No se pudo modificar guardadas sin conexión');
+        notificarError(l10nErr.rutasErrorGuardadasSinConexion);
       }
     }
   }
@@ -246,6 +248,7 @@ class _RutasScreenState extends State<RutasScreen> {
   }
 
   Widget _buildCuerpoTab() {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
     if (_tab == 0) {
       return _ListaRutas(
         key: const ValueKey<String>('explorar'),
@@ -255,8 +258,8 @@ class _RutasScreenState extends State<RutasScreen> {
         onToggleFavorita: _toggleFavorita,
         onCambio: _recargar,
         onEliminada: _rutaEliminada,
-        vacioTitulo: 'Sin rutas publicadas',
-        vacioMensaje: 'Cuando la comunidad publique rutas, apareceran aqui.',
+        vacioTitulo: l10n.rutasSinPublicadas,
+        vacioMensaje: l10n.rutasSinPublicadasMensaje,
       );
     }
     if (_tab == 1) {
@@ -269,8 +272,8 @@ class _RutasScreenState extends State<RutasScreen> {
         onCambio: _recargar,
         onEliminada: _rutaEliminada,
         mostrarEstado: true,
-        vacioTitulo: 'Todavia no tenes rutas',
-        vacioMensaje: 'Las rutas que registres o planifiques apareceran aqui.',
+        vacioTitulo: l10n.rutasSinPropias,
+        vacioMensaje: l10n.rutasSinPropiasMensaje,
       );
     }
     return _ListaRutas(
@@ -282,10 +285,10 @@ class _RutasScreenState extends State<RutasScreen> {
       onCambio: _recargar,
       onEliminada: _rutaEliminada,
       esOffline: _esOfflineGuardadas,
-      vacioTitulo: 'Sin rutas guardadas',
+      vacioTitulo: l10n.rutasSinGuardadas,
       vacioMensaje: _esOfflineGuardadas
-          ? 'No tienes rutas descargadas para consultar sin conexión.'
-          : 'Guarda tus rutas favoritas desde el catalogo para verlas aqui.',
+          ? l10n.rutasSinGuardadasOffline
+          : l10n.rutasSinGuardadasMensaje,
     );
   }
 }
@@ -410,18 +413,18 @@ class _ListaRutas extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
-                child: const Row(
+                child: Row(
                   children: <Widget>[
-                    Icon(
+                    const Icon(
                       Icons.wifi_off_rounded,
                       size: 18,
                       color: Color(0xFF92400E),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Modo sin conexión: mostrando rutas guardadas en tu dispositivo.',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.rutasModoSinConexion,
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF92400E),
@@ -545,7 +548,7 @@ class _TarjetaRuta extends StatelessWidget {
                 color: esFavorita ? const Color(0xFF0F766E) : FqColors.muted,
                 size: 22,
               ),
-              tooltip: esFavorita ? 'Quitar de guardadas' : 'Guardar ruta',
+              tooltip: esFavorita ? l10n.rutasQuitarGuardada : l10n.rutasGuardarRuta,
               splashRadius: 18,
               onPressed: onToggleFavorita,
             ),

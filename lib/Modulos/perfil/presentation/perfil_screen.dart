@@ -325,10 +325,10 @@ class _PerfilContenido extends StatelessWidget {
                           color: Color(0xFF92400E),
                         ),
                         const SizedBox(width: 10),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Modo sin conexión: mostrando datos guardados. Tus rutas descargadas siguen disponibles.',
-                            style: TextStyle(
+                            AppLocalizations.of(context)!.perfilModoSinConexion,
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF92400E),
@@ -338,7 +338,7 @@ class _PerfilContenido extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF92400E)),
                           onPressed: onRecargar,
-                          tooltip: 'Reintentar',
+                          tooltip: AppLocalizations.of(context)!.comunReintentar,
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),

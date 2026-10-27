@@ -72,7 +72,7 @@ class _SelectorActividadesCatalogoState
 
   List<CatalogoItem> _items = <CatalogoItem>[];
   bool _cargando = true;
-  String? _error;
+  bool _error = false;
   bool _usandoOffline = false;
   int _solicitud = 0;
 
@@ -92,7 +92,7 @@ class _SelectorActividadesCatalogoState
 
     setState(() {
       _cargando = true;
-      _error = null;
+      _error = false;
       _usandoOffline = false;
       _items = <CatalogoItem>[];
     });
@@ -126,7 +126,7 @@ class _SelectorActividadesCatalogoState
       setState(() {
         _items = activos;
         _cargando = false;
-        _error = null;
+        _error = false;
         _usandoOffline = false;
       });
 
@@ -160,7 +160,7 @@ class _SelectorActividadesCatalogoState
         setState(() {
           _items = fallback;
           _cargando = false;
-          _error = null;
+          _error = false;
           _usandoOffline = true;
         });
 
@@ -179,7 +179,7 @@ class _SelectorActividadesCatalogoState
       setState(() {
         _items = <CatalogoItem>[];
         _cargando = false;
-        _error = 'No se pudieron cargar las actividades.';
+        _error = true;
         _usandoOffline = false;
       });
 
@@ -207,12 +207,14 @@ class _SelectorActividadesCatalogoState
       );
     }
 
-    if (_error != null || _items.isEmpty) {
+    if (_error || _items.isEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            _error ?? 'No hay actividades disponibles.',
+            _error
+                ? AppLocalizations.of(context)!.actividadesErrorCarga
+                : AppLocalizations.of(context)!.actividadesVacio,
             style: TextStyle(
               color: Theme.of(context).colorScheme.error,
             ),
@@ -221,7 +223,7 @@ class _SelectorActividadesCatalogoState
           OutlinedButton.icon(
             onPressed: _cargar,
             icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
+            label: Text(AppLocalizations.of(context)!.comunReintentar),
           ),
         ],
       );
@@ -291,7 +293,7 @@ class _SelectorActividadesCatalogoState
             const SizedBox(width: 4),
             Expanded(
               child: Text(
-                'Sin conexión: usando catálogo de actividades guardado.',
+                AppLocalizations.of(context)!.actividadesSinConexionCatalogo,
                 style: TextStyle(
                   fontSize: 11,
                   color: Theme.of(context).colorScheme.outline,

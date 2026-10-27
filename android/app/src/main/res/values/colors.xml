@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Color de acento de los avisos del sistema (el "volt" de la marca). -->
+    <color name="color_notificacion">#B9F227</color>
+</resources>

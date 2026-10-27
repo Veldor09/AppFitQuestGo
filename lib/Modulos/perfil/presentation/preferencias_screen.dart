@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/idioma/idioma_app.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
+import 'package:fit_quest_go/core/push/registro_push.dart';
+import 'package:fit_quest_go/core/push/servicio_push.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -10,9 +15,21 @@ import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 
 /// APP-07 / NAV-08 - Preferencias y privacidad.
 class PreferenciasScreen extends StatefulWidget {
-  const PreferenciasScreen({super.key, required this.usuario, this.api});
+  const PreferenciasScreen({
+    super.key,
+    required this.usuario,
+    this.api,
+    this.idioma,
+    this.push,
+  });
   final Usuario usuario;
   final PerfilApi? api;
+
+  /// Inyectable para pruebas; por defecto el idioma de toda la app.
+  final ControladorIdioma? idioma;
+
+  /// Inyectable para pruebas; por defecto [ServicioPush.instancia].
+  final ServicioPush? push;
 
   @override
   State<PreferenciasScreen> createState() => _PreferenciasScreenState();
@@ -20,6 +37,8 @@ class PreferenciasScreen extends StatefulWidget {
 
 class _PreferenciasScreenState extends State<PreferenciasScreen> {
   late final PerfilApi _api = widget.api ?? PerfilApi();
+  late final ControladorIdioma _idioma =
+      widget.idioma ?? ControladorIdioma.instancia;
   late String _unidad;
   late bool _notificaciones;
   late String _visibilidad;
@@ -46,12 +65,30 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
         visibilidad: _visibilidad,
       );
       if (!mounted) return;
+      // El interruptor de "Notificaciones push" tambien prende o apaga los
+      // avisos fuera de la app en ESTE telefono.
+      if (_notificaciones != widget.usuario.notificaciones) {
+        final ServicioPush push = widget.push ?? ServicioPush.instancia;
+        if (_notificaciones) {
+          unawaited(
+            push.registrar(
+              idioma: idiomaDeAviso(Localizations.localeOf(context)),
+            ),
+          );
+        } else {
+          unawaited(push.quitar());
+        }
+      }
       notificarExito(l10n?.preferenciasGuardadas ?? 'Preferencias guardadas');
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (mounted) notificarError(e.message);
     } catch (_) {
-      if (mounted) notificarError(l10n?.preferenciasErrorGuardar ?? 'No se pudo guardar. Revisa tu conexion.');
+      if (mounted)
+        notificarError(
+          l10n?.preferenciasErrorGuardar ??
+              'No se pudo guardar. Revisa tu conexion.',
+        );
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -72,13 +109,20 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
             child: Row(
               children: <Widget>[
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: FqColors.white),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: FqColors.white,
+                  ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Expanded(
                   child: Text(
                     l10n.preferenciasTitulo,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: FqColors.white,
+                    ),
                   ),
                 ),
               ],
@@ -89,6 +133,36 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: <Widget>[
+                // El idioma se aplica al tocarlo (no espera a Guardar) para que se
+                // vea el cambio al instante, y es solo de este dispositivo.
+                ListenableBuilder(
+                  listenable: _idioma,
+                  builder: (BuildContext context, Widget? _) => _Tarjeta(
+                    icono: Icons.language_rounded,
+                    titulo: l10n.preferenciasIdiomaTitulo,
+                    bajada: l10n.preferenciasIdiomaDesc,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        _Chip(
+                          key: const ValueKey<String>('idioma-auto'),
+                          label: l10n.preferenciasIdiomaAuto,
+                          activo: _idioma.idioma == null,
+                          onTap: () => _idioma.elegir(null),
+                        ),
+                        for (final IdiomaApp i in IdiomaApp.values)
+                          _Chip(
+                            key: ValueKey<String>('idioma-${i.codigo}'),
+                            label: i.nombre,
+                            activo: _idioma.idioma == i,
+                            onTap: () => _idioma.elegir(i),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 _Tarjeta(
                   icono: Icons.straighten_rounded,
                   titulo: l10n.preferenciasUnidadTitulo,
@@ -96,8 +170,16 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                   child: Wrap(
                     spacing: 8,
                     children: <Widget>[
-                      _Chip(label: l10n.preferenciasKm, activo: _unidad == 'km', onTap: () => setState(() => _unidad = 'km')),
-                      _Chip(label: l10n.preferenciasMillas, activo: _unidad == 'mi', onTap: () => setState(() => _unidad = 'mi')),
+                      _Chip(
+                        label: l10n.preferenciasKm,
+                        activo: _unidad == 'km',
+                        onTap: () => setState(() => _unidad = 'km'),
+                      ),
+                      _Chip(
+                        label: l10n.preferenciasMillas,
+                        activo: _unidad == 'mi',
+                        onTap: () => setState(() => _unidad = 'mi'),
+                      ),
                     ],
                   ),
                 ),
@@ -110,16 +192,21 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Text(
-                        _notificaciones ? l10n.preferenciasActivadas : l10n.preferenciasDesactivadas,
+                        _notificaciones
+                            ? l10n.preferenciasActivadas
+                            : l10n.preferenciasDesactivadas,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: _notificaciones ? FqColors.trail : FqColors.muted,
+                          color: _notificaciones
+                              ? FqColors.trail
+                              : FqColors.muted,
                         ),
                       ),
                       Switch(
                         value: _notificaciones,
-                        onChanged: (bool v) => setState(() => _notificaciones = v),
+                        onChanged: (bool v) =>
+                            setState(() => _notificaciones = v),
                         activeColor: FqColors.voltDark,
                         activeTrackColor: FqColors.volt,
                         inactiveTrackColor: FqColors.toggleOff,
@@ -135,9 +222,31 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                   bajada: l10n.preferenciasVisibilidadDesc,
                   child: Column(
                     children: <Widget>[
-                      _OpcionVisibilidad(icono: Icons.public_rounded, titulo: l10n.preferenciasPublicoTitulo, sub: l10n.preferenciasPublicoDesc, val: 'publico', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'publico')),
-                      _OpcionVisibilidad(icono: Icons.group_outlined, titulo: l10n.preferenciasAmigosTitulo, sub: l10n.preferenciasAmigosDesc, val: 'amigos', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'amigos')),
-                      _OpcionVisibilidad(icono: Icons.lock_rounded, titulo: l10n.preferenciasPrivadoTitulo, sub: l10n.preferenciasPrivadoDesc, val: 'privado', sel: _visibilidad, onTap: () => setState(() => _visibilidad = 'privado'), ultimo: true),
+                      _OpcionVisibilidad(
+                        icono: Icons.public_rounded,
+                        titulo: l10n.preferenciasPublicoTitulo,
+                        sub: l10n.preferenciasPublicoDesc,
+                        val: 'publico',
+                        sel: _visibilidad,
+                        onTap: () => setState(() => _visibilidad = 'publico'),
+                      ),
+                      _OpcionVisibilidad(
+                        icono: Icons.group_outlined,
+                        titulo: l10n.preferenciasAmigosTitulo,
+                        sub: l10n.preferenciasAmigosDesc,
+                        val: 'amigos',
+                        sel: _visibilidad,
+                        onTap: () => setState(() => _visibilidad = 'amigos'),
+                      ),
+                      _OpcionVisibilidad(
+                        icono: Icons.lock_rounded,
+                        titulo: l10n.preferenciasPrivadoTitulo,
+                        sub: l10n.preferenciasPrivadoDesc,
+                        val: 'privado',
+                        sel: _visibilidad,
+                        onTap: () => setState(() => _visibilidad = 'privado'),
+                        ultimo: true,
+                      ),
                     ],
                   ),
                 ),
@@ -158,7 +267,12 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
 }
 
 class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({required this.icono, required this.titulo, required this.bajada, required this.child});
+  const _Tarjeta({
+    required this.icono,
+    required this.titulo,
+    required this.bajada,
+    required this.child,
+  });
   final IconData icono;
   final String titulo;
   final String bajada;
@@ -178,17 +292,39 @@ class _Tarjeta extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(width: 32, height: 32, alignment: Alignment.center,
-                decoration: BoxDecoration(color: FqColors.listIconBg, borderRadius: BorderRadius.circular(10)),
-                child: Icon(icono, size: 17, color: FqColors.night)),
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: FqColors.listIconBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icono, size: 17, color: FqColors.night),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(titulo, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: FqColors.ink)),
-                  Text(bajada, style: const TextStyle(fontSize: 10, color: FqColors.muted)),
-                ],
-              )),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      titulo,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: FqColors.ink,
+                      ),
+                    ),
+                    Text(
+                      bajada,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: FqColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -202,7 +338,12 @@ class _Tarjeta extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.activo, required this.onTap});
+  const _Chip({
+    super.key,
+    required this.label,
+    required this.activo,
+    required this.onTap,
+  });
   final String label;
   final bool activo;
   final VoidCallback onTap;
@@ -217,16 +358,33 @@ class _Chip extends StatelessWidget {
         decoration: BoxDecoration(
           color: activo ? FqColors.volt : FqColors.cloud,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: activo ? FqColors.voltDark : FqColors.border),
+          border: Border.all(
+            color: activo ? FqColors.voltDark : FqColors.border,
+          ),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: activo ? FqColors.night : FqColors.muted)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: activo ? FqColors.night : FqColors.muted,
+          ),
+        ),
       ),
     );
   }
 }
 
 class _OpcionVisibilidad extends StatelessWidget {
-  const _OpcionVisibilidad({required this.icono, required this.titulo, required this.sub, required this.val, required this.sel, required this.onTap, this.ultimo = false});
+  const _OpcionVisibilidad({
+    required this.icono,
+    required this.titulo,
+    required this.sub,
+    required this.val,
+    required this.sel,
+    required this.onTap,
+    this.ultimo = false,
+  });
   final IconData icono;
   final String titulo, sub, val, sel;
   final VoidCallback onTap;
@@ -240,24 +398,48 @@ class _OpcionVisibilidad extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        decoration: BoxDecoration(border: ultimo ? null : const Border(bottom: BorderSide(color: FqColors.border))),
+        decoration: BoxDecoration(
+          border: ultimo
+              ? null
+              : const Border(bottom: BorderSide(color: FqColors.border)),
+        ),
         child: Row(
           children: <Widget>[
-            Icon(icono, size: 18, color: activo ? FqColors.trail : FqColors.muted),
+            Icon(
+              icono,
+              size: 18,
+              color: activo ? FqColors.trail : FqColors.muted,
+            ),
             const SizedBox(width: 10),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(titulo, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: activo ? FqColors.ink : FqColors.muted)),
-                Text(sub, style: const TextStyle(fontSize: 10, color: FqColors.muted)),
-              ],
-            )),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    titulo,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: activo ? FqColors.ink : FqColors.muted,
+                    ),
+                  ),
+                  Text(
+                    sub,
+                    style: const TextStyle(fontSize: 10, color: FqColors.muted),
+                  ),
+                ],
+              ),
+            ),
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: 18, height: 18,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: activo ? FqColors.trail : FqColors.stone, width: activo ? 5 : 2),
+                border: Border.all(
+                  color: activo ? FqColors.trail : FqColors.stone,
+                  width: activo ? 5 : 2,
+                ),
               ),
             ),
           ],

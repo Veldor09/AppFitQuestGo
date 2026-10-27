@@ -157,6 +157,17 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  bool _gpsIniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Aqui y no en initState: la notificacion en segundo plano lleva textos
+    // traducidos y el idioma solo se puede leer con el contexto ya montado.
+    if (_gpsIniciado) return;
+    _gpsIniciado = true;
     _escucharGps();
   }
 
@@ -198,8 +209,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
         : posicionesGps(
             distanciaMinimaM: 3,
             segundoPlano: true,
-            tituloNotificacion: 'Navegando: ${widget.ruta.nombre}',
-            mensajeNotificacion: 'Siguiendo ruta en FitQuest Go',
+            tituloNotificacion:
+                AppLocalizations.of(context)?.recorridoNotifTitulo(widget.ruta.nombre) ??
+                'Navegando: ${widget.ruta.nombre}',
+            mensajeNotificacion:
+                AppLocalizations.of(context)?.recorridoNotifMensaje ??
+                'Siguiendo ruta en FitQuest Go',
           );
     _suscripcion = flujo.listen(
       _alRecibirPosicion,
@@ -1277,7 +1292,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                     _BotonAccionMapa(
                       heroTag: 'encuadrar-recorrido',
                       icono: Icons.zoom_out_map_rounded,
-                      tooltip: 'Ver ruta completa',
+                      tooltip:
+                          AppLocalizations.of(context)?.recorridoTooltipVerRutaCompleta ??
+                          'Ver ruta completa',
                       onPressed: _encuadrarRuta,
                     ),
                     const SizedBox(height: 10),

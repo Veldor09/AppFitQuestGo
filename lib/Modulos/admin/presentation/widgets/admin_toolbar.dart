@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Barra de herramientas de las pantallas de lista (`.fq-admin-toolbar`):
 /// buscador + boton "Filtros" + accion opcional a la derecha.
@@ -103,8 +104,8 @@ class _FiltrosButton extends StatelessWidget {
         onTap: onPressed ??
             () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Filtros: pendiente de backend.'),
+                SnackBar(
+                  content: Text(AppLocalizations.of(context)!.admFiltrosPendiente),
                 ),
               );
             },
@@ -115,16 +116,16 @@ class _FiltrosButton extends StatelessWidget {
             border: Border.all(color: FqColors.border),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: const Row(
+          child: Row(
             children: <Widget>[
-              Icon(
+              const Icon(
                 Icons.tune,
                 size: 14,
                 color: FqColors.ink,
               ),
               SizedBox(width: 5),
               Text(
-                'Filtros',
+                AppLocalizations.of(context)!.usuariosFiltros,
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,

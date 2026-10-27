@@ -16,6 +16,7 @@ import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/empresa/data/empresa_api.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 
 /// Panel de la empresa · "Cuenta": la foto de perfil, el nombre comercial y el
 /// telefono (editables), el correo (solo se muestra) y cerrar sesion.
@@ -320,6 +321,17 @@ class _CuentaEmpresaScreenState extends State<CuentaEmpresaScreen> {
           label: l10n.cuentaEmpresaGuardar,
           loading: _guardando,
           onPressed: _guardando ? null : _guardar,
+        ),
+        const SizedBox(height: 12),
+        FqButton.secondary(
+          key: const ValueKey<String>('abrir-plan-patrocinio'),
+          label: l10n.planTitulo,
+          icon: Icons.star_outline_rounded,
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const PlanPatrocinioScreen(),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         FqButton.secondary(

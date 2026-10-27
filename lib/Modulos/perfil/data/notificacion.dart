@@ -1,3 +1,5 @@
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+
 /// Notificación del buzón del usuario (NOT-01), emitida por el backend.
 class Notificacion {
   Notificacion({
@@ -26,13 +28,15 @@ class Notificacion {
     );
   }
 
-  /// Categorías válidas: rutas, alertas, insignias, eventos, patrocinio.
+  /// Categorías válidas: rutas, alertas, insignias, eventos, patrocinio y
+  /// clima (esta última solo la generan los avisos locales de la app).
   static const List<String> categorias = <String>[
     'rutas',
     'alertas',
     'insignias',
     'eventos',
     'patrocinio',
+    'clima',
   ];
 
   final int id;
@@ -46,16 +50,28 @@ class Notificacion {
   final String? referenciaTipo;
   final int? referenciaId;
 
+  /// `true` si la genero la propia app (clima, alerta o destacado cerca) y vive
+  /// solo en este telefono: su id es negativo y nunca se pide ni se manda al
+  /// servidor.
+  bool get esLocal => id < 0;
+
   /// Texto relativo ("Hace 5 min", "Ayer"...) calculado en el cliente.
-  String tiempoRelativo([DateTime? ahora]) {
+  ///
+  /// Con [l10n] sale en el idioma de la app; sin el, en español.
+  String tiempoRelativo({DateTime? ahora, AppLocalizations? l10n}) {
     final Duration d = (ahora ?? DateTime.now()).difference(creadaEn);
-    if (d.inMinutes < 1) return 'Justo ahora';
-    if (d.inMinutes < 60) return 'Hace ${d.inMinutes} min';
-    if (d.inHours < 24) {
-      return 'Hace ${d.inHours} ${d.inHours == 1 ? 'hora' : 'horas'}';
+    if (d.inMinutes < 1) return l10n?.notificacionesTiempoAhora ?? 'Justo ahora';
+    if (d.inMinutes < 60) {
+      return l10n?.notificacionesTiempoMinutos(d.inMinutes) ?? 'Hace ${d.inMinutes} min';
     }
-    if (d.inDays == 1) return 'Ayer';
-    if (d.inDays < 30) return 'Hace ${d.inDays} días';
+    if (d.inHours < 24) {
+      return l10n?.notificacionesTiempoHoras(d.inHours) ??
+          'Hace ${d.inHours} ${d.inHours == 1 ? 'hora' : 'horas'}';
+    }
+    if (d.inDays == 1) return l10n?.notificacionesTiempoAyer ?? 'Ayer';
+    if (d.inDays < 30) {
+      return l10n?.notificacionesTiempoDias(d.inDays) ?? 'Hace ${d.inDays} días';
+    }
     return '${creadaEn.day.toString().padLeft(2, '0')}/'
         '${creadaEn.month.toString().padLeft(2, '0')}/${creadaEn.year}';
   }

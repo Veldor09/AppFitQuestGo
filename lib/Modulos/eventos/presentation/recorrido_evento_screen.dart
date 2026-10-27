@@ -86,6 +86,12 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
 
   static const Locale _idiomaVoz = Locale('es');
 
+  /// Los textos, o nulo si la pantalla ya no esta montada (la voz puede hablar
+  /// despues de cerrarla).
+  AppLocalizations? get _t => mounted ? AppLocalizations.of(context) : null;
+
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   String get _token => widget.accessToken ?? kMapboxAccessToken;
 
   late final MapboxDirectionsService _directions =
@@ -170,6 +176,17 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
         ahora: widget.ahora,
       );
     }
+  }
+
+  bool _gpsIniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Aqui y no en initState: la notificacion en segundo plano lleva textos
+    // traducidos y el idioma solo se puede leer con el contexto ya montado.
+    if (_gpsIniciado) return;
+    _gpsIniciado = true;
     _escucharGps();
   }
 
@@ -228,9 +245,9 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
       _alcanzoRuta = true;
       _indiceSegmentoRuta = 0;
       if (avisar) {
-        _decir('Has llegado al inicio del evento. Comienza el recorrido');
+        _decir(_t?.eventoRecorridoVozLlegoInicio ?? 'Has llegado al inicio del evento. Comienza el recorrido');
       } else {
-        _decir('Comienza el recorrido');
+        _decir(_t?.recorridoVozComienza ?? 'Comienza el recorrido');
       }
       _camino = null;
       await _lineasAcercamiento?.deleteAll();
@@ -243,7 +260,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     } else {
       _alcanzoRuta = false;
       _indiceSegmentoRuta = 0;
-      _decir('Comienza el recorrido');
+      _decir(_t?.recorridoVozComienza ?? 'Comienza el recorrido');
       if (p != null) {
         _actualizarGuia(p);
       }
@@ -266,8 +283,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
         : posicionesGps(
             distanciaMinimaM: 3,
             segundoPlano: true,
-            tituloNotificacion: 'Rumbo al evento: ${widget.evento.nombre}',
-            mensajeNotificacion: 'Navegando con FitQuest Go',
+            tituloNotificacion: _l10n.eventoRecorridoNotifTitulo(widget.evento.nombre),
+            mensajeNotificacion: _l10n.eventoRecorridoNotifMensaje,
           );
     _suscripcion = flujo.listen(
       _alRecibirPosicion,
@@ -318,7 +335,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
               _indiceSegmentoRuta = 0;
               await _lineasAcercamiento?.deleteAll();
               await _puntosAcercamiento?.deleteAll();
-              _decir('Has llegado al inicio del evento. Comienza el recorrido');
+              _decir(_t?.eventoRecorridoVozLlegoInicio ?? 'Has llegado al inicio del evento. Comienza el recorrido');
               _registrarPunto(p);
               _evaluarRuta(p);
               await _actualizarTrazoRutaEnMarcha(p);
@@ -338,7 +355,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
           _camino = null;
           await _lineasAcercamiento?.deleteAll();
           await _puntosAcercamiento?.deleteAll();
-          _decir('Has llegado al evento ${widget.evento.nombre}');
+          _decir(_t?.eventoRecorridoVozLlegoEvento(widget.evento.nombre) ?? 'Has llegado al evento ${widget.evento.nombre}');
           if (mounted) {
             setState(() {});
             unawaited(_mostrarResumenLlegada());
@@ -902,9 +919,9 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     if (detector != null) {
       switch (detector.evaluar(p)) {
         case EventoDesviacion.desviado:
-          _decir('Atención: te has desviado del recorrido del evento');
+          _decir(_t?.eventoRecorridoVozDesviado ?? 'Atención: te has desviado del recorrido del evento');
         case EventoDesviacion.regreso:
-          _decir('Has regresado al recorrido del evento');
+          _decir(_t?.eventoRecorridoVozRegreso ?? 'Has regresado al recorrido del evento');
         case EventoDesviacion.ninguno:
           break;
       }
@@ -919,7 +936,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
         pr.progresoM > 0) {
       _haLlegado = true;
       _cronometro.pausar();
-      _decir('¡Has completado el recorrido del evento!');
+      _decir(_t?.eventoRecorridoVozCompletado ?? '¡Has completado el recorrido del evento!');
       unawaited(_lineasRutaEvento?.deleteAll());
       unawaited(_puntosAcercamiento?.deleteAll());
       if (mounted) {
@@ -1038,7 +1055,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Seguir'),
+            child: Text(_l10n.recorridoSeguir),
           ),
           FilledButton(
             style: peligro
@@ -1059,9 +1076,9 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
       return;
     }
     final bool salir = await _confirmar(
-      titulo: '¿Salir del recorrido?',
-      mensaje: 'Si sales ahora no se guardará lo que llevas.',
-      aceptar: 'Salir sin guardar',
+      titulo: _l10n.recorridoSalirTitulo,
+      mensaje: _l10n.recorridoSalirMensaje,
+      aceptar: _l10n.recorridoSalirSinGuardar,
       peligro: true,
     );
     if (salir && mounted) Navigator.of(context).pop();
@@ -1071,16 +1088,16 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     if (_finalizando) return;
     if (confirmar) {
       final bool ok = await _confirmar(
-        titulo: 'Finalizar recorrido',
-        mensaje: '¿Quieres terminar tu recorrido del evento?',
-        aceptar: 'Finalizar',
+        titulo: _l10n.recorridoFinalizarTitulo,
+        mensaje: _l10n.eventoRecorridoFinalizarMensaje,
+        aceptar: _l10n.recorridoFinalizarBtn,
       );
       if (!ok || !mounted) return;
     }
     _finalizando = true;
     _cronometro.pausar();
     _haLlegado = true;
-    _decir('¡Has completado el recorrido del evento!');
+    _decir(_t?.eventoRecorridoVozCompletado ?? '¡Has completado el recorrido del evento!');
     await _lineasRutaEvento?.deleteAll();
     await _puntosAcercamiento?.deleteAll();
     if (mounted) {
@@ -1139,8 +1156,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                 const SizedBox(height: 14),
                 Text(
                   _tieneRuta
-                      ? '¡Has completado el recorrido!'
-                      : '¡Has llegado al evento!',
+                      ? _l10n.eventoRecorridoCompletadoTitulo
+                      : _l10n.eventoRecorridoLlegasteTitulo,
                   style: const TextStyle(
                     color: FqColors.white,
                     fontSize: 20,
@@ -1174,17 +1191,17 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                     child: Row(
                       children: <Widget>[
                         _Metrica(
-                          etiqueta: 'TIEMPO',
+                          etiqueta: _l10n.recorridoMetricaTiempo,
                           valor: formatoDuracion(tiempo),
                         ),
                         const _SeparadorMetrica(),
                         _Metrica(
-                          etiqueta: 'DISTANCIA',
+                          etiqueta: _l10n.recorridoMetricaDistancia,
                           valor: '${km.toStringAsFixed(2)} km',
                         ),
                         const _SeparadorMetrica(),
                         _Metrica(
-                          etiqueta: 'RITMO MEDIO',
+                          etiqueta: _l10n.recorridoMetricaRitmoMedio,
                           valor: formatoRitmo(ritmoPorKm(tiempo, km)),
                           unidad: '/km',
                         ),
@@ -1231,21 +1248,23 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     final String locale = Localizations.localeOf(context).toString();
     if (_sinGps && _ultima == null) {
       return (
-        texto: 'Activa la ubicación para comenzar',
+        texto: _l10n.recorridoEstadoActivaUbicacion,
         color: FqColors.risk,
         icono: Icons.location_off_rounded,
       );
     }
     if (_ultima == null) {
       return (
-        texto: 'Buscando tu ubicación…',
+        texto: _l10n.recorridoEstadoBuscandoUbicacion,
         color: FqColors.amber,
         icono: Icons.gps_not_fixed_rounded,
       );
     }
     if (_haLlegado) {
       return (
-        texto: _tieneRuta ? '¡Completaste el recorrido!' : '¡Llegaste al evento!',
+        texto: _tieneRuta
+            ? _l10n.eventoRecorridoEstadoCompletaste
+            : _l10n.eventoRecorridoEstadoLlegaste,
         color: FqColors.voltDark,
         icono: Icons.flag_rounded,
       );
@@ -1255,7 +1274,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
         final double dist = _detector?.distanciaAlTrazoM ?? 0;
         final String distStr = formatearDistancia(dist, locale: locale);
         return (
-          texto: '¡Fuera de ruta! · $distStr',
+          texto: _l10n.recorridoEstadoFueraRuta(distStr),
           color: FqColors.risk,
           icono: Icons.warning_amber_rounded,
         );
@@ -1264,7 +1283,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
       final double total = (pr?.progresoM ?? 0) + (pr?.restanteM ?? 0);
       final int pct = total > 0 ? ((pr!.progresoM / total) * 100).round() : 0;
       return (
-        texto: 'En ruta · $pct% completado',
+        texto: _l10n.recorridoEstadoEnRuta(pct),
         color: FqColors.voltDark,
         icono: Icons.directions_run_rounded,
       );
@@ -1278,7 +1297,9 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
         : 0;
     final String distStr = formatearDistancia(m, locale: locale);
     return (
-      texto: _tieneRuta ? 'Rumbo al inicio · $distStr' : 'Rumbo al evento · $distStr',
+      texto: _tieneRuta
+          ? _l10n.recorridoEstadoRumboInicio(distStr)
+          : _l10n.eventoRecorridoEstadoRumboEvento(distStr),
       color: FqColors.amber,
       icono: Icons.navigation_rounded,
     );
@@ -1379,7 +1400,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                   _BotonAccionMapa(
                     heroTag: 'encuadrar-evento',
                     icono: Icons.zoom_out_map_rounded,
-                    tooltip: 'Ver evento completo',
+                    tooltip: _l10n.eventoRecorridoVerCompleto,
                     onPressed: _encuadrarEvento,
                   ),
                   const SizedBox(height: 10),
@@ -1389,7 +1410,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                         ? Icons.my_location_rounded
                         : Icons.location_searching_rounded,
                     activo: _siguiendo,
-                    tooltip: 'Centrar en mi ubicación',
+                    tooltip: _l10n.recorridoTooltipCentrar,
                     onPressed: _centrar,
                   ),
                 ],
@@ -1422,22 +1443,24 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                         Row(
                           children: <Widget>[
                             _Metrica(
-                              etiqueta: 'TIEMPO',
+                              etiqueta: _l10n.recorridoMetricaTiempo,
                               valor: formatoDuracion(tiempo),
                             ),
                             const _SeparadorMetrica(),
                             _Metrica(
-                              etiqueta: 'RECORRIDO',
+                              etiqueta: _l10n.recorridoMetricaRecorrido,
                               valor: formatearDistancia(kmRecorrido * 1000, locale: locale),
                             ),
                             const _SeparadorMetrica(),
                             _Metrica(
-                              etiqueta: (_enRuta && _alcanzoRuta) ? 'RESTANTE' : 'EVENTO',
+                              etiqueta: (_enRuta && _alcanzoRuta)
+                                  ? _l10n.recorridoMetricaRestante
+                                  : _l10n.eventoRecorridoMetricaEvento,
                               valor: restanteStr,
                             ),
                             const _SeparadorMetrica(),
                             _Metrica(
-                              etiqueta: 'RITMO',
+                              etiqueta: _l10n.recorridoMetricaRitmo,
                               valor: formatoRitmo(ritmoPorKm(tiempo, kmRecorrido)),
                               unidad: '/km',
                             ),
@@ -1455,13 +1478,13 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                                 width: 1,
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: <Widget>[
-                                Icon(Icons.navigation_rounded, size: 16, color: FqColors.volt),
-                                SizedBox(width: 8),
+                                const Icon(Icons.navigation_rounded, size: 16, color: FqColors.volt),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Sigue la línea verde hasta el inicio del recorrido',
+                                    _l10n.eventoRecorridoGuiaInicio,
                                     style: TextStyle(
                                       color: FqColors.volt,
                                       fontSize: 12,
@@ -1488,8 +1511,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                                   ? null
                                   : () => _comenzarRecorrido(avisar: false),
                               icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                              label: const Text(
-                                'Empezar recorrido',
+                              label: Text(
+                                _l10n.eventoRecorridoEmpezar,
                                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
                               ),
                             ),
@@ -1506,13 +1529,13 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                                   width: 1,
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: <Widget>[
-                                  Icon(Icons.navigation_rounded, size: 16, color: FqColors.volt),
-                                  SizedBox(width: 8),
+                                  const Icon(Icons.navigation_rounded, size: 16, color: FqColors.volt),
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'Sigue la línea verde hasta el inicio del recorrido',
+                                      _l10n.eventoRecorridoGuiaInicio,
                                       style: TextStyle(
                                         color: FqColors.volt,
                                         fontSize: 12,
@@ -1538,8 +1561,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                                   ),
                                 ),
                                 onPressed: () => Navigator.of(context).pop(),
-                                child: const Text(
-                                  'Ver detalles del evento',
+                                child: Text(
+                                  _l10n.eventoRecorridoVerDetalles,
                                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
                                 ),
                               ),
@@ -1563,7 +1586,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                                       size: 20,
                                     ),
                                     label: Text(
-                                      _pausado ? 'Reanudar' : 'Pausar',
+                                      _pausado ? _l10n.recorridoReanudar : _l10n.recorridoPausar,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 15,
@@ -1584,8 +1607,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                                     ),
                                     onPressed: _finalizando ? null : () => _finalizar(confirmar: true),
                                     icon: const Icon(Icons.stop_rounded, size: 20),
-                                    label: const Text(
-                                      'Finalizar recorrido',
+                                    label: Text(
+                                      _l10n.recorridoFinalizarTitulo,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 15,
@@ -1600,18 +1623,20 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                         Row(
                           children: <Widget>[
                             _Metrica(
-                              etiqueta: 'DISTANCIA',
+                              etiqueta: _l10n.recorridoMetricaDistancia,
                               valor: formatearDistancia(distanciaM, locale: locale),
                             ),
                             const _SeparadorMetrica(),
                             _Metrica(
-                              etiqueta: 'A PIE',
-                              valor: '$minutosAprox min',
+                              etiqueta: _l10n.eventoRecorridoMetricaAPie,
+                              valor: _l10n.eventoRecorridoMinutos(minutosAprox),
                             ),
                             const _SeparadorMetrica(),
                             _Metrica(
-                              etiqueta: 'ESTADO',
-                              valor: _haLlegado ? 'Llegaste' : 'En camino',
+                              etiqueta: _l10n.eventoRecorridoMetricaEstado,
+                              valor: _haLlegado
+                                  ? _l10n.eventoRecorridoValorLlegaste
+                                  : _l10n.eventoRecorridoValorEnCamino,
                             ),
                           ],
                         ),
@@ -1641,8 +1666,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                               Expanded(
                                 child: Text(
                                   _haLlegado
-                                      ? '¡Has llegado al destino del evento!'
-                                      : 'Sigue la línea y los puntos verdes hasta el evento',
+                                      ? _l10n.eventoRecorridoDestinoLlegado
+                                      : _l10n.eventoRecorridoGuiaDestino,
                                   style: TextStyle(
                                     color: _haLlegado
                                         ? FqColors.voltDark
@@ -1680,7 +1705,9 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                               }
                             },
                             child: Text(
-                              _haLlegado ? 'Ver detalles del evento' : '¡Ya llegué!',
+                              _haLlegado
+                                  ? _l10n.eventoRecorridoVerDetalles
+                                  : _l10n.eventoRecorridoYaLlegue,
                               style: const TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,

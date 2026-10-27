@@ -209,11 +209,11 @@ void main() {
     );
     expect(find.byKey(tarjeta), findsNothing);
 
-    await tester.pump(const Duration(seconds: 61));
+    await tester.pump(refrescoAlertasHome);
     await tester.pump();
     expect(find.byKey(tarjeta), findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 61));
+    await tester.pump(refrescoAlertasHome);
     await tester.pump();
     expect(find.byKey(tarjeta), findsNothing);
   });

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "538749292553",
+    "project_id": "fitquestgo-85ef7",
+    "storage_bucket": "fitquestgo-85ef7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538749292553:android:e6e7e32a2765ae400228d8",
+        "android_client_info": {
+          "package_name": "com.veldor09.fit_quest_go"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwEsK0IM0mUVz_Xh9sdztVLI3gKKiJ_To"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

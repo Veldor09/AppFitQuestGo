@@ -124,14 +124,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No se pudieron cargar las estadísticas: $_error',
+                        l10n.admDashErrorEstadisticas('$_error'),
                         style: const TextStyle(fontSize: 12),
                       ),
                     ),
                     TextButton.icon(
                       onPressed: _cargarResumen,
                       icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text('Reintentar'),
+                      label: Text(l10n.comunReintentar),
                     ),
                   ],
                 ),

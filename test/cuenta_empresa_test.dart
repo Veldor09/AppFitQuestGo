@@ -466,7 +466,9 @@ void main() {
       int cierres = 0;
       await _abrir(tester, _EmpresaApiFalsa(), alCerrar: () => cierres++);
 
-      await tester.ensureVisible(_tocable('cerrar-sesion-empresa'));
+      // Es el ultimo de la lista: se baja hasta el final antes de tocarlo.
+      await tester.drag(find.byType(ListView), const Offset(0, -1000));
+      await tester.pumpAndSettle();
       await tester.tap(_tocable('cerrar-sesion-empresa'));
       expect(cierres, 1);
     });

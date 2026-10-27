@@ -106,18 +106,18 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFFDE68A)),
               ),
-              child: const Row(
+              child: Row(
                 children: <Widget>[
-                  Icon(
+                  const Icon(
                     Icons.wifi_off_rounded,
                     size: 18,
                     color: Color(0xFF92400E),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Modo sin conexión: mostrando insignias guardadas en tu dispositivo.',
-                      style: TextStyle(
+                      l10n.insigniasModoSinConexion,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF92400E),
@@ -139,7 +139,7 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                     icon: Icons.wifi_off_rounded,
                     title: l10n.insigniasErrorCarga,
                     message: _esOffline
-                        ? 'No tienes insignias guardadas en tu dispositivo.'
+                        ? l10n.insigniasSinConexionMensaje
                         : l10n.insigniasErrorCargaMsg,
                     action: TextButton(onPressed: _recargar, child: Text(l10n.comunReintentar)),
                   );

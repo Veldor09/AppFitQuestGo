@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/db/daos/avisos_locales_dao.dart';
 import 'package:fit_quest_go/core/db/daos/notificaciones_cache_dao.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/perfil/data/avisos_locales.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificacion.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
@@ -18,10 +20,14 @@ class NotificacionesScreen extends StatefulWidget {
     super.key,
     this.api,
     this.cacheDao,
+    this.avisosLocales,
   });
 
   final NotificacionesApi? api;
   final NotificacionesCacheDao? cacheDao;
+
+  /// Los avisos que la app genero sola (clima, alertas y destacados cerca).
+  final AvisosLocales? avisosLocales;
 
   @override
   State<NotificacionesScreen> createState() => _NotificacionesScreenState();
@@ -31,6 +37,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   late final NotificacionesApi _api = widget.api ?? NotificacionesApi();
   late final NotificacionesCacheDao _cacheDao =
       widget.cacheDao ?? NotificacionesCacheDao();
+  late final AvisosLocales _locales = widget.avisosLocales ?? AvisosLocalesDao();
   List<Notificacion>? _items;
   String? _error;
   String _filtro = 'todas';
@@ -42,30 +49,45 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     _cargar();
   }
 
+  /// Une lo del servidor con los avisos locales (clima, alertas y destacados
+  /// que salieron en el mapa), del mas nuevo al mas viejo.
+  Future<List<Notificacion>> _conLocales(List<Notificacion> delServidor) async {
+    return <Notificacion>[
+      ...delServidor,
+      ...await _locales.listar(),
+    ]..sort((Notificacion a, Notificacion b) => b.creadaEn.compareTo(a.creadaEn));
+  }
+
   Future<void> _cargar() async {
-    // Si aún no tenemos items, intentamos cargar desde la caché local primero
+    // Si aún no tenemos items, mostramos primero lo guardado en el telefono
     final List<Notificacion> enCache = await _cacheDao.listar();
-    if (enCache.isNotEmpty && mounted && _items == null) {
-      setState(() {
-        _items = enCache;
-        _error = null;
-        _esOffline = true;
-      });
+    if (_items == null) {
+      final List<Notificacion> primeras = await _conLocales(enCache);
+      if (primeras.isNotEmpty && mounted && _items == null) {
+        setState(() {
+          _items = primeras;
+          _error = null;
+          _esOffline = enCache.isNotEmpty;
+        });
+      }
     }
 
     try {
       final List<Notificacion> datos = await _api.listar();
+      final List<Notificacion> todas = await _conLocales(datos);
       if (!mounted) return;
       setState(() {
-        _items = datos;
+        _items = todas;
         _error = null;
         _esOffline = false;
       });
       await _cacheDao.guardarTodas(datos);
     } catch (e) {
       if (!mounted) return;
-      final List<Notificacion> fallback =
-          enCache.isNotEmpty ? enCache : await _cacheDao.listar();
+      final List<Notificacion> fallback = await _conLocales(
+        enCache.isNotEmpty ? enCache : await _cacheDao.listar(),
+      );
+      if (!mounted) return;
       setState(() {
         _items = fallback;
         _esOffline = true;
@@ -94,6 +116,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       }
     });
     await _cacheDao.marcarTodasLeidas();
+    await _locales.marcarTodasLeidas();
     try {
       await _api.marcarTodasLeidas();
       notificarInfo(l10n?.notificacionesTodasMarcadas ?? 'Todas las notificaciones marcadas como leídas');
@@ -114,11 +137,15 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   Future<void> _abrir(Notificacion n) async {
     if (!n.leida) {
       setState(() => n.leida = true);
-      await _cacheDao.marcarLeida(n.id);
-      try {
-        await _api.marcarLeida(n.id);
-      } catch (_) {
-        if (!_esOffline && mounted) setState(() => n.leida = false);
+      if (n.esLocal) {
+        await _locales.marcarLeida(n.id);
+      } else {
+        await _cacheDao.marcarLeida(n.id);
+        try {
+          await _api.marcarLeida(n.id);
+        } catch (_) {
+          if (!_esOffline && mounted) setState(() => n.leida = false);
+        }
       }
     }
     if (!mounted) return;
@@ -153,6 +180,10 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     final List<Notificacion> lista = _items!;
     final int indice = lista.indexOf(n);
     setState(() => lista.remove(n));
+    if (n.esLocal) {
+      await _locales.eliminar(n.id);
+      return;
+    }
     await _cacheDao.eliminar(n.id);
     try {
       await _api.eliminar(n.id);
@@ -233,7 +264,8 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                           'alertas': l10n.homeFiltroAlertas,
                           'insignias': l10n.perfilInsignias,
                           'eventos': l10n.comunEventos,
-                          'patrocinio': 'Patrocinio',
+                          'patrocinio': l10n.notificacionesFiltroPatrocinio,
+                          'clima': l10n.notificacionesFiltroClima,
                         }.entries) ...<Widget>[
                           const SizedBox(width: 8),
                           _FiltroPill(
@@ -288,10 +320,10 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                         ? Icons.wifi_off_rounded
                         : Icons.notifications_off_outlined,
                     title: _esOffline
-                        ? 'Sin notificaciones sin conexión'
+                        ? l10n.notificacionesSinConexionTitulo
                         : l10n.notificacionesVacioTitulo,
                     message: _esOffline
-                        ? 'No tienes notificaciones guardadas en tu dispositivo.'
+                        ? l10n.notificacionesSinConexionMensaje
                         : (_filtro == 'todas'
                             ? l10n.notificacionesVacioAlDia
                             : l10n.notificacionesVacioCategoria),
@@ -316,18 +348,18 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFFDE68A)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: <Widget>[
-                        Icon(
+                        const Icon(
                           Icons.wifi_off_rounded,
                           size: 18,
                           color: Color(0xFF92400E),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Modo sin conexión: mostrando notificaciones guardadas en tu dispositivo.',
-                            style: TextStyle(
+                            l10n.notificacionesModoSinConexion,
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF92400E),
@@ -403,6 +435,13 @@ _EstiloCategoria _estiloDe(Notificacion n, AppLocalizations l10n) {
         const Color(0xFFB45309),
         const Color(0xFFFEF3C7),
         l10n.notificacionesAccionInsignias,
+      );
+    case 'clima':
+      return const _EstiloCategoria(
+        Icons.cloud_rounded,
+        Color(0xFF0369A1),
+        Color(0xFFE0F2FE),
+        null,
       );
     case 'patrocinio':
       return const _EstiloCategoria(
@@ -574,7 +613,7 @@ class _NotificacionCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         Text(
-                          item.tiempoRelativo(),
+                          item.tiempoRelativo(l10n: AppLocalizations.of(context)),
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,

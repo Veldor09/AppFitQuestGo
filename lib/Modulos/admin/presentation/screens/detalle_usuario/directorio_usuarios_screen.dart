@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
@@ -16,6 +17,8 @@ class DirectorioUsuariosScreen extends StatefulWidget {
 }
 
 class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   late final UsuariosApi _api = widget.api ?? UsuariosApi();
 
   static const Color _fondo = Color(0xFFF5F7FA);
@@ -67,7 +70,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
       if (!mounted) return;
 
       setState(() {
-        _error = 'No se pudieron cargar los usuarios: $error';
+        _error = _l10n.admDirErrorCarga('$error');
         _cargando = false;
       });
     }
@@ -139,22 +142,22 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                'Detalle de usuarios',
-                style: TextStyle(
+                _l10n.admDirTitulo,
+                style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: _texto,
                 ),
               ),
-              SizedBox(height: 5),
+              const SizedBox(height: 5),
               Text(
-                'Consulte la actividad, los aportes y los reportes de cada usuario.',
-                style: TextStyle(
+                _l10n.admDirSubtitulo,
+                style: const TextStyle(
                   fontSize: 13,
                   color: Color(0xFF64748B),
                 ),
@@ -163,7 +166,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
           ),
         ),
         IconButton.outlined(
-          tooltip: 'Actualizar usuarios',
+          tooltip: _l10n.admDirActualizar,
           onPressed: _cargando ? null : _cargar,
           icon: const Icon(Icons.refresh),
         ),
@@ -189,8 +192,8 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                 _busqueda = valor;
               }),
               decoration: InputDecoration(
-                labelText: 'Buscar usuario',
-                hintText: 'Nombre o correo electrónico',
+                labelText: _l10n.admDirBuscar,
+                hintText: _l10n.admDirBuscarHint,
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(11),
@@ -203,27 +206,27 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
             width: 170,
             child: DropdownButtonFormField<int?>(
               initialValue: _rol,
-              decoration: const InputDecoration(
-                labelText: 'Rol',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _l10n.perfilRol,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
-              items: const <DropdownMenuItem<int?>>[
+              items: <DropdownMenuItem<int?>>[
                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('Todos'),
+                  child: Text(_l10n.usuariosFiltroTodos),
                 ),
                 DropdownMenuItem<int?>(
                   value: 1,
-                  child: Text('Usuario'),
+                  child: Text(_l10n.rolUsuario),
                 ),
                 DropdownMenuItem<int?>(
                   value: 2,
-                  child: Text('Empresa'),
+                  child: Text(_l10n.rolEmpresa),
                 ),
                 DropdownMenuItem<int?>(
                   value: 3,
-                  child: Text('Admin'),
+                  child: Text(_l10n.rolAdmin),
                 ),
               ],
               onChanged: (valor) => _actualizarFiltros(() {
@@ -235,23 +238,23 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
             width: 180,
             child: DropdownButtonFormField<bool?>(
               initialValue: _activo,
-              decoration: const InputDecoration(
-                labelText: 'Estado',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _l10n.perfilEstado,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
-              items: const <DropdownMenuItem<bool?>>[
+              items: <DropdownMenuItem<bool?>>[
                 DropdownMenuItem<bool?>(
                   value: null,
-                  child: Text('Todos'),
+                  child: Text(_l10n.usuariosFiltroTodos),
                 ),
                 DropdownMenuItem<bool?>(
                   value: true,
-                  child: Text('Activados'),
+                  child: Text(_l10n.admDirActivados),
                 ),
                 DropdownMenuItem<bool?>(
                   value: false,
-                  child: Text('Desactivados'),
+                  child: Text(_l10n.admDirDesactivados),
                 ),
               ],
               onChanged: (valor) => _actualizarFiltros(() {
@@ -264,7 +267,9 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
               _ascendente = !_ascendente;
             }),
             icon: const Icon(Icons.sort_by_alpha),
-            label: Text(_ascendente ? 'Nombre A–Z' : 'Nombre Z–A'),
+            label: Text(
+              _ascendente ? _l10n.admDirNombreAZ : _l10n.admDirNombreZA,
+            ),
           ),
           TextButton.icon(
             onPressed: () {
@@ -277,7 +282,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
               });
             },
             icon: const Icon(Icons.close),
-            label: const Text('Limpiar filtros'),
+            label: Text(_l10n.admLimpiarFiltros),
           ),
         ],
       ),
@@ -312,9 +317,9 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
               ),
             )
           else if (usuarios.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(48),
-              child: Text('No se encontraron usuarios.'),
+            Padding(
+              padding: const EdgeInsets.all(48),
+              child: Text(_l10n.admDirSinResultados),
             )
           else
             LayoutBuilder(
@@ -333,12 +338,12 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                       ),
                       dataRowMinHeight: 65,
                       dataRowMaxHeight: 76,
-                      columns: const <DataColumn>[
-                        DataColumn(label: Text('Usuario')),
-                        DataColumn(label: Text('Correo electrónico')),
-                        DataColumn(label: Text('Rol')),
-                        DataColumn(label: Text('Estado')),
-                        DataColumn(label: Text('Detalle')),
+                      columns: <DataColumn>[
+                        DataColumn(label: Text(_l10n.rolUsuario)),
+                        DataColumn(label: Text(_l10n.admDirColCorreo)),
+                        DataColumn(label: Text(_l10n.perfilRol)),
+                        DataColumn(label: Text(_l10n.perfilEstado)),
+                        DataColumn(label: Text(_l10n.admDetalle)),
                       ],
                       rows: visibles.map((usuario) {
                         return DataRow(
@@ -383,7 +388,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                                   Icons.visibility_outlined,
                                   size: 17,
                                 ),
-                                label: const Text('Ver detalle'),
+                                label: Text(_l10n.admDirVerDetalle),
                               ),
                             ),
                           ],
@@ -403,12 +408,12 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
-                Text('Total de usuarios: ${usuarios.length}'),
+                Text(_l10n.admDirTotal(usuarios.length)),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     IconButton.outlined(
-                      tooltip: 'Página anterior',
+                      tooltip: _l10n.admPaginaAnterior,
                       onPressed: pagina > 1
                           ? () => setState(() {
                               _pagina = pagina - 1;
@@ -418,10 +423,10 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('Página $pagina de $totalPaginas'),
+                      child: Text(_l10n.admPaginaDe(pagina, totalPaginas)),
                     ),
                     IconButton.outlined(
-                      tooltip: 'Página siguiente',
+                      tooltip: _l10n.admPaginaSiguiente,
                       onPressed: pagina < totalPaginas
                           ? () => setState(() {
                               _pagina = pagina + 1;

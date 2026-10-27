@@ -356,7 +356,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                       ruta.creadoPorNombre!.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 8),
                     Text(
-                      'Creada por ${ruta.creadoPorNombre}',
+                      AppLocalizations.of(context)!.rutasCreadaPor(ruta.creadoPorNombre!),
                       style: const TextStyle(
                         fontSize: 12,
                         color: FqColors.muted,

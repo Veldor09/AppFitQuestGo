@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/db/daos/avisos_locales_dao.dart';
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
 import 'package:fit_quest_go/core/mapa/control_ubicacion.dart';
 import 'package:fit_quest_go/core/mapa/estilo_mapa.dart';
@@ -48,6 +49,7 @@ import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/formulario_nodo.dart';
+import 'package:fit_quest_go/Modulos/perfil/data/avisos_locales.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/notificaciones_api.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/application/proximidad_destacados.dart';
@@ -57,6 +59,18 @@ import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/capa_rutas_mapa.dart';
+
+/// Cada cuanto se vuelven a pedir las alertas vigentes, los puntos de interes,
+/// los eventos y las notificaciones sin leer: una alerta que reporta otra
+/// persona mientras caminas tiene que poder avisarte sin reabrir la app, un
+/// punto que otras personas votan como obsoleto tiene que salir del mapa y una
+/// notificacion nueva tiene que prender la campana. Publica para que las pruebas
+/// avancen el reloj exactamente este tiempo.
+const Duration refrescoAlertasHome = Duration(seconds: 5);
+
+/// Cada cuanto se vuelven a pedir las rutas publicadas: cambian poco (pasan por
+/// la moderacion del admin) y cada una trae todo su trazo.
+const Duration refrescoRutasHome = Duration(seconds: 5);
 
 class HomeUsuarioScreen extends StatefulWidget {
   const HomeUsuarioScreen({
@@ -69,6 +83,7 @@ class HomeUsuarioScreen extends StatefulWidget {
     this.eventoApi,
     this.rutaApi,
     this.notificacionesApi,
+    this.avisosLocales,
   });
 
   /// Inyectables para pruebas; en produccion se crean los reales.
@@ -78,6 +93,10 @@ class HomeUsuarioScreen extends StatefulWidget {
   final EventoApi? eventoApi;
   final RutaApi? rutaApi;
   final NotificacionesApi? notificacionesApi;
+
+  /// Donde queda constancia de los avisos que salen unos segundos en el mapa
+  /// (clima, alerta o destacado cerca) para encontrarlos en Notificaciones.
+  final AvisosLocales? avisosLocales;
   final AvisoVoz? voz;
 
   /// Fabrica del stream de posiciones del aviso de alertas cercanas. En
@@ -91,18 +110,6 @@ class HomeUsuarioScreen extends StatefulWidget {
 class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   static const String _accessToken = kMapboxAccessToken;
 
-  /// Cada cuanto se vuelven a pedir las alertas vigentes, los puntos de
-  /// interes, los eventos y las notificaciones sin leer: una alerta que reporta
-  /// otra persona mientras caminas tiene que poder avisarte sin reabrir la app,
-  /// un punto que otras personas votan como obsoleto tiene que salir del mapa y
-  /// una notificacion nueva tiene que prender la campana.
-  static const Duration _refrescoAlertas = Duration(seconds: 5);
-
-  /// Cada cuanto se vuelven a pedir las rutas publicadas: cambian poco (pasan
-  /// por la moderacion del admin) y cada una trae todo su trazo, asi que no se
-  /// piden tan seguido como lo demas.
-  static const Duration _refrescoRutas = Duration(seconds: 5);
-
   /// Cada cuanto se vuelve a preguntar el clima de la zona: cambia despacio y el
   /// servidor ademas lo guarda 10 minutos.
   static const Duration _refrescoClima = Duration(minutes: 15);
@@ -114,6 +121,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   late final RutaApi _rutaApi = widget.rutaApi ?? RutaApi();
   late final NotificacionesApi _notificacionesApi =
       widget.notificacionesApi ?? NotificacionesApi();
+  late final AvisosLocales _avisosLocales =
+      widget.avisosLocales ?? AvisosLocalesDao();
   late final ProximidadAlertas _proximidad;
   late final ClimaZona _clima;
 
@@ -181,6 +190,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   /// Notificaciones sin leer: el globito de la campana.
   int _noLeidas = 0;
 
+  /// Lo que el servidor dijo la ultima vez; los avisos locales se suman aparte.
+  int _noLeidasServidor = 0;
+
   /// Lo que dejan ver los chips de arriba. Solo cambia el dibujo del mapa y
   /// donde busca el buscador; el aviso por voz de las alertas sigue igual.
   FiltroMapa _filtro = FiltroMapa.todo;
@@ -233,14 +245,14 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       _cargarRutas();
       _cargarNoLeidas();
     });
-    _temporizadorAlertas = Timer.periodic(_refrescoAlertas, (Timer _) {
+    _temporizadorAlertas = Timer.periodic(refrescoAlertasHome, (Timer _) {
       _cargarAlertas();
       _cargarNodos();
       _cargarEventos();
       _cargarNoLeidas();
     });
     _temporizadorRutas = Timer.periodic(
-      _refrescoRutas,
+      refrescoRutasHome,
       (Timer _) => unawaited(_cargarRutas()),
     );
     _temporizadorClima = Timer.periodic(
@@ -301,8 +313,16 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     setState(() => _votando = true);
     try {
       final Alerta actualizada = sigueAhi
-          ? await _alertaApi.confirmar(alerta.id, lat: posicion.lat, lng: posicion.lng)
-          : await _alertaApi.desmentir(alerta.id, lat: posicion.lat, lng: posicion.lng);
+          ? await _alertaApi.confirmar(
+              alerta.id,
+              lat: posicion.lat,
+              lng: posicion.lng,
+            )
+          : await _alertaApi.desmentir(
+              alerta.id,
+              lat: posicion.lat,
+              lng: posicion.lng,
+            );
       if (!mounted) return;
       _proximidad.descartar();
       _reemplazarAlerta(actualizada);
@@ -376,12 +396,30 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     }
     if (_alertaAutoCierreId == actual.id) return;
     _alertaAutoCierreId = actual.id;
+    _guardarAviso(
+      (AppLocalizations l10n) => avisoDeAlertaCercana(
+        l10n,
+        actual,
+        _proximidad.metrosAlertaCercana ?? 0,
+      ),
+    );
     _temporizadorAutoCierreAlerta?.cancel();
     _temporizadorAutoCierreAlerta = Timer(_duracionAutoCierreAvisos, () {
       if (!mounted || _votando) return;
       _alertaAutoCierreId = null;
       _proximidad.descartar();
     });
+  }
+
+  /// Deja constancia en el centro de notificaciones de un aviso que sale unos
+  /// segundos en el mapa y se va solo, y prende la campana si es nuevo.
+  void _guardarAviso(AvisoLocal Function(AppLocalizations l10n) crear) {
+    if (!mounted) return;
+    final AppLocalizations? l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+    unawaited(
+      _avisosLocales.registrar(crear(l10n)).then((_) => _cargarNoLeidas()),
+    );
   }
 
   /// Oculta la tarjeta de aviso del clima tras unos segundos para no tapar el mapa.
@@ -394,6 +432,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     }
     if (_climaAutoCierreClave == aviso.clave) return;
     _climaAutoCierreClave = aviso.clave;
+    _guardarAviso((AppLocalizations l10n) => avisoDeClima(l10n, aviso));
     _temporizadorAutoCierreClima?.cancel();
     _temporizadorAutoCierreClima = Timer(_duracionAutoCierreAvisos, () {
       if (!mounted) return;
@@ -412,6 +451,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     }
     if (_destacadoAutoCierreClave == destacado.clave) return;
     _destacadoAutoCierreClave = destacado.clave;
+    _guardarAviso((AppLocalizations l10n) => avisoDeDestacado(l10n, destacado));
     _temporizadorAutoCierreDestacado?.cancel();
     _temporizadorAutoCierreDestacado = Timer(_duracionAutoCierreAvisos, () {
       if (!mounted) return;
@@ -508,12 +548,14 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   /// El globito de la campana: si falla (sin red) se queda con el ultimo conteo.
   Future<void> _cargarNoLeidas() async {
     try {
-      final int conteo = await _notificacionesApi.conteoNoLeidas();
-      if (!mounted || conteo == _noLeidas) return;
-      setState(() => _noLeidas = conteo);
+      _noLeidasServidor = await _notificacionesApi.conteoNoLeidas();
     } catch (_) {
-      // Sin datos por ahora: la campana queda como estaba.
+      // Sin red: se queda con el ultimo conteo del servidor.
     }
+    final int locales = await _avisosLocales.conteoNoLeidas();
+    final int conteo = _noLeidasServidor + locales;
+    if (!mounted || conteo == _noLeidas) return;
+    setState(() => _noLeidas = conteo);
   }
 
   /// Crea las capas del mapa, del fondo al frente. Se llama al crear el mapa y
@@ -970,10 +1012,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (mapa == null) return;
     try {
       await mapa.flyTo(
-        CameraOptions(
-          center: Point(coordinates: Position(lng, lat)),
-          zoom: 16,
-        ),
+        CameraOptions(center: Point(coordinates: Position(lng, lat)), zoom: 16),
         MapAnimationOptions(duration: 900),
       );
     } catch (_) {
@@ -1019,9 +1058,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   void _reportarAqui() {
     final PosicionGps? posicion = _proximidad.ultimaPosicion;
     if (posicion == null) {
-      notificarInfo(
-        AppLocalizations.of(context)!.homeSinUbicacionParaReportar,
-      );
+      notificarInfo(AppLocalizations.of(context)!.homeSinUbicacionParaReportar);
       return;
     }
     unawaited(_reportarEn(lat: posicion.lat, lng: posicion.lng));
@@ -1035,22 +1072,21 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (tipo == 'nodo') {
       final Nodo? creado = await _mostrarFormularioNodo(lat: lat, lng: lng);
       if (creado == null || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.homeNodoEnviadoExito)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.homeNodoEnviadoExito)));
       // Sale publicado de inmediato: se trae de nuevo para que aparezca ya.
       unawaited(_cargarNodos());
     } else {
-      final Alerta? creada =
-          await _mostrarFormularioAlerta(lat: lat, lng: lng);
+      final Alerta? creada = await _mostrarFormularioAlerta(lat: lat, lng: lng);
       if (creada == null || !mounted) return;
       setState(() => _alertas = <Alerta>[..._alertas, creada]);
       _proximidad.actualizarAlertas(_alertas);
       await _dibujarPines();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.homeAlertaPublicadaExito)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.homeAlertaPublicadaExito)));
     }
   }
 
@@ -1067,7 +1103,10 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   l10n.homeQuePublicar,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -1078,7 +1117,10 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
               onTap: () => Navigator.of(ctx).pop('nodo'),
             ),
             ListTile(
-              leading: const Icon(Icons.warning_amber_rounded, color: FqColors.risk),
+              leading: const Icon(
+                Icons.warning_amber_rounded,
+                color: FqColors.risk,
+              ),
               title: Text(l10n.homeAlertaOpcion),
               subtitle: Text(l10n.homeAlertaOpcionSubtitulo),
               onTap: () => Navigator.of(ctx).pop('alerta'),
@@ -1117,7 +1159,11 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   // --- Pantalla
 
   /// El cuadro "Cerca de ti": se recalcula con cada posicion del GPS.
-  Widget _construirPanel(BuildContext context, PosicionGps? posicion, Widget? _) {
+  Widget _construirPanel(
+    BuildContext context,
+    PosicionGps? posicion,
+    Widget? _,
+  ) {
     final RutaCercana? ruta = posicion == null
         ? null
         : rutaMasCercana(lat: posicion.lat, lng: posicion.lng, rutas: _rutas);
@@ -1146,7 +1192,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         if (ruta == null) return;
         unawaited(
           _encuadrar(<({double lat, double lng})>[
-            for (final PuntoRuta p in ruta.ruta.puntos) (lat: p.lat, lng: p.lng),
+            for (final PuntoRuta p in ruta.ruta.puntos)
+              (lat: p.lat, lng: p.lng),
           ]),
         );
         _abrirRuta(ruta.ruta);
@@ -1221,7 +1268,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                     child: aviso == null
                         ? const SizedBox.shrink()
                         : BannerClima(
-                            key: ValueKey<String>('banner-clima-${aviso.clave}'),
+                            key: ValueKey<String>(
+                              'banner-clima-${aviso.clave}',
+                            ),
                             alerta: aviso,
                             fuente: _clima.fuente,
                             masAvisos: _clima.visibles.length - 1,
@@ -1291,7 +1340,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
                       child: !visible
                           ? const SizedBox.shrink()
                           : BannerDestacadoCerca(
-                              key: ValueKey<String>('banner-destacado-${destacado.clave}'),
+                              key: ValueKey<String>(
+                                'banner-destacado-${destacado.clave}',
+                              ),
                               destacado: destacado,
                               onTap: () {
                                 _destacados.cerrar();

@@ -5,6 +5,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Avisos fuera de la app (Firebase): se activan solo si el equipo agrego
+// android/app/google-services.json. Sin el archivo la app compila igual y
+// simplemente no hay avisos del sistema (ver docs/push-notificaciones.md).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.veldor09.fit_quest_go"
     compileSdk = flutter.compileSdkVersion

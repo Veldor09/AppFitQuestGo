@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/reporte_contenido_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
@@ -13,6 +14,8 @@ class ReportesContenidoScreen extends StatefulWidget {
 }
 
 class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   final ReporteContenidoApi _api = ReporteContenidoApi();
   final TextEditingController _busquedaController = TextEditingController();
 
@@ -94,11 +97,11 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   String _nombreEstado(String estado) {
     switch (estado) {
       case 'pendiente':
-        return 'Pendiente';
+        return _l10n.admRepEstadoPendiente;
       case 'resuelta':
-        return 'Resuelta';
+        return _l10n.admRepEstadoResuelta;
       case 'archivada':
-        return 'Archivada';
+        return _l10n.admRepEstadoArchivada;
       default:
         return estado;
     }
@@ -107,11 +110,11 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   String _nombreTipo(String tipo) {
     switch (tipo) {
       case 'ruta':
-        return 'Ruta';
+        return _l10n.admRepTipoRuta;
       case 'nodo':
-        return 'Nodo';
+        return _l10n.admRepTipoNodo;
       case 'alerta':
-        return 'Alerta';
+        return _l10n.admRepTipoAlerta;
       default:
         return tipo;
     }
@@ -187,9 +190,9 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
         shape: const StadiumBorder(),
       ),
-      child: const Text(
-        'Cerrar',
-        style: TextStyle(fontWeight: FontWeight.w600),
+      child: Text(
+        _l10n.comunCerrar,
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -197,7 +200,6 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   Future<void> _cambiarEstado(int id, String estado) async {
     if (_actualizando) return;
 
-    final accion = estado == 'resuelta' ? 'resolver' : 'archivar';
 
     final bool? confirmado = await showDialog<bool>(
       context: context,
@@ -209,9 +211,9 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         titlePadding: const EdgeInsets.fromLTRB(26, 26, 26, 8),
         contentPadding: const EdgeInsets.fromLTRB(26, 8, 26, 12),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        title: const Text(
-          'Confirmar acción',
-          style: TextStyle(
+        title: Text(
+          _l10n.admRepConfirmarTitulo,
+          style: const TextStyle(
             color: _texto,
             fontSize: 23,
             fontWeight: FontWeight.w500,
@@ -220,18 +222,19 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 430),
           child: Text(
-            '¿Deseas $accion el reporte #$id?\n\n'
-            'Esta acción actualizará el estado del reporte.',
+            estado == 'resuelta'
+                ? _l10n.admRepConfirmarResolver(id)
+                : _l10n.admRepConfirmarArchivar(id),
             style: const TextStyle(color: _texto, fontSize: 15, height: 1.5),
           ),
         ),
         actions: [
           _botonSecundario(
-            texto: 'Cancelar',
+            texto: _l10n.comunCancelar,
             onPressed: () => Navigator.pop(dialogContext, false),
           ),
           _botonPrincipal(
-            texto: 'Confirmar',
+            texto: _l10n.admConfirmar,
             onPressed: () => Navigator.pop(dialogContext, true),
           ),
         ],
@@ -249,7 +252,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Reporte #$id actualizado a ${_nombreEstado(estado).toLowerCase()}',
+            _l10n.admRepActualizado(id, _nombreEstado(estado).toLowerCase()),
           ),
         ),
       );
@@ -259,7 +262,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo actualizar el reporte: $error')),
+        SnackBar(content: Text(_l10n.admRepErrorActualizar('$error'))),
       );
     } finally {
       if (mounted) {
@@ -274,7 +277,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     final String tipo = reporte['tipoContenido']?.toString() ?? '';
     final String motivo = reporte['motivo']?.toString() ?? 'Sin motivo';
     final String descripcion =
-        reporte['descripcion']?.toString() ?? 'Sin descripción';
+        reporte['descripcion']?.toString() ?? _l10n.admRepSinDescripcion;
 
     await showDialog<void>(
       context: context,
@@ -287,7 +290,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         contentPadding: const EdgeInsets.fromLTRB(26, 12, 26, 18),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         title: Text(
-          'Reporte #$id',
+          _l10n.admRepTitulo(id),
           style: const TextStyle(
             color: _texto,
             fontSize: 24,
@@ -301,9 +304,9 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Información del reporte',
-                  style: TextStyle(
+                Text(
+                  _l10n.admRepInfo,
+                  style: const TextStyle(
                     color: _secundario,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -315,15 +318,15 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
                   runSpacing: 18,
                   children: [
                     _campoDetalle(
-                      etiqueta: 'Tipo de contenido',
+                      etiqueta: _l10n.admRepTipoContenido,
                       valor: _nombreTipo(tipo),
                     ),
                     _campoDetalle(
-                      etiqueta: 'ID del contenido',
+                      etiqueta: _l10n.admRepIdContenido,
                       valor: '${reporte['contenidoId']}',
                     ),
                     _campoDetalle(
-                      etiqueta: 'Estado',
+                      etiqueta: _l10n.perfilEstado,
                       valor: _nombreEstado(estado),
                     ),
                   ],
@@ -331,9 +334,9 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
                 const SizedBox(height: 22),
                 const Divider(color: _borde),
                 const SizedBox(height: 18),
-                _campoDetalle(etiqueta: 'Motivo', valor: motivo),
+                _campoDetalle(etiqueta: _l10n.admMotivo, valor: motivo),
                 const SizedBox(height: 18),
-                _campoDetalle(etiqueta: 'Descripción', valor: descripcion),
+                _campoDetalle(etiqueta: _l10n.admDescripcion, valor: descripcion),
               ],
             ),
           ),
@@ -342,7 +345,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
           _botonCerrar(onPressed: () => Navigator.pop(dialogContext)),
           if (estado != 'resuelta')
             _botonSecundario(
-              texto: 'Resolver',
+              texto: _l10n.admResolver,
               onPressed: () {
                 Navigator.pop(dialogContext);
                 _cambiarEstado(id, 'resuelta');
@@ -350,7 +353,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
             ),
           if (estado != 'archivada')
             _botonPrincipal(
-              texto: 'Archivar',
+              texto: _l10n.admArchivar,
               onPressed: () {
                 Navigator.pop(dialogContext);
                 _cambiarEstado(id, 'archivada');
@@ -365,23 +368,23 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   Widget build(BuildContext context) {
     final filas = _reportesFiltrados.map((reporte) {
       final tipo = reporte['tipoContenido']?.toString() ?? 'contenido';
-      final motivo = reporte['motivo']?.toString() ?? 'Sin motivo';
+      final motivo = reporte['motivo']?.toString() ?? _l10n.admRepSinMotivo;
       final estado = reporte['estado']?.toString() ?? '';
 
       return AdminRow(
         icon: Icons.flag_outlined,
         title: '${_nombreTipo(tipo)} #${reporte['contenidoId']} - $motivo',
-        subtitle: 'Reporte #${reporte['id']}',
+        subtitle: _l10n.admRepTitulo(reporte['id'] as int),
         trailing: Chip(label: Text(_nombreEstado(estado))),
         onTap: () => _mostrarDetalle(reporte),
       );
     }).toList();
 
     return AdminListScaffold(
-      searchHint: 'Buscar reportes...',
+      searchHint: _l10n.admRepBuscar,
       searchController: _busquedaController,
       onSearch: (texto) => setState(() => _busqueda = texto),
-      tabs: const ['Pendientes', 'Resueltas', 'Archivadas'],
+      tabs: [_l10n.admTabPendientes, _l10n.admTabResueltas, _l10n.admTabArchivadas],
       tabIndex: _tab,
       onTab: (indice) => setState(() => _tab = indice),
       child: AdminDataTable(
@@ -389,8 +392,8 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         loading: _cargando,
         error: _error,
         onRetry: _cargarReportes,
-        emptyTitle: 'Sin reportes',
-        emptyMessage: 'No hay reportes para este estado.',
+        emptyTitle: _l10n.admRepSin,
+        emptyMessage: _l10n.admRepSinMsg,
       ),
     );
   }

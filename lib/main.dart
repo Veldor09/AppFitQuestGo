@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'package:fit_quest_go/core/idioma/idioma_app.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/app.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
@@ -29,9 +30,20 @@ Future<void> main() async {
   try {
     // Rehidrata la sesion guardada (tokens en almacenamiento seguro). Si falla
     // -por token invalido, timeout o backend caido- se arranca sin sesion sin bloquear.
-    await auth.cargarSesionGuardada().timeout(const Duration(milliseconds: 1500));
+    await auth.cargarSesionGuardada().timeout(
+      const Duration(milliseconds: 1500),
+    );
   } catch (_) {
     // Silencio deliberado: la app funciona igual sin sesion previa.
+  }
+
+  try {
+    // El idioma que la persona eligio en Preferencias (si no, el del telefono).
+    await ControladorIdioma.instancia.cargar().timeout(
+      const Duration(milliseconds: 500),
+    );
+  } catch (_) {
+    // Sin lo guardado la app arranca en el idioma del telefono.
   }
 
   runApp(FitQuestGoApp(auth: auth));

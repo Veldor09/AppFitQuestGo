@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/auditoria_api.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 class AuditoriaScreen extends StatefulWidget {
   const AuditoriaScreen({super.key, this.api});
@@ -19,6 +20,8 @@ class AuditoriaScreen extends StatefulWidget {
 }
 
 class _AuditoriaScreenState extends State<AuditoriaScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   late final AuditoriaApi _api = widget.api ?? AuditoriaApi();
 
   final TextEditingController _administradorController =
@@ -92,7 +95,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       if (!mounted) return;
 
       setState(() {
-        _error = 'Ingrese un ID de administrador válido.';
+        _error = _l10n.admAudIdInvalido;
       });
       return;
     }
@@ -147,8 +150,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       if (!mounted) return;
 
       setState(() {
-        _error =
-            'No se pudieron consultar los registros: $e';
+        _error = _l10n.admAudErrorConsulta('$e');
       });
     } finally {
       _consultando = false;
@@ -224,10 +226,10 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   }
 
   String _accionLegible(String accion) {
-    const nombres = {
-      'USUARIO_CREADO': 'Usuario creado',
-      'USUARIO_ACTUALIZADO': 'Usuario actualizado',
-      'ESTADO_USUARIO_CAMBIADO': 'Estado modificado',
+    final nombres = {
+      'USUARIO_CREADO': _l10n.admAudAccUsuarioCreado,
+      'USUARIO_ACTUALIZADO': _l10n.admAudAccUsuarioActualizado,
+      'ESTADO_USUARIO_CAMBIADO': _l10n.admAudAccEstado,
     };
 
     return nombres[accion] ??
@@ -235,20 +237,20 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   }
 
   String _campoLegible(String campo) {
-    const nombres = {
-      'nombreUser': 'Nombre del usuario',
-      'emailUser': 'Correo electrónico',
-      'telefono': 'Teléfono',
-      'idrol': 'Rol',
-      'estado': 'Estado',
+    final nombres = {
+      'nombreUser': _l10n.admAudCampoNombre,
+      'emailUser': _l10n.admDirColCorreo,
+      'telefono': _l10n.admTelefono,
+      'idrol': _l10n.perfilRol,
+      'estado': _l10n.perfilEstado,
     };
 
     return nombres[campo] ?? campo;
   }
 
   String _valor(dynamic valor) {
-    if (valor == null) return 'Sin valor';
-    if (valor is bool) return valor ? 'Sí' : 'No';
+    if (valor == null) return _l10n.admAudSinValor;
+    if (valor is bool) return valor ? _l10n.admSi : _l10n.admNo;
 
     if (valor is Map || valor is List) {
       return const JsonEncoder.withIndent('  ')
@@ -256,7 +258,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     }
 
     final texto = valor.toString();
-    return texto.isEmpty ? '(Vacío)' : texto;
+    return texto.isEmpty ? _l10n.admAudVacio : texto;
   }
 
   Map<String, dynamic>? _mapa(dynamic valor) {
@@ -356,7 +358,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                     CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Auditoría administrativa',
+                    _l10n.admAudTitulo,
                     style: TextStyle(
                       color: _texto,
                       fontSize: compacto ? 22 : 28,
@@ -364,9 +366,9 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                     ),
                   ),
                   const SizedBox(height: 5),
-                  const Text(
-                    'Historial de acciones realizadas por administradores.',
-                    style: TextStyle(
+                  Text(
+                    _l10n.admAudSubtitulo,
+                    style: const TextStyle(
                       color: Color(0xFF64748B),
                       fontSize: 13,
                     ),
@@ -403,9 +405,9 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Actualización automática cada 5 segundos',
-                      style: TextStyle(
+                    Text(
+                      _l10n.admAudAuto,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: _verdeOscuro,
                         fontSize: 12,
@@ -413,7 +415,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                     ),
                     if (_ultimaActualizacion != null)
                       Text(
-                        'Última consulta: ${_hora(_ultimaActualizacion!)}',
+                        _l10n.admAudUltimaConsulta(_hora(_ultimaActualizacion!)),
                         style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 11,
@@ -498,20 +500,20 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             WrapCrossAlignment.center,
         children: [
           _campoFiltro(
-            'ID administrador',
+            _l10n.admAudIdAdmin,
             _administradorController,
             icono: Icons.person_outline,
             teclado: TextInputType.number,
-            ejemplo: 'Ej. 1',
+            ejemplo: _l10n.admAudEjemploId,
           ),
           _campoFiltro(
-            'Acción',
+            _l10n.admAccion,
             _accionController,
             icono: Icons.list_alt_outlined,
             ejemplo: 'USUARIO_ACTUALIZADO',
           ),
           _campoFiltro(
-            'Entidad',
+            _l10n.admEntidad,
             _entidadController,
             icono: Icons.inventory_2_outlined,
             ejemplo: 'USUARIO',
@@ -529,7 +531,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               ),
             ),
             icon: const Icon(Icons.search),
-            label: const Text('Buscar'),
+            label: Text(_l10n.admBuscar),
           ),
           OutlinedButton.icon(
             onPressed:
@@ -543,10 +545,10 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               ),
             ),
             icon: const Icon(Icons.close),
-            label: const Text('Limpiar'),
+            label: Text(_l10n.planificarLimpiar),
           ),
           IconButton.outlined(
-            tooltip: 'Actualizar registros',
+            tooltip: _l10n.admAudActualizar,
             onPressed: _consultando
                 ? null
                 : () => _cargarRegistros(),
@@ -575,20 +577,20 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
   Widget _tabla() {
     if (_registros.isEmpty) {
-      return const Padding(
+      return Padding(
         padding:
-            EdgeInsets.symmetric(vertical: 60),
+            const EdgeInsets.symmetric(vertical: 60),
         child: Center(
           child: Column(
             children: [
-              Icon(
+              const Icon(
                 Icons.manage_search,
                 size: 48,
                 color: Color(0xFF94A3B8),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
-                'No hay registros de auditoría para mostrar.',
+                _l10n.admAudSinRegistros,
               ),
             ],
           ),
@@ -616,18 +618,18 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               dataRowMaxHeight: 76,
               columnSpacing: 18,
               horizontalMargin: 18,
-              columns: const [
-                DataColumn(label: Text('ID')),
+              columns: [
+                const DataColumn(label: Text('ID')),
                 DataColumn(
-                  label: Text('Administrador'),
+                  label: Text(_l10n.admAudAdministrador),
                 ),
-                DataColumn(label: Text('Acción')),
-                DataColumn(label: Text('Entidad')),
+                DataColumn(label: Text(_l10n.admAccion)),
+                DataColumn(label: Text(_l10n.admEntidad)),
                 DataColumn(
-                  label: Text('ID afectado'),
+                  label: Text(_l10n.admAudIdAfectado),
                 ),
-                DataColumn(label: Text('Fecha')),
-                DataColumn(label: Text('Detalle')),
+                DataColumn(label: Text(_l10n.admFecha)),
+                DataColumn(label: Text(_l10n.admDetalle)),
               ],
               rows: _registros.map((registro) {
                 final accion =
@@ -697,7 +699,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                           Icons.visibility_outlined,
                           size: 17,
                         ),
-                        label: const Text('Ver'),
+                        label: Text(_l10n.comunVer),
                       ),
                     ),
                   ],
@@ -722,7 +724,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             WrapAlignment.spaceBetween,
         children: [
           Text(
-            'Total de registros: $_total',
+            _l10n.admAudTotal(_total),
             style: const TextStyle(
               fontWeight: FontWeight.w600,
               color: _texto,
@@ -732,7 +734,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton.outlined(
-                tooltip: 'Página anterior',
+                tooltip: _l10n.admPaginaAnterior,
                 onPressed:
                     _pagina > 1 && !_consultando
                         ? () => _cambiarPagina(
@@ -749,11 +751,14 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                   horizontal: 12,
                 ),
                 child: Text(
-                  'Página $_pagina de ${_totalPaginas == 0 ? 1 : _totalPaginas}',
+                  _l10n.admPaginaDe(
+                    _pagina,
+                    _totalPaginas == 0 ? 1 : _totalPaginas,
+                  ),
                 ),
               ),
               IconButton.outlined(
-                tooltip: 'Página siguiente',
+                tooltip: _l10n.admPaginaSiguiente,
                 onPressed:
                     _pagina < _totalPaginas &&
                             !_consultando
@@ -882,8 +887,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     Map<String, dynamic> cambios,
   ) {
     if (cambios.isEmpty) {
-      return const Text(
-        'No se detectaron cambios en los campos auditables.',
+      return Text(
+        _l10n.admAudSinCambios,
       );
     }
 
@@ -897,15 +902,15 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
         columnSpacing: 18,
         dataRowMinHeight: 55,
         dataRowMaxHeight: 100,
-        columns: const [
+        columns: [
           DataColumn(
-            label: Text('Campo modificado'),
+            label: Text(_l10n.admAudCampoModificado),
           ),
           DataColumn(
-            label: Text('Valor anterior'),
+            label: Text(_l10n.admAudValorAnterior),
           ),
           DataColumn(
-            label: Text('Valor nuevo'),
+            label: Text(_l10n.admAudValorNuevo),
           ),
         ],
         rows: cambios.entries.map((entrada) {
@@ -958,7 +963,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
           CrossAxisAlignment.start,
       children: [
         _seccionTitulo(
-          'Información general',
+          _l10n.admAudInfoGeneral,
           Icons.info_outline,
         ),
         const SizedBox(height: 14),
@@ -974,30 +979,30 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
           child: Column(
             children: [
               _datoDetalle(
-                'Administrador',
+                _l10n.admAudAdministrador,
                 '${registro['administradorId'] ?? '—'}',
                 icono: Icons.person_outline,
               ),
               _datoDetalle(
-                'Acción',
+                _l10n.admAccion,
                 _accionLegible(
                   '${registro['accion'] ?? '—'}',
                 ),
                 icono: Icons.edit_outlined,
               ),
               _datoDetalle(
-                'Entidad',
+                _l10n.admEntidad,
                 '${registro['entidad'] ?? '—'}',
                 icono:
                     Icons.inventory_2_outlined,
               ),
               _datoDetalle(
-                'ID afectado',
+                _l10n.admAudIdAfectado,
                 '${registro['entidadId'] ?? '—'}',
                 icono: Icons.tag,
               ),
               _datoDetalle(
-                'Fecha',
+                _l10n.admFecha,
                 _fecha(registro['creadoEn']),
                 icono:
                     Icons.calendar_today_outlined,
@@ -1008,8 +1013,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
         const SizedBox(height: 25),
         _seccionTitulo(
           cambios != null
-              ? 'Cambios realizados'
-              : 'Detalle del registro',
+              ? _l10n.admAudCambios
+              : _l10n.admAudDetalleRegistro,
           Icons.compare_arrows,
         ),
         const SizedBox(height: 14),
@@ -1029,10 +1034,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                 .toList(),
           )
         else if (detalle == null)
-          const Text(
-            'Este registro no contiene detalles. '
-            'Puede haberse generado antes de '
-            'habilitar el historial de cambios.',
+          Text(
+            _l10n.admAudSinDetalles,
           )
         else
           SelectableText(
@@ -1042,10 +1045,9 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
         if (detalle?['contrasenaModificada'] ==
             true) ...[
           const SizedBox(height: 16),
-          const Text(
-            'La contraseña fue modificada. '
-            'Su contenido no se almacena por seguridad.',
-            style: TextStyle(
+          Text(
+            _l10n.admAudContrasena,
+            style: const TextStyle(
               color: _verdeOscuro,
             ),
           ),
@@ -1062,10 +1064,9 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               borderRadius:
                   BorderRadius.circular(12),
             ),
-            child: const Text(
-              'Solo se muestran los campos que tuvieron cambios. '
-              'Los demás permanecen sin modificaciones.',
-              style: TextStyle(
+            child: Text(
+              _l10n.admAudSoloCambios,
+              style: const TextStyle(
                 color: Color(0xFF1764C0),
                 fontSize: 12,
               ),
@@ -1147,7 +1148,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Cerrar',
+                    tooltip: _l10n.comunCerrar,
                     onPressed: () =>
                         Navigator.of(context).pop(),
                     icon: const Icon(
@@ -1178,7 +1179,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                   onPressed: () =>
                       Navigator.of(context).pop(),
                   child:
-                      const Text('Cerrar'),
+                      Text(_l10n.comunCerrar),
                 ),
               ),
             ),
@@ -1218,7 +1219,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar detalle',
+      barrierLabel: _l10n.admAudCerrarDetalle,
       barrierColor:
           Colors.black.withValues(
         alpha: 0.42,
