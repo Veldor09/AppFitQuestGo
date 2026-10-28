@@ -13,12 +13,6 @@ import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
 const Color _colorArriba = Color(0xFF1FA64F);
 const Color _colorAbajo = Color(0xFFE0362C);
 
-/// Los dos pulgares con su conteo. Solo presentacion: quien lo usa decide que
-/// pasa al tocar (ver [PulgaresObjeto]).
-///
-/// En modo [compacto] es solo lectura (el resumen de una ficha: "👍 5 · 👎 8");
-/// con [mini] son dos botones chicos en una fila (para listas, como las areas
-/// de un evento); si no, son dos botones grandes y el elegido queda relleno.
 class Pulgares extends StatelessWidget {
   const Pulgares({
     super.key,
@@ -32,7 +26,6 @@ class Pulgares extends StatelessWidget {
 
   final ResumenCalificacion resumen;
 
-  /// Falso: se ven los conteos pero los botones no responden.
   final bool habilitado;
   final bool enviando;
   final bool compacto;
@@ -214,10 +207,6 @@ class _BotonPulgar extends StatelessWidget {
   }
 }
 
-/// Pulgares de un objeto concreto (una ruta, un nodo, un evento o un area de
-/// un evento): pide su resumen al servidor, deja calificar con un toque (tocar
-/// el mismo pulgar otra vez retira la calificacion) y explica por que no se
-/// puede cuando no se puede.
 class PulgaresObjeto extends StatefulWidget {
   const PulgaresObjeto({
     super.key,
@@ -237,23 +226,17 @@ class PulgaresObjeto extends StatefulWidget {
   final TipoCalificable tipo;
   final int id;
 
-  /// Indice del area de un evento que se califica (null: el objeto entero).
   final int? area;
 
-  /// Si ya se tiene el resumen (el de un area viene con el del evento) no se
-  /// vuelve a pedir. Con [area], es el resumen de esa area.
   final ResumenCalificacion? resumenInicial;
   final CalificacionApi? api;
 
-  /// Solo nodos: donde esta el punto, para pedir cercania antes de calificar.
   final ({double lat, double lng})? destino;
   final PosicionGps? Function()? posicionActual;
   final bool compacto;
 
-  /// Botones chicos en una fila, para listas (las areas de un evento).
   final bool mini;
 
-  /// Muestra la nota de por que no se puede calificar (se oculta en listas).
   final bool mostrarMotivo;
   final ValueChanged<ResumenCalificacion>? alCambiar;
 
@@ -328,15 +311,12 @@ class _PulgaresObjetoState extends State<PulgaresObjeto> {
     }
   }
 
-  /// El servidor responde con el resumen del evento (y el de cada area): si
-  /// esto califica un area, se queda con el de esa area.
   ResumenCalificacion _deEsteObjeto(ResumenCalificacion r) {
     final int? area = widget.area;
     if (area == null || area >= r.areas.length) return r;
     return r.areas[area];
   }
 
-  /// Por que no se puede calificar ahora, o null si se puede.
   String? _motivo(AppLocalizations l10n, ResumenCalificacion r) {
     if (!r.puedeCalificar) {
       return switch (r.motivo) {

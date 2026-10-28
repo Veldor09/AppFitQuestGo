@@ -4,13 +4,9 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
-/// Como se dibuja el mapa de fondo.
 enum EstiloMapa {
-  /// El mapa de calles de siempre.
   calles(MapboxStyles.MAPBOX_STREETS),
 
-  /// Imagen de satelite con las calles y los nombres encima, como el modo
-  /// "Satelite" de Google Maps.
   satelite(MapboxStyles.SATELLITE_STREETS);
 
   const EstiloMapa(this.uri);
@@ -18,9 +14,6 @@ enum EstiloMapa {
   final String uri;
 }
 
-/// El estilo que eligio la persona, compartido por todos los mapas de la app
-/// (el de Home, el de la empresa, el de sus eventos): lo que se elige en uno se
-/// ve en los demas. Vive mientras la app esta abierta.
 class PreferenciaEstiloMapa {
   PreferenciaEstiloMapa._();
 
@@ -31,23 +24,11 @@ class PreferenciaEstiloMapa {
   );
 }
 
-/// Mantiene el estilo de UN mapa al dia con la preferencia.
-///
-/// Cambiar de estilo en Mapbox borra las capas que la app habia dibujado
-/// (pines, areas, rutas), asi que el gestor avisa cuando el estilo nuevo ya
-/// cargo para que el mapa las vuelva a crear ([alCambiarEstilo]). Solo recarga
-/// el estilo cuando de verdad cambio: elegir el que ya esta no hace nada.
-///
-/// Uso: `iniciar()` al crear la pantalla, `liberar()` al cerrarla, y pasar
-/// [alEstiloCargado] al `onStyleLoadedListener` del `MapWidget` (con
-/// `styleUri: PreferenciaEstiloMapa.instancia.estilo.value.uri` al crearlo).
 class GestorEstiloMapa {
   GestorEstiloMapa({required this.mapa, required this.alCambiarEstilo});
 
-  /// El mapa de la pantalla; null mientras todavia no existe.
   final MapboxMap? Function() mapa;
 
-  /// Vuelve a crear y dibujar las capas del mapa sobre el estilo nuevo.
   final Future<void> Function() alCambiarEstilo;
 
   EstiloMapa _aplicado = PreferenciaEstiloMapa.instancia.estilo.value;
@@ -69,13 +50,10 @@ class GestorEstiloMapa {
     try {
       await m.loadStyleURI(elegido.uri);
     } catch (_) {
-      // El mapa se cerro mientras cambiaba: no importa.
       _pendiente = null;
     }
   }
 
-  /// El `onStyleLoadedListener` del mapa. La carga inicial del estilo no hace
-  /// nada (no hay un cambio pedido): solo las que pidio [_alElegir].
   Future<void> alEstiloCargado([Object? _]) async {
     final EstiloMapa? nuevo = _pendiente;
     if (nuevo == null) return;
@@ -85,8 +63,6 @@ class GestorEstiloMapa {
   }
 }
 
-/// El boton de capas de Google Maps: un cuadrado con el icono de capas que abre
-/// "Tipo de mapa" para elegir entre Mapa y Satelite.
 class BotonTipoMapa extends StatelessWidget {
   const BotonTipoMapa({super.key});
 
@@ -115,8 +91,6 @@ class BotonTipoMapa extends StatelessWidget {
   }
 }
 
-/// La hoja "Tipo de mapa" con las dos opciones. Elegir una la aplica a todos los
-/// mapas abiertos y cierra la hoja.
 Future<void> mostrarTipoDeMapa(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,

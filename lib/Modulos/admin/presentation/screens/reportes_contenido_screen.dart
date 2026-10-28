@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/widgets/foto_remota.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/reporte_contenido_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
+import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 
 class ReportesContenidoScreen extends StatefulWidget {
-  const ReportesContenidoScreen({super.key});
+  const ReportesContenidoScreen({
+    super.key,
+    this.api,
+    this.nodoApi,
+    this.eventoApi,
+  });
+
+  final ReporteContenidoApi? api;
+  final NodoApi? nodoApi;
+  final EventoApi? eventoApi;
 
   @override
   State<ReportesContenidoScreen> createState() =>
@@ -16,7 +29,7 @@ class ReportesContenidoScreen extends StatefulWidget {
 class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   AppLocalizations get _l10n => AppLocalizations.of(context)!;
 
-  final ReporteContenidoApi _api = ReporteContenidoApi();
+  late final ReporteContenidoApi _api = widget.api ?? ReporteContenidoApi();
   final TextEditingController _busquedaController = TextEditingController();
 
   static const Color _fondo = Color(0xFFEAEADF);
@@ -115,6 +128,8 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         return _l10n.admRepTipoNodo;
       case 'alerta':
         return _l10n.admRepTipoAlerta;
+      case 'evento':
+        return _l10n.admRepTipoEvento;
       default:
         return tipo;
     }
@@ -197,13 +212,24 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     );
   }
 
-  Future<void> _cambiarEstado(int id, String estado) async {
+  Future<void> _decidir(int id, String accion) async {
     if (_actualizando) return;
 
+    final String aviso = switch (accion) {
+      'desactivar' => _l10n.admRepConfirmarDesactivar,
+      'conservar' => _l10n.admRepConfirmarConservar,
+      _ => _l10n.admRepConfirmarReactivar,
+    };
+    final String titulo = switch (accion) {
+      'desactivar' => _l10n.admRepDesactivar,
+      'conservar' => _l10n.admRepConservar,
+      _ => _l10n.admRepReactivar,
+    };
 
     final bool? confirmado = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        key: const ValueKey<String>('confirmar-reporte'),
         backgroundColor: _fondo,
         surfaceTintColor: Colors.transparent,
         shape: _formaDialogo,
@@ -212,7 +238,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         contentPadding: const EdgeInsets.fromLTRB(26, 8, 26, 12),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         title: Text(
-          _l10n.admRepConfirmarTitulo,
+          titulo,
           style: const TextStyle(
             color: _texto,
             fontSize: 23,
@@ -222,9 +248,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 430),
           child: Text(
-            estado == 'resuelta'
-                ? _l10n.admRepConfirmarResolver(id)
-                : _l10n.admRepConfirmarArchivar(id),
+            aviso,
             style: const TextStyle(color: _texto, fontSize: 15, height: 1.5),
           ),
         ),
@@ -246,14 +270,20 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     setState(() => _actualizando = true);
 
     try {
-      await _api.cambiarEstado(id, estado);
+      if (accion == 'reactivar') {
+        await _api.reactivar(id);
+      } else {
+        await _api.resolver(id, accion);
+      }
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            _l10n.admRepActualizado(id, _nombreEstado(estado).toLowerCase()),
-          ),
+          content: Text(switch (accion) {
+            'desactivar' => _l10n.admRepDesactivado,
+            'conservar' => _l10n.admRepConservado,
+            _ => _l10n.admRepReactivado,
+          }),
         ),
       );
 
@@ -271,17 +301,52 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     }
   }
 
+  Widget? _vistaPreviaFoto(String tipo, int contenidoId, String nombre) {
+    if (tipo == 'nodo') {
+      final NodoApi api = widget.nodoApi ?? NodoApi();
+      return FotoRemota(
+        llave: const ValueKey<String>('foto-reportada'),
+        cargar: () => api.foto(contenidoId),
+        altura: 170,
+        titulo: nombre,
+      );
+    }
+    if (tipo == 'evento') {
+      final EventoApi api = widget.eventoApi ?? EventoApi();
+      return FotoRemota(
+        llave: const ValueKey<String>('foto-reportada'),
+        cargar: () => api.foto(contenidoId),
+        altura: 170,
+        titulo: nombre,
+      );
+    }
+    return null;
+  }
+
   Future<void> _mostrarDetalle(Map<String, dynamic> reporte) async {
     final int id = reporte['id'] as int;
     final String estado = reporte['estado']?.toString() ?? '';
     final String tipo = reporte['tipoContenido']?.toString() ?? '';
-    final String motivo = reporte['motivo']?.toString() ?? 'Sin motivo';
+    final String motivo = motivoReporteLabel(
+      _l10n,
+      reporte['motivo']?.toString() ?? '',
+    );
     final String descripcion =
         reporte['descripcion']?.toString() ?? _l10n.admRepSinDescripcion;
+    final bool esFoto = reporte['esFoto'] == true;
+    final bool desactivo = reporte['resolucion']?.toString() == 'desactivado';
+    final int contenidoId = reporte['contenidoId'] as int;
+    final Map<String, dynamic>? contenido =
+        reporte['contenido'] is Map ? Map<String, dynamic>.from(reporte['contenido'] as Map) : null;
+    final String nombre = contenido?['nombre']?.toString() ?? '#$contenidoId';
+    final Widget? foto = contenido != null && contenido['conFoto'] == true
+        ? _vistaPreviaFoto(tipo, contenidoId, nombre)
+        : null;
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        key: const ValueKey<String>('detalle-reporte'),
         backgroundColor: _fondo,
         surfaceTintColor: Colors.transparent,
         shape: _formaDialogo,
@@ -322,17 +387,43 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
                       valor: _nombreTipo(tipo),
                     ),
                     _campoDetalle(
-                      etiqueta: _l10n.admRepIdContenido,
-                      valor: '${reporte['contenidoId']}',
-                    ),
-                    _campoDetalle(
                       etiqueta: _l10n.perfilEstado,
                       valor: _nombreEstado(estado),
                     ),
+                    if (esFoto)
+                      _campoDetalle(
+                        etiqueta: _l10n.admRepEsFoto,
+                        valor: motivo,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 22),
                 const Divider(color: _borde),
+                const SizedBox(height: 18),
+                _etiqueta(_l10n.admRepContenido),
+                const SizedBox(height: 8),
+                if (contenido == null)
+                  _valor(_l10n.admRepContenidoNoExiste)
+                else
+                  Wrap(
+                    spacing: 32,
+                    runSpacing: 14,
+                    children: [
+                      _campoDetalle(etiqueta: _l10n.comunNombre, valor: nombre),
+                      if (contenido['creadoPorNombre'] != null)
+                        _campoDetalle(
+                          etiqueta: _l10n.admRepDueno,
+                          valor: '${contenido['creadoPorNombre']}',
+                        ),
+                      _campoDetalle(
+                        etiqueta: _l10n.admRepEstadoContenido,
+                        valor: contenido['desactivado'] == true
+                            ? _l10n.admRepContenidoDesactivado
+                            : _l10n.admRepContenidoActivo,
+                      ),
+                    ],
+                  ),
+                if (foto != null) ...[const SizedBox(height: 14), foto],
                 const SizedBox(height: 18),
                 _campoDetalle(etiqueta: _l10n.admMotivo, valor: motivo),
                 const SizedBox(height: 18),
@@ -343,20 +434,28 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         ),
         actions: [
           _botonCerrar(onPressed: () => Navigator.pop(dialogContext)),
-          if (estado != 'resuelta')
+          if (estado == 'pendiente') ...[
             _botonSecundario(
-              texto: _l10n.admResolver,
+              texto: _l10n.admRepConservar,
               onPressed: () {
                 Navigator.pop(dialogContext);
-                _cambiarEstado(id, 'resuelta');
+                _decidir(id, 'conservar');
               },
             ),
-          if (estado != 'archivada')
             _botonPrincipal(
-              texto: _l10n.admArchivar,
+              texto: _l10n.admRepDesactivar,
               onPressed: () {
                 Navigator.pop(dialogContext);
-                _cambiarEstado(id, 'archivada');
+                _decidir(id, 'desactivar');
+              },
+            ),
+          ],
+          if (desactivo && contenido != null)
+            _botonPrincipal(
+              texto: _l10n.admRepReactivar,
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _decidir(id, 'reactivar');
               },
             ),
         ],
@@ -368,12 +467,19 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   Widget build(BuildContext context) {
     final filas = _reportesFiltrados.map((reporte) {
       final tipo = reporte['tipoContenido']?.toString() ?? 'contenido';
-      final motivo = reporte['motivo']?.toString() ?? _l10n.admRepSinMotivo;
+      final claveMotivo = reporte['motivo']?.toString() ?? '';
+      final motivo = claveMotivo.isEmpty
+          ? _l10n.admRepSinMotivo
+          : motivoReporteLabel(_l10n, claveMotivo);
       final estado = reporte['estado']?.toString() ?? '';
+      final contenido = reporte['contenido'];
+      final nombre = contenido is Map && contenido['nombre'] != null
+          ? '${contenido['nombre']}'
+          : '#${reporte['contenidoId']}';
 
       return AdminRow(
         icon: Icons.flag_outlined,
-        title: '${_nombreTipo(tipo)} #${reporte['contenidoId']} - $motivo',
+        title: '${_nombreTipo(tipo)} $nombre - $motivo',
         subtitle: _l10n.admRepTitulo(reporte['id'] as int),
         trailing: Chip(label: Text(_nombreEstado(estado))),
         onTap: () => _mostrarDetalle(reporte),

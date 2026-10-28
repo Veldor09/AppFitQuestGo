@@ -18,10 +18,9 @@ import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/recorrido_evento_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/mapa_trazos_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 
 /// Detalle de un evento: el mapa con sus areas y recorridos encuadrados, quien
-/// lo organiza, cuando es, los pulgares, la lista de trazos (cada area se
-/// califica) y "Como llegar".
 class EventoDetalleScreen extends StatefulWidget {
   const EventoDetalleScreen({
     super.key,
@@ -42,13 +41,10 @@ class EventoDetalleScreen extends StatefulWidget {
   /// Reemplazo del mapa para pruebas (Mapbox no corre en un test de widget).
   final WidgetBuilder? mapaBuilder;
 
-  /// Pulgares del evento, inyectable para pruebas.
   final CalificacionApi? calificaciones;
 
-  /// Abre "Como llegar"; por defecto lanza la app de mapas.
   final Future<bool> Function(Uri uri)? abrirUrl;
 
-  /// Para bajar la foto del evento, inyectable para pruebas.
   final EventoApi? api;
 
   /// Pantalla de navegación/recorrido inyectable para pruebas.
@@ -110,6 +106,18 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                   final ResumenCalificacion? resumen = _pulgares.resumen;
                   final bool propio =
                       resumen?.motivo == MotivoSinCalificar.propio;
+                  final bool reportable = puedeReportar(
+                    context,
+                    evento.creadoPorId,
+                  );
+                  Future<bool> reportar({bool foto = false}) =>
+                      mostrarHojaReportar(
+                        context,
+                        tipo: TipoReportable.evento,
+                        contenidoId: evento.id,
+                        nombre: evento.nombre,
+                        esFoto: foto,
+                      );
                   return ListView(
                     padding: const EdgeInsets.all(FqGap.xl),
                     children: <Widget>[
@@ -124,10 +132,11 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                             Pulgares(resumen: resumen, compacto: true),
                         ],
                       ),
-                      if (destino != null) ...<Widget>[
+                      if (destino != null || reportable) ...<Widget>[
                         const SizedBox(height: 12),
                         FilaAccionesFicha(
                           acciones: <Widget>[
+                            if (destino != null)
                             AccionFicha(
                               key: const ValueKey<String>('ficha-como-llegar'),
                               icono: Icons.directions_rounded,
@@ -153,6 +162,13 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                                 );
                               },
                             ),
+                            if (reportable)
+                              AccionFicha(
+                                key: const ValueKey<String>('ficha-reportar'),
+                                icono: Icons.flag_outlined,
+                                etiqueta: l10n.reportarBoton,
+                                onTap: reportar,
+                              ),
                           ],
                         ),
                       ],
@@ -165,6 +181,8 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                               (widget.api ?? EventoApi()).foto(evento.id),
                           altura: 190,
                           titulo: evento.nombre,
+                          alReportar:
+                              reportable ? () => reportar(foto: true) : null,
                         ),
                       ],
                       const SizedBox(height: 12),
@@ -281,7 +299,6 @@ class _FilaZona extends StatelessWidget {
   final Color color;
   final String nombre;
 
-  /// Los pulgares de la zona (solo las areas se califican).
   final Widget? pulgares;
 
   @override

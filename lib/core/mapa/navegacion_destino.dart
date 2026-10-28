@@ -26,7 +26,6 @@ class NavegacionApp {
 
   bool get hayMapa => _mapasActivos > 0;
 
-  /// Lo llama el mapa de Home al abrirse y al cerrarse.
   void registrarMapa() => _mapasActivos++;
   void liberarMapa() {
     if (_mapasActivos > 0) _mapasActivos--;
@@ -35,8 +34,6 @@ class NavegacionApp {
   void iniciar(BuildContext context, DestinoNavegacion d) {
     Navigator.of(context).popUntil((Route<dynamic> r) => r.isFirst);
     solicitudesMapa.value++;
-    // Un valor nuevo cada vez: tocar "Como llegar" al mismo lugar otra vez
-    // vuelve a trazar el camino.
     destino.value = DestinoNavegacion(lat: d.lat, lng: d.lng, nombre: d.nombre);
   }
 }

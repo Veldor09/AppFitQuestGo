@@ -42,7 +42,6 @@ class AportesScreen extends StatefulWidget {
   final AlertaApi? alertaApi;
   final NodoApi? nodoApi;
 
-  /// Categorias del formulario de editar un punto, inyectable para pruebas.
   final CatalogosApi? catalogosApi;
 
   @override
@@ -139,9 +138,6 @@ class _AportesScreenState extends State<AportesScreen>
 
 // ── Tab 1: Rutas Creadas ──────────────────────────────────────────────────────
 
-/// Mis rutas. Eliminar una ruta (desde aqui o desde su detalle) la quita de la
-/// lista al instante, sin volver a pedir ni repintar nada mas; cuando cambia
-/// otra cosa (se publica) la lista se refresca en silencio.
 class _TabMisRutas extends StatefulWidget {
   const _TabMisRutas({required this.rutaApi});
 
@@ -220,7 +216,6 @@ class _RutaFila extends StatelessWidget {
   final RutaApi rutaApi;
   final VoidCallback onCambio;
 
-  /// La ruta se elimino: quitarla de la lista, sin recargar.
   final VoidCallback alEliminada;
 
   @override
@@ -468,8 +463,6 @@ class _AlertaFila extends StatelessWidget {
 
 // ── Tab 3: Nodos / Puntos de Interés ──────────────────────────────────────────
 
-/// Mis puntos de interes. Cada uno se puede editar o eliminar (el servidor solo
-/// deja a quien lo creo); al editarlo se guarda directo, sin volver a revision.
 class _TabMisNodos extends StatefulWidget {
   const _TabMisNodos({required this.nodoApi, this.catalogosApi});
   final NodoApi nodoApi;
@@ -511,7 +504,6 @@ class _TabMisNodosState extends State<_TabMisNodos> {
     );
     if (editado == null || !mounted) return;
     notificarExito(l10n.aportesNodoActualizado);
-    // Solo cambia ese punto: se reemplaza en la lista, sin volver a pedirla.
     _carga.reemplazar((Nodo n) => n.id == nodo.id, editado);
   }
 

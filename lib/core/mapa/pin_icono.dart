@@ -132,9 +132,6 @@ EstiloPin estiloPinNodo(String categoria) {
   }
 }
 
-/// El pin de una alerta: la gota con el icono de su tipo (un perro, un arbol
-/// caido...) en el color de su gravedad: ambar (baja), naranja (media) o rojo
-/// (alta).
 EstiloPin estiloPinAlerta(String tipo, String gravedad) =>
     EstiloPin(icono: iconoAlerta(tipo), fondo: colorGravedadAlerta(gravedad));
 
@@ -163,7 +160,6 @@ Future<Uint8List> imagenPinNodo(String categoria) {
   return _imagenDe(estiloPinNodo(categoria));
 }
 
-/// La imagen PNG del pin de una alerta de [tipo] y [gravedad].
 Future<Uint8List> imagenPinAlerta(String tipo, String gravedad) {
   return _imagenDe(estiloPinAlerta(tipo, gravedad));
 }

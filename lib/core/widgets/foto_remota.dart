@@ -6,12 +6,6 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/visor_imagen.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
-/// Una foto que se baja del servidor (con la sesion de la app: pide token, asi
-/// que no sirve un `Image.network` pelado) y se muestra en un recuadro. Sirve
-/// para la foto de un punto, de una ruta o de un evento.
-///
-/// Cargando, con error y con imagen, sin romper la pantalla. Al tocarla se abre
-/// a pantalla completa (se puede acercar con dos dedos).
 class FotoRemota extends StatefulWidget {
   const FotoRemota({
     super.key,
@@ -19,18 +13,17 @@ class FotoRemota extends StatefulWidget {
     this.altura = 200,
     this.titulo,
     this.llave = const ValueKey<String>('foto-remota'),
+    this.alReportar,
   });
 
-  /// Pide los bytes de la foto (por ejemplo `() => api.foto(id)`). Se llama una
-  /// sola vez por widget.
   final Future<Uint8List> Function() cargar;
   final double altura;
 
-  /// Se muestra al pie de la imagen a pantalla completa.
   final String? titulo;
 
-  /// Llave de la imagen ya cargada (para pruebas).
   final Key llave;
+
+  final VoidCallback? alReportar;
 
   @override
   State<FotoRemota> createState() => _FotoRemotaState();
@@ -57,6 +50,7 @@ class _FotoRemotaState extends State<FotoRemota> {
                   context,
                   snap.data!,
                   titulo: widget.titulo,
+                  alReportar: widget.alReportar,
                 ),
                 child: Stack(
                   fit: StackFit.expand,

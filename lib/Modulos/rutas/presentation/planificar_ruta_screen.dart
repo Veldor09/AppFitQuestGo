@@ -34,9 +34,6 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/metrica_ruta.dar
 
 enum _ModoRuta { dibujar, gps }
 
-/// RTE-05/06/07 · Planificar ruta. Modo "Dibujar": se traza con el dedo sobre el
-/// mapa, igual que las empresas trazan sus recorridos (un trazo por arrastre,
-/// varios si se quiere seguir; el lapiz alterna entre trazar y mover el mapa). Modo "Grabar GPS": cada posicion del dispositivo (con un
 /// filtro de distancia minima) agrega un punto mientras se graba, con
 /// cronometro, distancia y ritmo en vivo, y se puede pausar y reanudar. Al
 /// detener se abre un resumen (tiempo, distancia, ritmo medio) desde donde se
@@ -66,7 +63,6 @@ class PlanificarRutaScreen extends StatefulWidget {
   /// API de catálogos inyectable para pruebas de ADM-11.
   final CatalogosApi? catalogosApi;
 
-  /// Selector de foto del formulario de guardar, inyectable para pruebas.
   final SelectorFoto? selectorFoto;
 
   /// Permite usar actividades de respaldo si falla la red al planificar offline.
@@ -97,14 +93,10 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   CircleAnnotationManager? _pines;
   PolylineAnnotationManager? _lineas;
 
-  /// La linea que sigue al dedo mientras se traza.
   PolylineAnnotation? _previa;
 
-  /// Cuantos puntos aporto cada trazo, para que "Deshacer" quite el ultimo
-  /// trazo entero y no un punto suelto.
   final List<int> _trazos = <int>[];
 
-  /// En modo Dibujar: el dedo traza (true) o mueve el mapa (false).
   bool _trazando = true;
 
   final List<PuntoRuta> _puntos = <PuntoRuta>[];
@@ -198,7 +190,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     await centrarEnUbicacionActual(controller);
   }
 
-  /// Un trazo terminado con el dedo: se agrega a continuacion de lo que ya hay.
   Future<void> _alTrazoMano(List<PuntoGeo> trazo) async {
     if (_guardando || _modo != _ModoRuta.dibujar) return;
     setState(() {
@@ -214,7 +205,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     notificarInfo(AppLocalizations.of(context)!.eventoTrazoCorto);
   }
 
-  /// La linea que sigue al dedo mientras se traza.
   Future<void> _pintarPrevia(List<PuntoGeo> enCurso) async {
     final PolylineAnnotationManager? lineas = _lineas;
     if (lineas == null || enCurso.length < 2) return;
@@ -241,7 +231,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   Future<void> _deshacer() async {
     if (_puntos.isEmpty || _grabando) return;
     setState(() {
-      // El ultimo trazo entero; sin trazos registrados, el ultimo punto.
       final int quitar = _trazos.isEmpty
           ? 1
           : _trazos.removeLast().clamp(1, _puntos.length);
@@ -429,7 +418,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 
   Future<void> _redibujar() async {
-    // Borrar las lineas tambien se lleva la que seguia al dedo.
     _previa = null;
     await _pines?.deleteAll();
     await _lineas?.deleteAll();
@@ -477,7 +465,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           puntos: _puntos,
           visibilidad: datos.visibilidad,
         );
-        // La foto va aparte del JSON: si falla, la ruta ya quedo guardada.
         final Uint8List? foto = datos.foto;
         if (foto != null) {
           try {
@@ -957,7 +944,6 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   }
 }
 
-/// Una dificultad del selector del formulario: su carita y su nombre.
 class _OpcionDificultad extends StatelessWidget {
   const _OpcionDificultad({required this.dificultad, required this.texto});
 
@@ -976,8 +962,6 @@ class _OpcionDificultad extends StatelessWidget {
   }
 }
 
-/// Alterna el dedo entre trazar y mover el mapa (mientras traza, el mapa no se
-/// mueve: la capa de dibujo se queda con el gesto).
 class _BotonTrazar extends StatelessWidget {
   const _BotonTrazar({required this.trazando, required this.alCambiar});
 
@@ -1110,6 +1094,5 @@ class _DatosRuta {
   final String dificultad;
   final String visibilidad;
 
-  /// La foto elegida (se sube despues de guardar la ruta).
   final Uint8List? foto;
 }

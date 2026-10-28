@@ -6,16 +6,6 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
-/// Piezas compartidas de las fichas de detalle (nodo, evento, ruta), con el
-/// mismo orden que una ficha de lugar de un mapa: agarre, titulo con su boton
-/// de cerrar, una linea de datos (pulgares, categoria...), una fila de
-/// acciones en pastilla y secciones de contenido.
-
-/// "Como llegar" hasta ([lat], [lng]): cierra la ficha y el mapa de la app
-/// traza el camino a pie desde donde estas, sin salir de la aplicacion.
-///
-/// Solo si no hay un mapa de la app abierto (la cuenta de una empresa) o si se
-/// pasa [abrir] (las pruebas), abre en cambio la app de mapas del telefono.
 Future<void> abrirComoLlegar(
   BuildContext context, {
   required double lat,
@@ -46,14 +36,10 @@ Future<void> abrirComoLlegar(
   if (!abierto) notificarError(l10n.fichaNoSePudoAbrirMapa);
 }
 
-/// La hoja inferior con las esquinas redondeadas de las fichas. Quien abre la
-/// ficha usa estos valores en `showModalBottomSheet`.
 const ShapeBorder formaFichaLugar = RoundedRectangleBorder(
   borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
 );
 
-/// Agarre y cabecera de la ficha: la rayita para arrastrar y, debajo, el
-/// titulo grande con el subtitulo y el boton de cerrar.
 class CabeceraFicha extends StatelessWidget {
   const CabeceraFicha({
     super.key,
@@ -67,17 +53,13 @@ class CabeceraFicha extends StatelessWidget {
 
   final String titulo;
 
-  /// Llave del texto del titulo (para pruebas).
   final Key? keyTitulo;
   final String? subtitulo;
 
-  /// Icono de la categoria a la izquierda del titulo.
   final Widget? icono;
 
-  /// Etiquetas a la derecha del subtitulo (estado, destacado...).
   final List<Widget> etiquetas;
 
-  /// Por defecto cierra la hoja.
   final VoidCallback? onCerrar;
 
   @override
@@ -153,8 +135,6 @@ class CabeceraFicha extends StatelessWidget {
   }
 }
 
-/// Una accion de la fila de la ficha: icono y texto en una pastilla. La
-/// [principal] va rellena de oscuro, como "Cómo llegar" en una ficha de lugar.
 class AccionFicha extends StatelessWidget {
   const AccionFicha({
     super.key,
@@ -202,7 +182,6 @@ class AccionFicha extends StatelessWidget {
   }
 }
 
-/// Las acciones de la ficha en una fila que se desplaza si no caben.
 class FilaAccionesFicha extends StatelessWidget {
   const FilaAccionesFicha({super.key, required this.acciones});
 
@@ -225,7 +204,6 @@ class FilaAccionesFicha extends StatelessWidget {
   }
 }
 
-/// Una seccion de la ficha: un titulo corto y su contenido.
 class SeccionFicha extends StatelessWidget {
   const SeccionFicha({super.key, required this.titulo, required this.hijo});
 
@@ -252,7 +230,6 @@ class SeccionFicha extends StatelessWidget {
   }
 }
 
-/// Fila de "icono + texto" de los datos de la ficha (fecha, organizador...).
 class DatoFicha extends StatelessWidget {
   const DatoFicha({super.key, required this.icono, required this.texto});
 
@@ -285,7 +262,6 @@ class DatoFicha extends StatelessWidget {
   }
 }
 
-/// Fondo suave con borde para agrupar un bloque dentro de la ficha.
 class TarjetaFicha extends StatelessWidget {
   const TarjetaFicha({super.key, required this.hijo, this.color});
 

@@ -22,6 +22,7 @@ class Ruta {
     required this.puntos,
     required this.estado,
     this.creadoPorNombre,
+    this.creadoPorId,
     this.conFoto = false,
   });
 
@@ -44,6 +45,7 @@ class Ruta {
           .toList(),
       estado: json['estado'] as String,
       creadoPorNombre: creador?['nombreUser'] as String?,
+      creadoPorId: creador?['id'] as int?,
       conFoto: json['conFoto'] as bool? ?? false,
     );
   }
@@ -69,7 +71,7 @@ class Ruta {
   final List<PuntoRuta> puntos;
   final String estado;
   final String? creadoPorNombre;
+  final int? creadoPorId;
 
-  /// Tiene una foto en el servidor (`GET /rutas/:id/foto`).
   final bool conFoto;
 }

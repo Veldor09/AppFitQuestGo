@@ -169,7 +169,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   final Map<String, Nodo> _nodoPorPin = <String, Nodo>{};
   final Map<String, Alerta> _alertaPorPin = <String, Alerta>{};
 
-  /// El camino a pie que "Como llegar" dibuja en el mapa, y su resumen.
   PolylineAnnotationManager? _lineasGuia;
   PointAnnotationManager? _pinGuia;
   final ValueNotifier<GuiaActiva?> _guia = ValueNotifier<GuiaActiva?>(null);
@@ -177,8 +176,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   RutaVial? _rutaGuia;
   DestinoNavegacion? _destinoGuia;
 
-  /// Mantiene el estilo del mapa (Mapa / Satelite) al dia con el que eligio la
-  /// persona; al cambiarlo se vuelven a crear las capas (ver [GestorEstiloMapa]).
   late final GestorEstiloMapa _estilo = GestorEstiloMapa(
     mapa: () => _mapa,
     alCambiarEstilo: _recrearCapas,
@@ -558,8 +555,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     setState(() => _noLeidas = conteo);
   }
 
-  /// Crea las capas del mapa, del fondo al frente. Se llama al crear el mapa y
-  /// otra vez al cambiar de estilo (que se lleva las capas).
   Future<void> _crearCapas(MapboxMap controller) async {
     // Del fondo al frente: los eventos, las rutas, las alertas y, encima, los
     // puntos.
@@ -571,7 +566,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       controller,
       alTocarRuta: _abrirRutaPorId,
     );
-    // El camino de "Como llegar" va debajo de los pines de puntos y alertas.
     _lineasGuia = await controller.annotations
         .createPolylineAnnotationManager();
     final PointAnnotationManager pinGuia = await controller.annotations
@@ -600,9 +594,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     await centrarEnUbicacionActual(controller);
   }
 
-  /// Tras cambiar de estilo: quita las capas viejas, crea las nuevas y vuelve a
-  /// dibujar todo lo que ya estaba (puntos, alertas, eventos, rutas y, si hay,
-  /// el camino de "Como llegar"), sin volver a pedir nada al servidor.
   Future<void> _recrearCapas() async {
     final MapboxMap? mapa = _mapa;
     if (mapa == null || !mounted) return;
@@ -620,7 +611,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       try {
         await mapa.annotations.removeAnnotationManager(m);
       } catch (_) {
-        // Ya no estaba: no importa.
       }
     }
     await _crearCapas(mapa);
@@ -633,15 +623,11 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (ruta != null && destino != null) await _dibujarGuia(ruta, destino);
   }
 
-  // --- Como llegar (dentro de la app)
-
   void _alPedirDestino() {
     final DestinoNavegacion? d = NavegacionApp.instancia.destino.value;
     if (d != null) unawaited(_iniciarGuia(d));
   }
 
-  /// Traza en el mapa el camino a pie desde donde estas hasta [d] y muestra
-  /// cuanto falta. Una sola consulta a Mapbox; sin red, la linea directa.
   Future<void> _iniciarGuia(DestinoNavegacion d) async {
     if (_mapa == null || !mounted) return;
     final AppLocalizations l10n = AppLocalizations.of(context)!;
@@ -679,7 +665,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     final PolylineAnnotationManager? lineas = _lineasGuia;
     final PointAnnotationManager? pin = _pinGuia;
     if (lineas == null || pin == null) return;
-    // Antes de las esperas: el context no se usa despues de un await.
     final double densidad = MediaQuery.devicePixelRatioOf(context);
     await lineas.deleteAll();
     await pin.deleteAll();
@@ -715,7 +700,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       await _lineasGuia?.deleteAll();
       await _pinGuia?.deleteAll();
     } catch (_) {
-      // El mapa se cerro mientras tanto: no importa.
     }
   }
 
@@ -884,8 +868,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (!mounted) return;
     final double densidad = MediaQuery.devicePixelRatioOf(context);
 
-    // Las alertas van primero (debajo de los puntos): cada una con el icono de
-    // su tipo y el color de su gravedad.
     if (alertas.isNotEmpty) {
       final List<PointAnnotationOptions> opcionesAlertas =
           <PointAnnotationOptions>[
@@ -1281,8 +1263,6 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
               ),
               const Spacer(),
               if (!escribiendo) ...<Widget>[
-                // Como el de Google Maps: te trae a tu posicion y, ya centrado,
-                // inclina el mapa.
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(

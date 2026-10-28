@@ -85,8 +85,6 @@ class _RutasScreenState extends State<RutasScreen> {
     }
   }
 
-  /// [silencioso]: refresca sin volver a mostrar el circulo de carga ni
-  /// repintar lo que ya se ve (cada lista cambia cuando llegan sus datos).
   void _cargar({bool silencioso = false}) {
     _explorar.cargar(silencioso: silencioso);
     _misRutas.cargar(silencioso: silencioso);
@@ -105,7 +103,6 @@ class _RutasScreenState extends State<RutasScreen> {
 
   void _recargar() => _cargar(silencioso: true);
 
-  /// Una ruta se elimino: sale de las tres listas al instante, sin pedir nada.
   void _rutaEliminada(int id) {
     for (final CargaLista<Ruta> lista in <CargaLista<Ruta>>[
       _explorar,

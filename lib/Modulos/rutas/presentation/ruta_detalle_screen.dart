@@ -13,6 +13,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
@@ -41,22 +42,16 @@ class RutaDetalleScreen extends StatefulWidget {
 
   final Ruta ruta;
   final RutaApi? api;
-  /// Muestra el boton de publicar (solo en una ruta propia que sigue privada).
   final bool puedeEnviarARevision;
 
-  /// Muestra el boton de eliminar (solo en una ruta propia).
   final bool puedeEliminar;
 
-  /// Se llama cuando la ruta se elimino desde aqui (la lista la quita sin
-  /// recargar). Sin esto se usa [onCambio].
   final VoidCallback? alEliminar;
   final VoidCallback? onCambio;
   final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
-  /// Pulgares de la ruta, inyectable para pruebas.
   final CalificacionApi? calificaciones;
 
-  /// Abre "Como llegar"; por defecto lanza la app de mapas (inyectable para pruebas).
   final Future<bool> Function(Uri uri)? abrirUrl;
 
   @override
@@ -68,7 +63,6 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   late final CalificacionApi _calificaciones =
       widget.calificaciones ?? CalificacionApi.predeterminada();
 
-  /// Pulgares de la ruta; null mientras carga (la pantalla funciona sin ellos).
   ResumenCalificacion? _resumen;
   bool _enviando = false;
   bool _esFavorita = false;
@@ -393,6 +387,18 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                                 abrir: widget.abrirUrl,
                               ),
                       ),
+                      if (puedeReportar(context, ruta.creadoPorId))
+                        AccionFicha(
+                          key: const ValueKey<String>('ficha-reportar'),
+                          icono: Icons.flag_outlined,
+                          etiqueta: l10n.reportarBoton,
+                          onTap: () => mostrarHojaReportar(
+                            context,
+                            tipo: TipoReportable.ruta,
+                            contenidoId: ruta.id,
+                            nombre: ruta.nombre,
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -639,7 +645,6 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                     ),
                   ],
 
-                  // Eliminar (solo mis rutas)
                   if (widget.puedeEliminar) ...<Widget>[
                     const SizedBox(height: 12),
                     FqButton.danger(
@@ -668,7 +673,6 @@ class _MetricaDetalle extends StatelessWidget {
     this.dificultad,
   });
 
-  /// Si se da, el subtitulo lleva la carita de esa dificultad.
   final String? dificultad;
   final String valor;
   final String unidad;

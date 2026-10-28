@@ -78,8 +78,6 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
     }
   }
 
-  /// Refresca la lista sin repintarla: lo que ya se ve se queda hasta que
-  /// llegan los datos nuevos.
   Future<void> _recargar() => _carga.cargar(silencioso: true);
 
   Future<void> _abrirEditor([Evento? evento]) async {
@@ -118,8 +116,6 @@ class _MisEventosScreenState extends State<MisEventosScreen> {
       await _api.eliminar(evento.id);
       if (!mounted) return;
       notificarExito(l10n.eventoEliminado);
-      // Se quita de esta lista al instante; las demas pantallas (el mapa) se
-      // ponen al dia en silencio con la señal.
       _carga.quitar((Evento e) => e.id == evento.id);
       await _huboCambios();
     } on ApiException catch (e) {

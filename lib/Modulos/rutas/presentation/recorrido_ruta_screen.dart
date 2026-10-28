@@ -73,7 +73,6 @@ class RecorridoRutaScreen extends StatefulWidget {
   /// Id del usuario; por defecto el de la sesion.
   final int? idUsuario;
 
-  /// Calificaciones (pulgares al terminar), inyectable para pruebas.
   final CalificacionApi? calificaciones;
 
   @override
@@ -410,7 +409,6 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
       _pidiendoCamino = false;
     }
   }
-
 
   static PosicionGps _puntoMasCercanoEnSegmentoGps(
     PosicionGps p,
@@ -1852,9 +1850,6 @@ class _BotonAccionMapa extends StatelessWidget {
   }
 }
 
-/// Tarjeta del resumen de llegada: "¿Como estuvo tu recorrido?" con los pulgares.
-/// Solo se ofrece con el recorrido ya registrado en el servidor, que es lo que
-/// exige para dejar calificar la ruta.
 class _CalificarRecorrido extends StatelessWidget {
   const _CalificarRecorrido({required this.rutaId, this.api});
 

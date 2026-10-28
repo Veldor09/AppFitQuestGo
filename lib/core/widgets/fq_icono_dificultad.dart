@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 
-/// Colores de cada dificultad (`facil`, `moderada`, `dificil`): arriba y abajo
-/// del degradado de la carita.
 ({Color arriba, Color abajo}) coloresDificultad(String dificultad) {
   switch (dificultad) {
     case 'facil':
@@ -15,14 +13,9 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
   }
 }
 
-/// Carita de la dificultad: sonriente y verde (facil), serena y ambar
-/// (moderada), con el ceño fruncido, la boca abierta y una gota de sudor, en
-/// rojo (dificil). Se dibuja con vectores, asi que se ve nitida a cualquier
-/// tamaño y no depende de la fuente de emojis del telefono.
 class IconoDificultad extends StatelessWidget {
   const IconoDificultad({super.key, required this.dificultad, this.size = 24});
 
-  /// `facil`, `moderada` o `dificil`; cualquier otro valor se ve como moderada.
   final String dificultad;
   final double size;
 
@@ -36,7 +29,6 @@ class IconoDificultad extends StatelessWidget {
   }
 }
 
-/// Carita y nombre de la dificultad en una pastilla.
 class EtiquetaDificultad extends StatelessWidget {
   const EtiquetaDificultad({
     super.key,
@@ -89,7 +81,6 @@ class _CaraPainter extends CustomPainter {
     final double r = s / 2;
     final ({Color arriba, Color abajo}) colores = coloresDificultad(dificultad);
 
-    // Cara: degradado vertical con un borde un poco mas oscuro.
     final Rect caja = Rect.fromCircle(center: c, radius: r);
     canvas.drawCircle(
       c,
@@ -109,7 +100,6 @@ class _CaraPainter extends CustomPainter {
         ..strokeWidth = s * 0.04
         ..color = Colors.black.withValues(alpha: 0.12),
     );
-    // Brillo suave arriba a la izquierda.
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(s * 0.36, s * 0.24),
@@ -137,7 +127,6 @@ class _CaraPainter extends CustomPainter {
         canvas.drawPath(sonrisa, trazo);
       case 'dificil':
         _ojos(canvas, tinta, c.dx, ojosY + s * 0.03, ojoDx, s * 0.06);
-        // Cejas hacia dentro: ceño fruncido.
         final Paint ceja = Paint()
           ..color = _tinta
           ..style = PaintingStyle.stroke
@@ -153,7 +142,6 @@ class _CaraPainter extends CustomPainter {
           Offset(c.dx + ojoDx - s * 0.09, ojosY - s * 0.05),
           ceja,
         );
-        // Boca abierta, como quien resopla.
         final RRect boca = RRect.fromRectAndRadius(
           Rect.fromCenter(
             center: Offset(c.dx, s * 0.69),
@@ -167,7 +155,6 @@ class _CaraPainter extends CustomPainter {
           boca.deflate(s * 0.03),
           Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9),
         );
-        // Gota de sudor.
         final Path gota = Path()
           ..moveTo(s * 0.86, s * 0.20)
           ..quadraticBezierTo(s * 0.97, s * 0.36, s * 0.86, s * 0.40)
@@ -176,7 +163,6 @@ class _CaraPainter extends CustomPainter {
         canvas.drawPath(gota, Paint()..color = const Color(0xFF7CC8FF));
       default:
         _ojos(canvas, tinta, c.dx, ojosY, ojoDx, s * 0.065);
-        // Boca recta con una leve curva: serena.
         final Path boca = Path()
           ..moveTo(s * 0.33, s * 0.66)
           ..quadraticBezierTo(s * 0.5, s * 0.70, s * 0.67, s * 0.64);

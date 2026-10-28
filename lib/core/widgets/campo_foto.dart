@@ -7,10 +7,6 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
-/// El campo "Foto (opcional)" de los formularios (ruta, evento): dos botones
-/// (camara y galeria) y, con una foto elegida, su vista previa con "Quitar
-/// foto". No sube nada: entrega los bytes por [alCambiar] y quien lo usa la
-/// sube despues de guardar (la foto va aparte del JSON, como la de los puntos).
 class CampoFoto extends StatelessWidget {
   const CampoFoto({
     super.key,
@@ -21,15 +17,12 @@ class CampoFoto extends StatelessWidget {
     this.yaTiene = false,
   });
 
-  /// La foto elegida (null: ninguna).
   final Uint8List? foto;
   final ValueChanged<Uint8List?> alCambiar;
 
-  /// Inyectable para pruebas; en produccion usa image_picker.
   final SelectorFoto? selector;
   final bool habilitado;
 
-  /// Al editar: ya tiene una foto guardada; elegir otra la reemplaza.
   final bool yaTiene;
 
   Future<void> _elegir(OrigenFoto origen) async {
@@ -103,8 +96,6 @@ class CampoFoto extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // Flexible: en un telefono angosto el boton se acomoda en vez de
-              // salirse de la pantalla.
               Flexible(
                 child: TextButton.icon(
                   key: const ValueKey<String>('foto-quitar'),
