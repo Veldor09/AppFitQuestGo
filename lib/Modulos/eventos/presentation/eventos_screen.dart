@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -29,6 +30,22 @@ class _EventosScreenState extends State<EventosScreen> {
   late Future<List<Evento>> _futuro = _api.listar();
 
   DateTime get _ahora => (widget.ahora ?? DateTime.now)();
+
+  @override
+  void initState() {
+    super.initState();
+    ConexionServicio.instancia.reconectado.addListener(_alReconectar);
+  }
+
+  @override
+  void dispose() {
+    ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
+    super.dispose();
+  }
+
+  void _alReconectar() {
+    if (mounted) _recargar();
+  }
 
   Future<void> _recargar() async {
     final Future<List<Evento>> nuevo = _api.listar();

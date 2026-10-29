@@ -4,11 +4,13 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:fit_quest_go/core/idioma/idioma_app.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
 import 'package:fit_quest_go/app.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ConexionServicio.instancia.inicializar();
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);

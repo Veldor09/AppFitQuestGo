@@ -671,6 +671,7 @@
   "recorridoEstadoLlegasteFinal": "Chegou ao final · pode finalizar",
   "recorridoEstadoEnRuta": "Na rota · {pct}% concluído",
   "recorridoTooltipCentrar": "Centralizar na minha localização",
+  "recorridoTooltipPip": "Janela flutuante",
   "recorridoEmpezarAqui": "Começar aqui",
   "recorridoPausar": "Pausar",
   "recorridoReanudar": "Retomar",
