@@ -16,6 +16,8 @@ import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/pip/modo_pip.dart';
+import 'package:fit_quest_go/core/pip/pip_overlay_compacto.dart';
 import 'package:fit_quest_go/core/voz/aviso_voz.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
@@ -157,6 +159,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ModoPip.instancia.habilitar();
   }
 
   bool _gpsIniciado = false;
@@ -174,6 +177,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ModoPip.instancia.deshabilitar();
     _reloj?.cancel();
     _suscripcion?.cancel();
     unawaited(_voz.detener());
@@ -1161,64 +1165,103 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                   ),
                 ),
               ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-                  child: _CabeceraRecorrido(
-                    nombre: widget.ruta.nombre,
-                    estado: _estado,
-                    silenciado: _silenciado,
-                    onCerrar: _salir,
-                    onVoz: _alternarVoz,
+            ValueListenableBuilder<bool>(
+              valueListenable: ModoPip.instancia.activo,
+              builder: (BuildContext context, bool enPip, Widget? _) {
+                if (enPip) {
+                  return PipOverlayCompacto(
+                    texto: _estado.texto,
+                    icono: _estado.icono,
+                    color: _estado.color,
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: ModoPip.instancia.activo,
+              builder: (BuildContext context, bool enPip, Widget? _) {
+                if (enPip) return const SizedBox.shrink();
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                      child: _CabeceraRecorrido(
+                        nombre: widget.ruta.nombre,
+                        estado: _estado,
+                        silenciado: _silenciado,
+                        onCerrar: _salir,
+                        onVoz: _alternarVoz,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-            Positioned(
-              right: 14,
-              bottom: 215,
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    _BotonAccionMapa(
-                      heroTag: 'encuadrar-recorrido',
-                      icono: Icons.zoom_out_map_rounded,
-                      tooltip:
-                          AppLocalizations.of(context)?.recorridoTooltipVerRutaCompleta ??
-                          'Ver ruta completa',
-                      onPressed: _encuadrarRuta,
+            ValueListenableBuilder<bool>(
+              valueListenable: ModoPip.instancia.activo,
+              builder: (BuildContext context, bool enPip, Widget? _) {
+                if (enPip) return const SizedBox.shrink();
+                return Positioned(
+                  right: 14,
+                  bottom: 215,
+                  child: SafeArea(
+                    top: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        _BotonAccionMapa(
+                          heroTag: 'pip-recorrido',
+                          icono: Icons.picture_in_picture_alt_rounded,
+                          tooltip: AppLocalizations.of(context)?.recorridoTooltipPip ??
+                              'Ventana flotante',
+                          onPressed: () => ModoPip.instancia.entrar(),
+                        ),
+                        const SizedBox(height: 10),
+                        _BotonAccionMapa(
+                          heroTag: 'encuadrar-recorrido',
+                          icono: Icons.zoom_out_map_rounded,
+                          tooltip:
+                              AppLocalizations.of(context)?.recorridoTooltipVerRutaCompleta ??
+                              'Ver ruta completa',
+                          onPressed: _encuadrarRuta,
+                        ),
+                        const SizedBox(height: 10),
+                        _BotonAccionMapa(
+                          heroTag: 'centrar-recorrido',
+                          icono: _siguiendo
+                              ? Icons.my_location_rounded
+                              : Icons.location_searching_rounded,
+                          activo: _siguiendo,
+                          tooltip: AppLocalizations.of(context)?.recorridoTooltipCentrar ??
+                              'Centrar en mi ubicación',
+                          onPressed: _centrar,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    _BotonAccionMapa(
-                      heroTag: 'centrar-recorrido',
-                      icono: _siguiendo
-                          ? Icons.my_location_rounded
-                          : Icons.location_searching_rounded,
-                      activo: _siguiendo,
-                      tooltip: AppLocalizations.of(context)?.recorridoTooltipCentrar ??
-                          'Centrar en mi ubicación',
-                      onPressed: _centrar,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  child: _panelInferior(),
-                ),
-              ),
+            ValueListenableBuilder<bool>(
+              valueListenable: ModoPip.instancia.activo,
+              builder: (BuildContext context, bool enPip, Widget? _) {
+                if (enPip) return const SizedBox.shrink();
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                      child: _panelInferior(),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),

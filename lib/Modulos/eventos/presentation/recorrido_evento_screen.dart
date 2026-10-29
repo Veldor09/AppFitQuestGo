@@ -16,6 +16,8 @@ import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/pip/modo_pip.dart';
+import 'package:fit_quest_go/core/pip/pip_overlay_compacto.dart';
 import 'package:fit_quest_go/core/voz/aviso_voz.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
@@ -171,6 +173,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ModoPip.instancia.habilitar();
     if (_tieneRuta) {
       _detector = DesviacionRutaDetector(
         trazo: _puntosRuta,
@@ -194,6 +197,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ModoPip.instancia.deshabilitar();
     _reloj?.cancel();
     _suscripcion?.cancel();
     unawaited(_voz.detener());
@@ -1253,75 +1257,113 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
               ),
             ),
 
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) {
+                return PipOverlayCompacto(
+                  texto: _estado.texto,
+                  icono: _estado.icono,
+                  color: _estado.color,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+
           // ── Cabecera flotante superior ──────────────────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-                child: _CabeceraRecorridoEvento(
-                  nombre: widget.evento.nombre,
-                  categoria: widget.evento.categoria,
-                  estado: _estado,
-                  silenciado: _silenciado,
-                  onCerrar: _salir,
-                  onVoz: _alternarVoz,
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) return const SizedBox.shrink();
+              return Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                    child: _CabeceraRecorridoEvento(
+                      nombre: widget.evento.nombre,
+                      categoria: widget.evento.categoria,
+                      estado: _estado,
+                      silenciado: _silenciado,
+                      onCerrar: _salir,
+                      onVoz: _alternarVoz,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
 
           // ── Botones de mapa flotantes ───────────────────────────────
-          Positioned(
-            right: 14,
-            bottom: 215,
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _BotonAccionMapa(
-                    heroTag: 'encuadrar-evento',
-                    icono: Icons.zoom_out_map_rounded,
-                    tooltip: _l10n.eventoRecorridoVerCompleto,
-                    onPressed: _encuadrarEvento,
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) return const SizedBox.shrink();
+              return Positioned(
+                right: 14,
+                bottom: 215,
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _BotonAccionMapa(
+                        heroTag: 'pip-evento',
+                        icono: Icons.picture_in_picture_alt_rounded,
+                        tooltip: AppLocalizations.of(context)?.recorridoTooltipPip ??
+                            'Ventana flotante',
+                        onPressed: () => ModoPip.instancia.entrar(),
+                      ),
+                      const SizedBox(height: 10),
+                      _BotonAccionMapa(
+                        heroTag: 'encuadrar-evento',
+                        icono: Icons.zoom_out_map_rounded,
+                        tooltip: _l10n.eventoRecorridoVerCompleto,
+                        onPressed: _encuadrarEvento,
+                      ),
+                      const SizedBox(height: 10),
+                      _BotonAccionMapa(
+                        heroTag: 'centrar-evento',
+                        icono: _siguiendo
+                            ? Icons.my_location_rounded
+                            : Icons.location_searching_rounded,
+                        activo: _siguiendo,
+                        tooltip: _l10n.recorridoTooltipCentrar,
+                        onPressed: _centrar,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  _BotonAccionMapa(
-                    heroTag: 'centrar-evento',
-                    icono: _siguiendo
-                        ? Icons.my_location_rounded
-                        : Icons.location_searching_rounded,
-                    activo: _siguiendo,
-                    tooltip: _l10n.recorridoTooltipCentrar,
-                    onPressed: _centrar,
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
 
           // ── Panel inferior de navegación ────────────────────────────
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      width: 1,
-                    ),
-                    boxShadow: FqColors.softShadow,
-                  ),
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) return const SizedBox.shrink();
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          width: 1,
+                        ),
+                        boxShadow: FqColors.softShadow,
+                      ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
@@ -1607,6 +1649,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                 ),
               ),
             ),
+              );
+            },
           ),
         ],
       ),

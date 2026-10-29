@@ -671,6 +671,7 @@
   "recorridoEstadoLlegasteFinal": "Reached the end · you may finish",
   "recorridoEstadoEnRuta": "On route · {pct}% completed",
   "recorridoTooltipCentrar": "Center on my location",
+  "recorridoTooltipPip": "Picture-in-picture",
   "recorridoEmpezarAqui": "Start here",
   "recorridoPausar": "Pause",
   "recorridoReanudar": "Resume",

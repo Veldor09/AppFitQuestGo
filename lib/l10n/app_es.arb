@@ -2702,6 +2702,10 @@
     }
   },
   "recorridoTooltipCentrar": "Centrar en mi ubicación",
+  "recorridoTooltipPip": "Ventana flotante",
+  "@recorridoTooltipPip": {
+    "description": "Tooltip del botón para activar ventana flotante PiP"
+  },
   "@recorridoTooltipCentrar": {
     "description": "FAB tooltip to re-center camera on GPS location"
   },
