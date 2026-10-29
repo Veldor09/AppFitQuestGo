@@ -5,14 +5,15 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.util.Rational
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 /// Ademas de lo estandar de Flutter, maneja la ventana flotante
 /// (Picture-in-Picture) que se usa mientras se sigue una ruta o un evento.
 /// Flutter la controla por el canal "fitquest/pip" (ver lib/core/pip/modo_pip.dart).
-class MainActivity : FlutterActivity() {
+/// Hereda de FlutterFragmentActivity para dar soporte a autenticacion biometrica (local_auth).
+class MainActivity : FlutterFragmentActivity() {
     private var canalPip: MethodChannel? = null
 
     /// true mientras haya una pantalla de seguimiento abierta.
