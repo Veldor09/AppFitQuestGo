@@ -24,7 +24,8 @@ class ActividadApi {
       'iniciadoEn': iniciadoEn.toUtc().toIso8601String(),
       'finalizadoEn': finalizadoEn.toUtc().toIso8601String(),
       'puntos': <Map<String, double>>[
-        for (final PuntoRuta p in puntos) <String, double>{'lat': p.lat, 'lng': p.lng},
+        for (final PuntoRuta p in puntos)
+          <String, double>{'lat': p.lat, 'lng': p.lng},
       ],
     });
   }

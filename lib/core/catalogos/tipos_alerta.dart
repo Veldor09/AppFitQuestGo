@@ -52,9 +52,6 @@ String tipoAlertaLabel(AppLocalizations l10n, String clave, {String? otro}) {
   }
 }
 
-/// El icono "lleno" de cada tipo de alerta, el que va dentro de su pin en el
-/// mapa y en su ficha (los de [tiposAlerta] son de contorno, para el selector).
-/// Un tipo desconocido usa el triangulo de advertencia.
 IconData iconoAlerta(String tipo) {
   switch (tipo) {
     case 'arbol_caido':
@@ -80,8 +77,6 @@ IconData iconoAlerta(String tipo) {
   }
 }
 
-/// El color de una alerta segun su gravedad (`baja`, `media`, `alta`): ambar,
-/// naranja y rojo.
 Color colorGravedadAlerta(String gravedad) {
   switch (gravedad) {
     case 'alta':

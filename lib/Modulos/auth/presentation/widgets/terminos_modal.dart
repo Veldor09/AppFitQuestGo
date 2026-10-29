@@ -88,8 +88,10 @@ class _TerminosDialog extends StatelessWidget {
                         color: FqColors.muted,
                         splashRadius: 18,
                         padding: EdgeInsets.zero,
-                        constraints:
-                            const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
                       ),
                     ],
                   ),
@@ -101,8 +103,9 @@ class _TerminosDialog extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        for (final (String titulo, String texto)
-                            in _secciones(l10n))
+                        for (final (String titulo, String texto) in _secciones(
+                          l10n,
+                        ))
                           Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: Column(

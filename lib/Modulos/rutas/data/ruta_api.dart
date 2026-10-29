@@ -45,12 +45,6 @@ class RutaApi {
     return false;
   }
 
-  /// ADM-04 · Cola de moderacion. Solo Admin.
-  Future<List<Ruta>> listarPendientes() async {
-    final dynamic data = await _client.get('/rutas/pendientes');
-    return _lista(data);
-  }
-
   Future<Ruta> obtener(int id) async {
     final dynamic data = await _client.get('/rutas/$id');
     return Ruta.fromJson(data as Map<String, dynamic>);
@@ -82,7 +76,6 @@ class RutaApi {
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
-  /// Adjunta la foto (JPEG, PNG o WebP, hasta 3 MB) a una ruta propia.
   Future<Ruta> subirFoto(int id, Uint8List bytes) async {
     final dynamic data = await _client.subirArchivo(
       '/rutas/$id/foto',
@@ -93,20 +86,10 @@ class RutaApi {
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
-  /// Bytes de la foto de la ruta; 404 (`ApiException`) si no tiene o no te toca verla.
   Future<Uint8List> foto(int id) => _client.getBytes('/rutas/$id/foto');
 
-  /// Elimina una ruta propia (con sus recorridos y guardados). 403 si no es tuya.
   Future<void> eliminar(int id) async {
     await _client.delete('/rutas/$id');
-  }
-
-  /// ADM-05 · Retirar una ruta. Solo Admin. Ya no se aprueban: se publican solas.
-  Future<Ruta> cambiarEstado(int id, String estado) async {
-    final dynamic data = await _client.patch('/rutas/$id/estado', {
-      'estado': estado,
-    });
-    return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
   List<Ruta> _lista(dynamic data) {

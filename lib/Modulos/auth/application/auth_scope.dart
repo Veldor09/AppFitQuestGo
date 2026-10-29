@@ -15,15 +15,14 @@ class AuthScope extends InheritedNotifier<AuthRepositorio> {
   }) : super(notifier: auth);
 
   static AuthRepositorio of(BuildContext context) {
-    final AuthScope? scope =
-        context.dependOnInheritedWidgetOfExactType<AuthScope>();
+    final AuthScope? scope = context
+        .dependOnInheritedWidgetOfExactType<AuthScope>();
     assert(scope != null, 'No se encontro AuthScope en el arbol de widgets.');
     return scope!.notifier!;
   }
 
   static AuthRepositorio read(BuildContext context) {
-    final AuthScope? scope =
-        context.getInheritedWidgetOfExactType<AuthScope>();
+    final AuthScope? scope = context.getInheritedWidgetOfExactType<AuthScope>();
     assert(scope != null, 'No se encontro AuthScope en el arbol de widgets.');
     return scope!.notifier!;
   }

@@ -69,10 +69,13 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
     return todoValido(<(String, List<Validador>)>[
       (_nombre.text, reglasNombre()),
       (_email.text, reglasCorreo()),
-      (_password.text, <Validador>[
-        requerido(l10n.registroValidacionContrasena),
-        minCaracteres(8),
-      ]),
+      (
+        _password.text,
+        <Validador>[
+          requerido(l10n.registroValidacionContrasena),
+          minCaracteres(8),
+        ],
+      ),
     ]);
   }
 
@@ -174,8 +177,9 @@ class _RegistroFlujoScreenState extends State<RegistroFlujoScreen> {
                     FqGap.xl,
                   ),
                   child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: kAuthContentMaxWidth),
+                    constraints: const BoxConstraints(
+                      maxWidth: kAuthContentMaxWidth,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[

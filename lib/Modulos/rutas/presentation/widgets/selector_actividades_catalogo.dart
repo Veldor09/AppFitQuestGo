@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/catalogo_item.dart';
@@ -101,8 +100,9 @@ class _SelectorActividadesCatalogoState
     widget.onActividadesDisponibles?.call(<String>[]);
 
     try {
-      final List<CatalogoItem> resultado =
-          await _api.listarItemsActivos('actividades');
+      final List<CatalogoItem> resultado = await _api.listarItemsActivos(
+        'actividades',
+      );
 
       if (!mounted || solicitudActual != _solicitud) return;
 
@@ -111,8 +111,9 @@ class _SelectorActividadesCatalogoState
           .toList();
 
       if (activos.isNotEmpty) {
-        SelectorActividadesCatalogo._cacheActividades =
-            List<CatalogoItem>.of(activos);
+        SelectorActividadesCatalogo._cacheActividades = List<CatalogoItem>.of(
+          activos,
+        );
       }
 
       final Set<String> clavesActivas = activos
@@ -145,9 +146,9 @@ class _SelectorActividadesCatalogoState
       if (widget.permitirFallbackOffline) {
         final List<CatalogoItem> fallback =
             (SelectorActividadesCatalogo._cacheActividades != null &&
-                    SelectorActividadesCatalogo._cacheActividades!.isNotEmpty)
-                ? SelectorActividadesCatalogo._cacheActividades!
-                : SelectorActividadesCatalogo._actividadesFallback();
+                SelectorActividadesCatalogo._cacheActividades!.isNotEmpty)
+            ? SelectorActividadesCatalogo._cacheActividades!
+            : SelectorActividadesCatalogo._actividadesFallback();
 
         final Set<String> clavesActivas = fallback
             .map((CatalogoItem item) => item.clave)
@@ -201,9 +202,7 @@ class _SelectorActividadesCatalogoState
     if (_cargando) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -215,9 +214,7 @@ class _SelectorActividadesCatalogoState
             _error
                 ? AppLocalizations.of(context)!.actividadesErrorCarga
                 : AppLocalizations.of(context)!.actividadesVacio,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.error,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -229,25 +226,20 @@ class _SelectorActividadesCatalogoState
       );
     }
 
-    final Map<String, CatalogoItem> itemsPorClave =
-        <String, CatalogoItem>{
-      for (final CatalogoItem item in _items)
-        item.clave: item,
+    final Map<String, CatalogoItem> itemsPorClave = <String, CatalogoItem>{
+      for (final CatalogoItem item in _items) item.clave: item,
     };
 
-    final Map<String, IconData> iconosOriginales =
-        <String, IconData>{
+    final Map<String, IconData> iconosOriginales = <String, IconData>{
       for (final OpcionCatalogo opcion in actividadesRuta)
         opcion.clave: opcion.icono,
     };
 
-    final List<OpcionCatalogo> opciones =
-        <OpcionCatalogo>[
+    final List<OpcionCatalogo> opciones = <OpcionCatalogo>[
       for (final CatalogoItem item in _items)
         OpcionCatalogo(
           item.clave,
-          iconosOriginales[item.clave] ??
-              Icons.directions_outlined,
+          iconosOriginales[item.clave] ?? Icons.directions_outlined,
         ),
     ];
 
@@ -262,8 +254,7 @@ class _SelectorActividadesCatalogoState
       },
       seleccion: widget.seleccion,
       onToggle: (String clave) {
-        final Set<String> nuevaSeleccion =
-            Set<String>.of(widget.seleccion);
+        final Set<String> nuevaSeleccion = Set<String>.of(widget.seleccion);
 
         if (!nuevaSeleccion.remove(clave)) {
           nuevaSeleccion.add(clave);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -17,7 +18,10 @@ const PlanPatrocinio _mensual = PlanPatrocinio(
 
 class _PlanApiFalsa extends PlanApi {
   MiSuscripcion? suscripcion;
-  List<PlanPatrocinio> lista = <PlanPatrocinio>[_mensual];
+  RespuestaPlanes respuesta = const RespuestaPlanes(
+    planes: <PlanPatrocinio>[_mensual],
+    sinpeNumero: '83722969',
+  );
   Object? errorAlSolicitar;
   Object? errorAlCargar;
   final List<({int planId, String pais})> pedidos =
@@ -31,21 +35,35 @@ class _PlanApiFalsa extends PlanApi {
   }
 
   @override
-  Future<List<PlanPatrocinio>> planes(String pais) async {
+  Future<RespuestaPlanes> planes(String pais) async {
     paisesConsultados.add(pais);
-    return lista;
+    return respuesta;
   }
 
   @override
-  Future<void> solicitar({required int planId, required String pais}) async {
+  Future<SolicitudCreada> solicitar({
+    required int planId,
+    required String pais,
+  }) async {
     if (errorAlSolicitar != null) throw errorAlSolicitar!;
     pedidos.add((planId: planId, pais: pais));
-    // Como el servidor: lo recien pedido queda en revision.
+    // Como el servidor: lo recien pedido queda en revision, con su numero.
     suscripcion = const MiSuscripcion(
       id: 9,
       estado: EstadoSuscripcion.solicitada,
       vigente: false,
       planNombre: 'Plan Mensual',
+      numeroSolicitud: '482913',
+      monto: 10000,
+      moneda: 'CRC',
+      metodoPago: MetodoPago.sinpe,
+      sinpeNumero: '83722969',
+    );
+    return const SolicitudCreada(
+      numeroSolicitud: '482913',
+      monto: 10000,
+      moneda: 'CRC',
+      sinpeNumero: '83722969',
     );
   }
 }
@@ -57,10 +75,20 @@ void main() {
 
   setUp(() => api = _PlanApiFalsa());
 
-  Future<void> abrir(WidgetTester tester) async {
+  Future<void> abrir(
+    WidgetTester tester, {
+    bool empresa = true,
+    String pais = 'CR',
+  }) async {
     await montarApp(
       tester,
-      PlanPatrocinioScreen(api: api, pais: 'CR', ahora: () => _hoy),
+      PlanPatrocinioScreen(
+        api: api,
+        pais: pais,
+        ahora: () => _hoy,
+        esEmpresa: empresa,
+        nombre: 'Ana Mora',
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -78,29 +106,146 @@ void main() {
     },
   );
 
-  testWidgets('pedir un plan: confirma, envia y pasa a "en revision"', (
+  testWidgets('un usuario normal ve "Mi suscripción" y para que sirve', (
+    WidgetTester tester,
+  ) async {
+    await abrir(tester, empresa: false);
+
+    expect(find.text('Mi suscripción'), findsOneWidget);
+    expect(
+      find.textContaining('sin conexión: hasta 15 en vez de 3'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('destacar'), findsNothing);
+  });
+
+  testWidgets(
+    'pedir un plan en Costa Rica: confirma y salen las instrucciones de SINPE con el numero de solicitud',
+    (WidgetTester tester) async {
+      await abrir(tester);
+
+      await tester.tap(find.byKey(const ValueKey<String>('solicitar-plan-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('¿Solicitar este plan?'), findsOneWidget);
+      expect(find.textContaining('₡10.000 por 30 días'), findsOneWidget);
+      expect(api.pedidos, isEmpty);
+
+      await tester.tap(find.byKey(const ValueKey<String>('confirmar-plan')));
+      await tester.pumpAndSettle();
+
+      expect(api.pedidos, <({int planId, String pais})>[
+        (planId: 1, pais: 'CR'),
+      ]);
+      expect(find.text('Solicitud en revisión'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('solicitar-plan-1')),
+        findsNothing,
+      );
+      // Las instrucciones del pago.
+      expect(
+        find.byKey(const ValueKey<String>('instrucciones-sinpe')),
+        findsOneWidget,
+      );
+      expect(find.text('482913'), findsOneWidget);
+      expect(
+        find.textContaining('SINPE Móvil al 8372-2969 por ₡10.000'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('número de solicitud (482913) y tu nombre'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('comprobante al mismo número (8372-2969)'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    '"Copiar detalle" deja en el portapapeles el numero y el nombre',
+    (WidgetTester tester) async {
+      api.suscripcion = const MiSuscripcion(
+        id: 9,
+        estado: EstadoSuscripcion.solicitada,
+        vigente: false,
+        planNombre: 'Plan Mensual',
+        numeroSolicitud: '482913',
+        monto: 10000,
+        moneda: 'CRC',
+        metodoPago: MetodoPago.sinpe,
+        sinpeNumero: '83722969',
+      );
+      String? copiado;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (MethodCall llamada) async {
+          if (llamada.method == 'Clipboard.setData') {
+            copiado =
+                (llamada.arguments as Map<Object?, Object?>)['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await abrir(tester);
+
+      await tester.tap(find.byKey(const ValueKey<String>('copiar-detalle')));
+      await tester.pumpAndSettle();
+
+      expect(copiado, '482913 Ana Mora');
+      expect(find.text('Detalle copiado. Pégalo en el SINPE.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'fuera de Costa Rica se ven los planes pero PayPal aun no esta: no se puede pedir',
+    (WidgetTester tester) async {
+      api.respuesta = const RespuestaPlanes(
+        planes: <PlanPatrocinio>[
+          PlanPatrocinio(
+            id: 1,
+            nombre: 'Plan Mensual',
+            duracionDias: 30,
+            moneda: 'USD',
+            importe: 20,
+          ),
+        ],
+        metodoPago: MetodoPago.paypal,
+        pagoDisponible: false,
+      );
+      await abrir(tester, pais: 'US');
+
+      expect(find.text('Plan Mensual'), findsOneWidget);
+      expect(find.text('US\$20,00'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('plan-paypal')), findsOneWidget);
+      expect(find.text('Pronto disponible'), findsOneWidget);
+      // Tocarlo no hace nada: ni confirmacion ni solicitud.
+      await tester.tap(find.byKey(const ValueKey<String>('solicitar-plan-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('¿Solicitar este plan?'), findsNothing);
+      expect(api.pedidos, isEmpty);
+    },
+  );
+
+  testWidgets('si el servidor dice que el pago no esta disponible lo explica', (
     WidgetTester tester,
   ) async {
     await abrir(tester);
+    api.errorAlSolicitar = ApiException(400, 'PAGO_NO_DISPONIBLE');
 
     await tester.tap(find.byKey(const ValueKey<String>('solicitar-plan-1')));
     await tester.pumpAndSettle();
-    expect(find.text('¿Solicitar este plan?'), findsOneWidget);
-    expect(find.textContaining('₡10.000 por 30 días'), findsOneWidget);
-    expect(api.pedidos, isEmpty);
-
     await tester.tap(find.byKey(const ValueKey<String>('confirmar-plan')));
     await tester.pumpAndSettle();
 
-    expect(api.pedidos, <({int planId, String pais})>[(planId: 1, pais: 'CR')]);
-    expect(find.text('Solicitud en revisión'), findsOneWidget);
-    // Ya no se ofrece pedir otro mientras esta en revision.
     expect(
-      find.byKey(const ValueKey<String>('solicitar-plan-1')),
-      findsNothing,
-    );
-    expect(
-      find.text('Solicitud enviada. Te avisaremos cuando la revisen.'),
+      find.text('El pago para tu región aún no está disponible.'),
       findsOneWidget,
     );
   });
@@ -171,29 +316,51 @@ void main() {
     },
   );
 
-  testWidgets('plan vigente: nombre, fecha, dias que quedan y nada que pedir', (
-    WidgetTester tester,
-  ) async {
-    api.suscripcion = MiSuscripcion(
-      id: 4,
-      estado: EstadoSuscripcion.activa,
-      vigente: true,
-      planNombre: 'Plan Mensual',
-      venceEn: DateTime(2026, 11, 6, 10),
-    );
-    await abrir(tester);
+  testWidgets(
+    'plan vigente de empresa: nombre, fecha, dias que quedan y nada que pedir',
+    (WidgetTester tester) async {
+      api.suscripcion = MiSuscripcion(
+        id: 4,
+        estado: EstadoSuscripcion.activa,
+        vigente: true,
+        planNombre: 'Plan Mensual',
+        venceEn: DateTime(2026, 11, 6, 10),
+      );
+      await abrir(tester);
 
-    expect(find.byKey(const ValueKey<String>('plan-activo')), findsOneWidget);
-    expect(find.text('Plan activo'), findsOneWidget);
-    expect(find.textContaining('Plan Mensual · vence el'), findsOneWidget);
-    expect(find.text('Quedan 10 días'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey<String>('solicitar-plan-1')),
-      findsNothing,
-    );
-    // No pidio la lista de planes: no hace falta.
-    expect(api.paisesConsultados, isEmpty);
-  });
+      expect(find.byKey(const ValueKey<String>('plan-activo')), findsOneWidget);
+      expect(find.text('Plan activo'), findsOneWidget);
+      expect(find.textContaining('Plan Mensual · vence el'), findsOneWidget);
+      expect(find.text('Quedan 10 días'), findsOneWidget);
+      expect(find.textContaining('Destacar'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('solicitar-plan-1')),
+        findsNothing,
+      );
+      expect(api.paisesConsultados, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'plan vigente de usuario: dice cuantas rutas offline puede guardar',
+    (WidgetTester tester) async {
+      api.suscripcion = MiSuscripcion(
+        id: 4,
+        estado: EstadoSuscripcion.activa,
+        vigente: true,
+        planNombre: 'Plan Explorador',
+        venceEn: DateTime(2026, 11, 6, 10),
+        audiencia: AudienciaPlan.usuario,
+      );
+      await abrir(tester, empresa: false);
+
+      expect(find.text('Plan activo'), findsOneWidget);
+      expect(
+        find.text('Ya puedes guardar hasta 15 rutas para verlas sin conexión.'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('rechazada: avisa y deja pedir otra vez', (
     WidgetTester tester,
@@ -233,7 +400,7 @@ void main() {
   });
 
   testWidgets('sin planes disponibles lo dice', (WidgetTester tester) async {
-    api.lista = <PlanPatrocinio>[];
+    api.respuesta = const RespuestaPlanes(planes: <PlanPatrocinio>[]);
     await abrir(tester);
     expect(
       find.text('Por ahora no hay planes disponibles para tu país.'),
@@ -256,7 +423,7 @@ void main() {
     },
   );
 
-  group('MiSuscripcion', () {
+  group('modelos', () {
     test('diasRestantes cuenta dias enteros y nunca baja de 0', () {
       MiSuscripcion con(DateTime? vence) => MiSuscripcion(
         id: 1,
@@ -278,8 +445,39 @@ void main() {
         'duracionDias': 30,
         'moneda': 'USD',
         'importe': '20.00',
+        'audiencia': 'usuario',
       });
       expect(p.importe, 20);
+      expect(p.audiencia, AudienciaPlan.usuario);
+    });
+
+    test('RespuestaPlanes lee el metodo de pago y si ya se puede pagar', () {
+      final RespuestaPlanes r = RespuestaPlanes.fromJson(<String, dynamic>{
+        'metodoPago': 'paypal',
+        'pagoDisponible': false,
+        'sinpeNumero': null,
+        'planes': <dynamic>[],
+      });
+      expect(r.metodoPago, MetodoPago.paypal);
+      expect(r.pagoDisponible, isFalse);
+    });
+
+    test('MiSuscripcion lee el numero de solicitud y el monto', () {
+      final MiSuscripcion s = MiSuscripcion.fromJson(<String, dynamic>{
+        'id': 1,
+        'estado': 'Solicitada',
+        'vigente': false,
+        'planNombre': 'P',
+        'numeroSolicitud': '123456',
+        'monto': '2500.00',
+        'moneda': 'CRC',
+        'metodoPago': 'sinpe',
+        'sinpeNumero': '83722969',
+        'audiencia': 'usuario',
+      });
+      expect(s.numeroSolicitud, '123456');
+      expect(s.monto, 2500);
+      expect(s.audiencia, 'usuario');
     });
   });
 }

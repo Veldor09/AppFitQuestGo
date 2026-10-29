@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';

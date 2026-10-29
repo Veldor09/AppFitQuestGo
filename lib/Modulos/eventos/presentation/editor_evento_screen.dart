@@ -44,7 +44,6 @@ class EditorEventoScreen extends StatefulWidget {
     this.selectorFoto,
   });
 
-  /// Selector de foto, inyectable para pruebas; en produccion usa image_picker.
   final SelectorFoto? selectorFoto;
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
@@ -74,7 +73,6 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
 
   late String? _categoria = widget.evento?.categoria;
 
-  /// La foto elegida; se sube despues de guardar (va aparte del JSON).
   Uint8List? _foto;
   late DateTime? _inicio = widget.evento?.fechaInicio.toLocal();
   late DateTime? _fin = widget.evento?.fechaFin.toLocal();

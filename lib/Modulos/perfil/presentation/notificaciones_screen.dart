@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/db/daos/avisos_locales_dao.dart';
 import 'package:fit_quest_go/core/db/daos/notificaciones_cache_dao.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/avisos_locales.dart';
@@ -47,6 +48,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   void initState() {
     super.initState();
     _cargar();
+    ConexionServicio.instancia.reconectado.addListener(_alReconectar);
   }
 
   /// Une lo del servidor con los avisos locales (clima, alertas y destacados
@@ -56,6 +58,16 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       ...delServidor,
       ...await _locales.listar(),
     ]..sort((Notificacion a, Notificacion b) => b.creadaEn.compareTo(a.creadaEn));
+  }
+
+  void _alReconectar() {
+    if (mounted) _cargar();
+  }
+
+  @override
+  void dispose() {
+    ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
+    super.dispose();
   }
 
   Future<void> _cargar() async {

@@ -1,4 +1,3 @@
-
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -15,9 +14,6 @@ import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 
-/// Formulario para proponer un punto de interes o, con [editar], para
-/// corregir uno propio (nombre, categoria, descripcion y foto; el lugar se
-/// queda donde estaba). Al editar se guarda directo, sin volver a moderacion.
 ///
 /// Las categorias disponibles se consultan al catalogo administrable ADM-11.
 /// La foto es opcional: primero se crea el nodo y despues se sube la foto.
@@ -36,7 +32,6 @@ class FormularioNodo extends StatefulWidget {
   final double lat;
   final double lng;
 
-  /// El punto propio que se edita; null para proponer uno nuevo.
   final Nodo? editar;
 
   /// Inyectable para pruebas; en produccion usa image_picker.

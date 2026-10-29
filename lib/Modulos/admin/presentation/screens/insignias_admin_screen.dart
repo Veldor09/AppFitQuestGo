@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -11,24 +10,19 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaff
 
 /// ADM-10 · Gestión administrativa de insignias.
 class InsigniasAdminScreen extends StatefulWidget {
-  const InsigniasAdminScreen({
-    super.key,
-    this.api,
-  });
+  const InsigniasAdminScreen({super.key, this.api});
 
   /// Permite inyectar un servicio simulado durante las pruebas.
   final InsigniasAdminApi? api;
 
   @override
-  State<InsigniasAdminScreen> createState() =>
-      _InsigniasAdminScreenState();
+  State<InsigniasAdminScreen> createState() => _InsigniasAdminScreenState();
 }
 
 class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
   late final InsigniasAdminApi _api;
 
-  final TextEditingController _busquedaController =
-      TextEditingController();
+  final TextEditingController _busquedaController = TextEditingController();
 
   List<InsigniaAdminItem> _insignias = <InsigniaAdminItem>[];
 
@@ -64,8 +58,7 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     });
 
     try {
-      final List<InsigniaAdminItem> insignias =
-          await _api.listarInsignias();
+      final List<InsigniaAdminItem> insignias = await _api.listarInsignias();
 
       if (!mounted || version != _versionCarga) return;
 
@@ -98,17 +91,12 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     }).toList();
   }
 
-  Future<void> _abrirFormulario({
-    InsigniaAdminItem? insignia,
-  }) async {
+  Future<void> _abrirFormulario({InsigniaAdminItem? insignia}) async {
     final bool? guardado = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        return _FormularioInsignia(
-          api: _api,
-          insignia: insignia,
-        );
+        return _FormularioInsignia(api: _api, insignia: insignia);
       },
     );
 
@@ -142,19 +130,16 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
     final List<InsigniaAdminItem> filtradas = _insigniasFiltradas;
-    final int totalPaginas =
-        (filtradas.length / _insigniasPorPagina).ceil();
+    final int totalPaginas = (filtradas.length / _insigniasPorPagina).ceil();
     final int paginaVisible = totalPaginas == 0
         ? 0
         : _paginaActual.clamp(0, totalPaginas - 1);
     final int inicio = paginaVisible * _insigniasPorPagina;
-    final int fin = (inicio + _insigniasPorPagina).clamp(
-      0,
-      filtradas.length,
-    );
+    final int fin = (inicio + _insigniasPorPagina).clamp(0, filtradas.length);
 
-    final List<AdminRow> filas =
-        filtradas.sublist(inicio, fin).map((InsigniaAdminItem insignia) {
+    final List<AdminRow> filas = filtradas.sublist(inicio, fin).map((
+      InsigniaAdminItem insignia,
+    ) {
       final String descripcion = l10n.admInsResumen(
         insignia.codigo,
         insignia.metrica ?? l10n.admInsSinMetrica,
@@ -186,12 +171,22 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       searchHint: l10n.admInsigniasSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {
-        setState(() { _busqueda = valor; _paginaActual = 0; });
+        setState(() {
+          _busqueda = valor;
+          _paginaActual = 0;
+        });
       },
-      tabs: <String>[l10n.notificacionesFiltroTodas, l10n.admTabActivas, l10n.admTabInactivas],
+      tabs: <String>[
+        l10n.notificacionesFiltroTodas,
+        l10n.admTabActivas,
+        l10n.admTabInactivas,
+      ],
       tabIndex: _filtroEstado,
       onTab: (int indice) {
-        setState(() { _filtroEstado = indice; _paginaActual = 0; });
+        setState(() {
+          _filtroEstado = indice;
+          _paginaActual = 0;
+        });
       },
       toolbarTrailing: FqButton.primary(
         label: l10n.comunNuevo,
@@ -246,17 +241,13 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
 /// Formulario independiente para crear y editar insignias.
 class _FormularioInsignia extends StatefulWidget {
-  const _FormularioInsignia({
-    required this.api,
-    this.insignia,
-  });
+  const _FormularioInsignia({required this.api, this.insignia});
 
   final InsigniasAdminApi api;
   final InsigniaAdminItem? insignia;
 
   @override
-  State<_FormularioInsignia> createState() =>
-      _FormularioInsigniaState();
+  State<_FormularioInsignia> createState() => _FormularioInsigniaState();
 }
 
 class _FormularioInsigniaState extends State<_FormularioInsignia> {
@@ -308,29 +299,21 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
 
     final InsigniaAdminItem? insignia = widget.insignia;
 
-    _codigoController = TextEditingController(
-      text: insignia?.codigo ?? '',
-    );
+    _codigoController = TextEditingController(text: insignia?.codigo ?? '');
 
-    _nombreController = TextEditingController(
-      text: insignia?.nombre ?? '',
-    );
+    _nombreController = TextEditingController(text: insignia?.nombre ?? '');
 
     _descripcionController = TextEditingController(
       text: insignia?.descripcion ?? '',
     );
 
-    _emojiController = TextEditingController(
-      text: insignia?.emoji ?? '',
-    );
+    _emojiController = TextEditingController(text: insignia?.emoji ?? '');
 
     _metaController = TextEditingController(
       text: insignia?.meta?.toString() ?? '',
     );
 
-    _tipo = _tipos.contains(insignia?.tipo)
-        ? insignia!.tipo
-        : 'hito';
+    _tipo = _tipos.contains(insignia?.tipo) ? insignia!.tipo : 'hito';
 
     _metrica = _metricas.contains(insignia?.metrica)
         ? insignia!.metrica!
@@ -356,8 +339,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
   Future<void> _guardar() async {
     if (_guardando) return;
 
-    final String codigo =
-        _codigoController.text.trim().toUpperCase();
+    final String codigo = _codigoController.text.trim().toUpperCase();
     final String nombre = _nombreController.text.trim();
     final String descripcion = _descripcionController.text.trim();
     final String emoji = _emojiController.text.trim();
@@ -368,33 +350,26 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         emoji.isEmpty ||
         (_creando && codigo.isEmpty)) {
       setState(() {
-        _errorFormulario =
-            _l10n.admInsErrCampos;
+        _errorFormulario = _l10n.admInsErrCampos;
       });
       return;
     }
 
-    if (_creando &&
-        !RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(codigo)) {
+    if (_creando && !RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(codigo)) {
       setState(() {
-        _errorFormulario =
-            _l10n.admInsErrCodigo;
+        _errorFormulario = _l10n.admInsErrCodigo;
       });
       return;
     }
 
-    if (codigo.length > 50 ||
-        nombre.length > 100 ||
-        emoji.runes.length > 10) {
+    if (codigo.length > 50 || nombre.length > 100 || emoji.runes.length > 10) {
       setState(() {
-        _errorFormulario =
-            _l10n.admInsErrLongitudes;
+        _errorFormulario = _l10n.admInsErrLongitudes;
       });
       return;
     }
 
-    final double? meta =
-        double.tryParse(textoMeta.replaceAll(',', '.'));
+    final double? meta = double.tryParse(textoMeta.replaceAll(',', '.'));
 
     // Una insignia especial existente con meta nula
     // puede conservar ese valor durante la edición.
@@ -411,19 +386,16 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
             !meta.isFinite ||
             meta < 0.01 ||
             meta > 99999999.99 ||
-            ((meta * 100) - (meta * 100).round()).abs() >
-                0.000001)) {
+            ((meta * 100) - (meta * 100).round()).abs() > 0.000001)) {
       setState(() {
-        _errorFormulario =
-            _l10n.admInsErrMeta;
+        _errorFormulario = _l10n.admInsErrMeta;
       });
       return;
     }
 
     if (_tipo == 'km' && _metrica != 'km') {
       setState(() {
-        _errorFormulario =
-            _l10n.admInsErrKm;
+        _errorFormulario = _l10n.admInsErrKm;
       });
       return;
     }
@@ -489,193 +461,185 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         ),
       ),
       child: AlertDialog(
-      title: Text(
-        _creando ? _l10n.admInsNueva : _l10n.admInsEditar,
-      ),
-      content: SizedBox(
-        width: 480,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(
-                _l10n.admInsConfig,
-                style: const TextStyle(
-                  color: FqColors.muted,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _codigoController,
-                enabled: _creando && !_guardando,
-                maxLength: 50,
-                decoration: InputDecoration(
-                  labelText: _l10n.admInsCodigo,
-                  hintText: 'RUTAS_10',
-                  helperText: _l10n.admInsCodigoAyuda,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _nombreController,
-                enabled: !_guardando,
-                maxLength: 100,
-                decoration: InputDecoration(
-                  labelText: _l10n.comunNombre,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _descripcionController,
-                enabled: !_guardando,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: _l10n.admDescripcion,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emojiController,
-                enabled: !_guardando,
-                decoration: InputDecoration(
-                  labelText: _l10n.admEmoji,
-                  hintText: '🏅',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _tipo,
-                decoration: InputDecoration(
-                  labelText: _l10n.admInsTipo,
-                  border: const OutlineInputBorder(),
-                ),
-                items: _tipos.map((String clave) {
-                  return DropdownMenuItem<String>(
-                    value: clave,
-                    child: Text(_nombreTipo(clave)),
-                  );
-                }).toList(),
-                onChanged: _guardando
-                    ? null
-                    : (String? valor) {
-                        if (valor == null) return;
-
-                        setState(() {
-                          _tipo = valor;
-
-                          if (_tipo == 'km') {
-                            _metrica = 'km';
-                          }
-                        });
-                      },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                // Fuerza la actualización visual de la métrica
-                // cuando cambia el tipo de insignia.
-                key: ValueKey<String>('metrica_$_tipo'),
-                initialValue: _metrica,
-                decoration: InputDecoration(
-                  labelText: _l10n.admMetrica,
-                  border: const OutlineInputBorder(),
-                ),
-                items: _metricas
-                    .where(
-                      (String clave) =>
-                          _tipo != 'km' || clave == 'km',
-                    )
-                    .map((String clave) {
-                  return DropdownMenuItem<String>(
-                    value: clave,
-                    child: Text(_nombreMetrica(clave)),
-                  );
-                }).toList(),
-                onChanged: _guardando
-                    ? null
-                    : (String? valor) {
-                        if (valor != null) {
-                          setState(() => _metrica = valor);
-                        }
-                      },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _metaController,
-                enabled: !_guardando,
-                keyboardType:
-                    const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: _l10n.admMeta,
-                  hintText: '10',
-                  helperText: !_creando &&
-                          widget.insignia?.meta == null &&
-                          _tipo == 'hito' &&
-                          _metrica == 'especial'
-                      ? _l10n.admInsMetaAyudaVacia
-                      : _l10n.admInsMetaAyuda,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(_l10n.admInsActivoTitulo),
-                subtitle: Text(
-                  _activa
-                      ? _l10n.admDisponibleUsuarios
-                      : _l10n.admInsActivoNo,
-                ),
-                value: _activa,
-                onChanged: _guardando
-                    ? null
-                    : (bool valor) {
-                        setState(() => _activa = valor);
-                      },
-              ),
-              if (_errorFormulario != null) ...<Widget>[
-                const SizedBox(height: 12),
+        title: Text(_creando ? _l10n.admInsNueva : _l10n.admInsEditar),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
                 Text(
-                  _errorFormulario!,
-                  style: const TextStyle(color: Colors.red),
+                  _l10n.admInsConfig,
+                  style: const TextStyle(
+                    color: FqColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _codigoController,
+                  enabled: _creando && !_guardando,
+                  maxLength: 50,
+                  decoration: InputDecoration(
+                    labelText: _l10n.admInsCodigo,
+                    hintText: 'RUTAS_10',
+                    helperText: _l10n.admInsCodigoAyuda,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _nombreController,
+                  enabled: !_guardando,
+                  maxLength: 100,
+                  decoration: InputDecoration(
+                    labelText: _l10n.comunNombre,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descripcionController,
+                  enabled: !_guardando,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: _l10n.admDescripcion,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _emojiController,
+                  enabled: !_guardando,
+                  decoration: InputDecoration(
+                    labelText: _l10n.admEmoji,
+                    hintText: '🏅',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _tipo,
+                  decoration: InputDecoration(
+                    labelText: _l10n.admInsTipo,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: _tipos.map((String clave) {
+                    return DropdownMenuItem<String>(
+                      value: clave,
+                      child: Text(_nombreTipo(clave)),
+                    );
+                  }).toList(),
+                  onChanged: _guardando
+                      ? null
+                      : (String? valor) {
+                          if (valor == null) return;
+
+                          setState(() {
+                            _tipo = valor;
+
+                            if (_tipo == 'km') {
+                              _metrica = 'km';
+                            }
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  // Fuerza la actualización visual de la métrica
+                  // cuando cambia el tipo de insignia.
+                  key: ValueKey<String>('metrica_$_tipo'),
+                  initialValue: _metrica,
+                  decoration: InputDecoration(
+                    labelText: _l10n.admMetrica,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: _metricas
+                      .where((String clave) => _tipo != 'km' || clave == 'km')
+                      .map((String clave) {
+                        return DropdownMenuItem<String>(
+                          value: clave,
+                          child: Text(_nombreMetrica(clave)),
+                        );
+                      })
+                      .toList(),
+                  onChanged: _guardando
+                      ? null
+                      : (String? valor) {
+                          if (valor != null) {
+                            setState(() => _metrica = valor);
+                          }
+                        },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _metaController,
+                  enabled: !_guardando,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: _l10n.admMeta,
+                    hintText: '10',
+                    helperText:
+                        !_creando &&
+                            widget.insignia?.meta == null &&
+                            _tipo == 'hito' &&
+                            _metrica == 'especial'
+                        ? _l10n.admInsMetaAyudaVacia
+                        : _l10n.admInsMetaAyuda,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(_l10n.admInsActivoTitulo),
+                  subtitle: Text(
+                    _activa
+                        ? _l10n.admDisponibleUsuarios
+                        : _l10n.admInsActivoNo,
+                  ),
+                  value: _activa,
+                  onChanged: _guardando
+                      ? null
+                      : (bool valor) {
+                          setState(() => _activa = valor);
+                        },
+                ),
+                if (_errorFormulario != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorFormulario!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
-          onPressed: _guardando
-              ? null
-              : () => Navigator.of(context).pop(false),
-          child: Text(_l10n.comunCancelar),
-        ),
-        FilledButton(
-          onPressed: _guardando ? null : _guardar,
-          child: _guardando
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
+        actions: <Widget>[
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+            onPressed: _guardando
+                ? null
+                : () => Navigator.of(context).pop(false),
+            child: Text(_l10n.comunCancelar),
+          ),
+          FilledButton(
+            onPressed: _guardando ? null : _guardar,
+            child: _guardando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(
+                    _creando ? _l10n.admInsCrear : _l10n.comunGuardarCambios,
                   ),
-                )
-              : Text(
-                  _creando
-                      ? _l10n.admInsCrear
-                      : _l10n.comunGuardarCambios,
-                ),
-        ),
-      ],
+          ),
+        ],
       ),
     );
   }

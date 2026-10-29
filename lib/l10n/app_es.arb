@@ -683,9 +683,9 @@
   "admDescGestionNodos": "Revisar puntos de interes propuestos.",
   "admNavGestionEventos": "Gestion de eventos",
   "admDescGestionEventos": "Aprobar eventos y retos patrocinados.",
-  "admNavGestionPatrocinadores": "Gestion de patrocinadores",
-  "admHeaderPatrocinadores": "Patrocinadores",
-  "admDescGestionPatrocinadores": "Verificar y supervisar cuentas comerciales.",
+  "admNavGestionPatrocinadores": "Gestión de suscripciones",
+  "admHeaderPatrocinadores": "Suscripciones",
+  "admDescGestionPatrocinadores": "Activar, rechazar y suspender las suscripciones de empresas y usuarios.",
   "admNavGestionInsignias": "Gestion de insignias",
   "admDescGestionInsignias": "Crear y configurar reglas de gamificacion.",
   "admNavCatalogos": "Catalogos",
@@ -760,7 +760,7 @@
   "admEventosSearchHint": "Buscar en eventos",
   "admEventosVacioTitulo": "Sin eventos por aprobar",
   "admEventosVacioMensaje": "Eventos y retos patrocinados pendientes de aprobacion se veran aqui.",
-  "admPatrocinadoresSearchHint": "Buscar en patrocinadores",
+  "admPatrocinadoresSearchHint": "Buscar en suscripciones",
   "admPatrocinadoresVacioTitulo": "Sin cuentas comerciales",
   "admPatrocinadoresVacioMensaje": "Las cuentas de patrocinador para verificar o supervisar iran aqui.",
   "admInsigniasSearchHint": "Buscar en insignias",
@@ -981,13 +981,13 @@
   "@rutasAdminSearchHint": {
     "description": "Search box hint on the admin routes moderation queue."
   },
-  "rutasAdminSinCola": "Sin rutas en la cola",
+  "rutasAdminSinCola": "No hay rutas publicadas",
   "@rutasAdminSinCola": {
-    "description": "Empty-state title when there are no routes pending moderation."
+    "description": "Empty-state title when there are no published routes."
   },
-  "rutasAdminSinColaMensaje": "Las rutas enviadas a moderacion apareceran aqui para revisarlas.",
+  "rutasAdminSinColaMensaje": "Las rutas publicadas aparecerán aquí para su consulta.",
   "@rutasAdminSinColaMensaje": {
-    "description": "Empty-state message on the admin routes moderation queue."
+    "description": "Empty-state message on the admin published routes list."
   },
   "rutasAdminSubtituloPropuesta": "{actividad} · {km} km · propuesta por {nombre}",
   "@rutasAdminSubtituloPropuesta": {
@@ -2473,8 +2473,9 @@
   "@interesesModalError": {
     "description": "Error notification when updating interests fails"
   },
-  "rutaDetalleLimiteOffline": "Límite de 3 rutas offline alcanzado. Elimina una para descargar otra.",
+  "rutaDetalleLimiteOffline": "Límite de {n} rutas sin conexión alcanzado. Elimina una para descargar otra.",
   "@rutaDetalleLimiteOffline": {
+    "placeholders": {"n": {"type": "int"}},
     "description": "Warning when maximum offline routes limit is reached"
   },
   "rutaDetalleErrorGuardarOffline": "No se pudo guardar la ruta en el teléfono",
@@ -2702,6 +2703,10 @@
     }
   },
   "recorridoTooltipCentrar": "Centrar en mi ubicación",
+  "recorridoTooltipPip": "Ventana flotante",
+  "@recorridoTooltipPip": {
+    "description": "Tooltip del botón para activar ventana flotante PiP"
+  },
   "@recorridoTooltipCentrar": {
     "description": "FAB tooltip to re-center camera on GPS location"
   },
@@ -3080,7 +3085,11 @@
   "eventoRecorridoVozLlegoEvento": "Has llegado al evento {nombre}",
   "@eventoRecorridoVozLlegoEvento": {
     "description": "Voice: arrived at the event",
-    "placeholders": {"nombre":{"type":"String"}}
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
   },
   "eventoRecorridoVozDesviado": "Atención: te has desviado del recorrido del evento",
   "@eventoRecorridoVozDesviado": {
@@ -3097,7 +3106,11 @@
   "eventoRecorridoNotifTitulo": "Rumbo al evento: {nombre}",
   "@eventoRecorridoNotifTitulo": {
     "description": "Background GPS notification title",
-    "placeholders": {"nombre":{"type":"String"}}
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
   },
   "eventoRecorridoNotifMensaje": "Navegando con FitQuest Go",
   "@eventoRecorridoNotifMensaje": {
@@ -3126,7 +3139,11 @@
   "eventoRecorridoEstadoRumboEvento": "Rumbo al evento · {distancia}",
   "@eventoRecorridoEstadoRumboEvento": {
     "description": "Status chip: heading to the event",
-    "placeholders": {"distancia":{"type":"String"}}
+    "placeholders": {
+      "distancia": {
+        "type": "String"
+      }
+    }
   },
   "eventoRecorridoVerCompleto": "Ver evento completo",
   "@eventoRecorridoVerCompleto": {
@@ -3147,7 +3164,11 @@
   "eventoRecorridoMinutos": "{min} min",
   "@eventoRecorridoMinutos": {
     "description": "Approximate walking minutes",
-    "placeholders": {"min":{"type":"int"}}
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
   },
   "eventoRecorridoValorLlegaste": "Llegaste",
   "@eventoRecorridoValorLlegaste": {
@@ -3184,7 +3205,11 @@
   "recorridoNotifTitulo": "Navegando: {ruta}",
   "@recorridoNotifTitulo": {
     "description": "Background GPS notification title while following a route",
-    "placeholders": {"ruta":{"type":"String"}}
+    "placeholders": {
+      "ruta": {
+        "type": "String"
+      }
+    }
   },
   "recorridoNotifMensaje": "Siguiendo ruta en FitQuest Go",
   "@recorridoNotifMensaje": {
@@ -3237,7 +3262,11 @@
   "rutasCreadaPor": "Creada por {nombre}",
   "@rutasCreadaPor": {
     "description": "Route detail: author",
-    "placeholders": {"nombre":{"type":"String"}}
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
   },
   "rutasSincronizar": "Sincronizar",
   "@rutasSincronizar": {
@@ -3246,12 +3275,20 @@
   "rutasPendientesSubir": "{n, plural, =1{Tienes 1 ruta pendiente de subir} other{Tienes {n} rutas pendientes de subir}}",
   "@rutasPendientesSubir": {
     "description": "Banner: routes waiting to upload",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "rutasPendientesSubidas": "{n, plural, =1{Ruta pendiente subida} other{{n} rutas pendientes subidas}}",
   "@rutasPendientesSubidas": {
     "description": "Toast: routes uploaded",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "rutasSinConexionReintento": "Aún sin conexión. Se reintentará automáticamente.",
   "@rutasSinConexionReintento": {
@@ -3284,12 +3321,20 @@
   "notificacionesTiempoMinutos": "Hace {n} min",
   "@notificacionesTiempoMinutos": {
     "description": "Relative time in minutes",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "notificacionesTiempoHoras": "{n, plural, =1{Hace 1 hora} other{Hace {n} horas}}",
   "@notificacionesTiempoHoras": {
     "description": "Relative time in hours",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "notificacionesTiempoAyer": "Ayer",
   "@notificacionesTiempoAyer": {
@@ -3298,7 +3343,11 @@
   "notificacionesTiempoDias": "Hace {n} días",
   "@notificacionesTiempoDias": {
     "description": "Relative time in days",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "insigniasModoSinConexion": "Modo sin conexión: mostrando insignias guardadas en tu dispositivo.",
   "@insigniasModoSinConexion": {
@@ -3355,12 +3404,20 @@
   "validacionMaximo": "Maximo {n} caracteres",
   "@validacionMaximo": {
     "description": "Max length",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "validacionMinimo": "Minimo {n} caracteres",
   "@validacionMinimo": {
     "description": "Min length",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "validacionSinNumeros": "No se pueden digitar numeros",
   "@validacionSinNumeros": {
@@ -3401,12 +3458,23 @@
   "planActivoDetalle": "{plan} · vence el {fecha}",
   "@planActivoDetalle": {
     "description": "Active plan detail",
-    "placeholders": {"plan":{"type":"String"},"fecha":{"type":"String"}}
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "fecha": {
+        "type": "String"
+      }
+    }
   },
   "planDiasRestantes": "{n, plural, =0{Vence hoy} =1{Queda 1 día} other{Quedan {n} días}}",
   "@planDiasRestantes": {
     "description": "Days left in the active plan",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "planActivoAyuda": "Ya puedes activar \"Destacar\" en tus eventos y puntos desde Mis eventos y las fichas de cada uno.",
   "@planActivoAyuda": {
@@ -3419,7 +3487,11 @@
   "planPendienteDetalle": "Pediste \"{plan}\". El equipo la revisará y te avisaremos aquí y en tu celular cuando tenga respuesta.",
   "@planPendienteDetalle": {
     "description": "Pending request detail",
-    "placeholders": {"plan":{"type":"String"}}
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
   },
   "planRechazadaAviso": "Tu última solicitud no fue aprobada. El motivo está en tus notificaciones; puedes pedir un plan de nuevo.",
   "@planRechazadaAviso": {
@@ -3440,7 +3512,11 @@
   "planDuracion": "{dias} días",
   "@planDuracion": {
     "description": "Plan duration",
-    "placeholders": {"dias":{"type":"int"}}
+    "placeholders": {
+      "dias": {
+        "type": "int"
+      }
+    }
   },
   "planSolicitar": "Solicitar plan",
   "@planSolicitar": {
@@ -3453,7 +3529,17 @@
   "planConfirmarMensaje": "{plan} · {precio} por {dias} días. El equipo revisará tu solicitud antes de activarlo.",
   "@planConfirmarMensaje": {
     "description": "Dialog message",
-    "placeholders": {"plan":{"type":"String"},"precio":{"type":"String"},"dias":{"type":"int"}}
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "precio": {
+        "type": "String"
+      },
+      "dias": {
+        "type": "int"
+      }
+    }
   },
   "planSolicitudEnviada": "Solicitud enviada. Te avisaremos cuando la revisen.",
   "@planSolicitudEnviada": {
@@ -3562,7 +3648,14 @@
   "admPaginaDe": "Página {pagina} de {total}",
   "@admPaginaDe": {
     "description": "Admin pagination label",
-    "placeholders": {"pagina":{"type":"int"},"total":{"type":"int"}}
+    "placeholders": {
+      "pagina": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "admAplicarFiltros": "Aplicar filtros",
   "@admAplicarFiltros": {
@@ -3583,7 +3676,11 @@
   "admDashErrorEstadisticas": "No se pudieron cargar las estadísticas: {error}",
   "@admDashErrorEstadisticas": {
     "description": "Dashboard error",
-    "placeholders": {"error":{"type":"String"}}
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "admCatTipoAlertas": "Tipos de alertas",
   "@admCatTipoAlertas": {
@@ -3676,27 +3773,50 @@
   "admRepConfirmarResolver": "¿Deseas resolver el reporte #{id}?\n\nEsta acción actualizará el estado del reporte.",
   "@admRepConfirmarResolver": {
     "description": "Dialog message",
-    "placeholders": {"id":{"type":"int"}}
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
   },
   "admRepConfirmarArchivar": "¿Deseas archivar el reporte #{id}?\n\nEsta acción actualizará el estado del reporte.",
   "@admRepConfirmarArchivar": {
     "description": "Dialog message",
-    "placeholders": {"id":{"type":"int"}}
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
   },
   "admRepActualizado": "Reporte #{id} actualizado a {estado}",
   "@admRepActualizado": {
     "description": "Toast",
-    "placeholders": {"id":{"type":"int"},"estado":{"type":"String"}}
+    "placeholders": {
+      "id": {
+        "type": "int"
+      },
+      "estado": {
+        "type": "String"
+      }
+    }
   },
   "admRepErrorActualizar": "No se pudo actualizar el reporte: {error}",
   "@admRepErrorActualizar": {
     "description": "Toast",
-    "placeholders": {"error":{"type":"String"}}
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "admRepTitulo": "Reporte #{id}",
   "@admRepTitulo": {
     "description": "Title",
-    "placeholders": {"id":{"type":"int"}}
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
   },
   "admRepInfo": "Información del reporte",
   "@admRepInfo": {
@@ -3729,7 +3849,11 @@
   "admDirErrorCarga": "No se pudieron cargar los usuarios: {error}",
   "@admDirErrorCarga": {
     "description": "Error",
-    "placeholders": {"error":{"type":"String"}}
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "admDirTitulo": "Detalle de usuarios",
   "@admDirTitulo": {
@@ -3782,7 +3906,11 @@
   "admDirTotal": "Total de usuarios: {n}",
   "@admDirTotal": {
     "description": "Footer",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "admInsCreada": "Insignia creada correctamente.",
   "@admInsCreada": {
@@ -3803,7 +3931,17 @@
   "admInsResumen": "{codigo} · {metrica} · Meta: {meta}",
   "@admInsResumen": {
     "description": "Badge row subtitle",
-    "placeholders": {"codigo":{"type":"String"},"metrica":{"type":"String"},"meta":{"type":"String"}}
+    "placeholders": {
+      "codigo": {
+        "type": "String"
+      },
+      "metrica": {
+        "type": "String"
+      },
+      "meta": {
+        "type": "String"
+      }
+    }
   },
   "admInsTipoHito": "Hito",
   "@admInsTipoHito": {
@@ -3952,7 +4090,11 @@
   "admAudErrorConsulta": "No se pudieron consultar los registros: {error}",
   "@admAudErrorConsulta": {
     "description": "Error",
-    "placeholders": {"error":{"type":"String"}}
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "admAudAccUsuarioCreado": "Usuario creado",
   "@admAudAccUsuarioCreado": {
@@ -3993,7 +4135,11 @@
   "admAudUltimaConsulta": "Última consulta: {hora}",
   "@admAudUltimaConsulta": {
     "description": "Live note",
-    "placeholders": {"hora":{"type":"String"}}
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
   },
   "admAudIdAdmin": "ID administrador",
   "@admAudIdAdmin": {
@@ -4022,7 +4168,11 @@
   "admAudTotal": "Total de registros: {n}",
   "@admAudTotal": {
     "description": "Footer",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "admAudSinCambios": "No se detectaron cambios en los campos auditables.",
   "@admAudSinCambios": {
@@ -4119,7 +4269,11 @@
   "admEvtUsuarioN": "Usuario #{id}",
   "@admEvtUsuarioN": {
     "description": "Organizer fallback",
-    "placeholders": {"id":{"type":"String"}}
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
   },
   "admEvtNoDisponible": "No disponible",
   "@admEvtNoDisponible": {
@@ -4168,7 +4322,14 @@
   "admEvtInicioRango": "Inicio: {desde} - {hasta}",
   "@admEvtInicioRango": {
     "description": "Button",
-    "placeholders": {"desde":{"type":"String"},"hasta":{"type":"String"}}
+    "placeholders": {
+      "desde": {
+        "type": "String"
+      },
+      "hasta": {
+        "type": "String"
+      }
+    }
   },
   "admEvtSelRangoFin": "Seleccionar rango de finalización",
   "@admEvtSelRangoFin": {
@@ -4177,7 +4338,14 @@
   "admEvtFinRango": "Fin: {desde} - {hasta}",
   "@admEvtFinRango": {
     "description": "Button",
-    "placeholders": {"desde":{"type":"String"},"hasta":{"type":"String"}}
+    "placeholders": {
+      "desde": {
+        "type": "String"
+      },
+      "hasta": {
+        "type": "String"
+      }
+    }
   },
   "admEvtQuitarInicio": "Quitar rango de inicio",
   "@admEvtQuitarInicio": {
@@ -4226,7 +4394,11 @@
   "admEvtConfirmarMsg": "Se eliminará \"{nombre}\".\n\nEsta acción es permanente y no se puede deshacer.",
   "@admEvtConfirmarMsg": {
     "description": "Dialog message",
-    "placeholders": {"nombre":{"type":"String"}}
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
   },
   "admEvtEliminarDef": "Eliminar definitivamente",
   "@admEvtEliminarDef": {
@@ -4243,7 +4415,11 @@
   "admEvtFiltrosActivos": "{n, plural, =1{1 filtro activo} other{{n} filtros activos}}",
   "@admEvtFiltrosActivos": {
     "description": "Chip",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "admEvtActualizar": "Actualizar eventos",
   "@admEvtActualizar": {
@@ -4288,7 +4464,14 @@
   "admUsrInsigniasObtenidas": "Insignias obtenidas: {obtenidas} de {total}",
   "@admUsrInsigniasObtenidas": {
     "description": "Header",
-    "placeholders": {"obtenidas":{"type":"int"},"total":{"type":"int"}}
+    "placeholders": {
+      "obtenidas": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "admUsrDesbloqueada": "Desbloqueada",
   "@admUsrDesbloqueada": {
@@ -4301,12 +4484,23 @@
   "admUsrObtenida": "Obtenida: {fecha}",
   "@admUsrObtenida": {
     "description": "Badge date",
-    "placeholders": {"fecha":{"type":"String"}}
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
   },
   "admUsrProgreso": "Progreso: {progreso} / {meta}",
   "@admUsrProgreso": {
     "description": "Badge progress",
-    "placeholders": {"progreso":{"type":"String"},"meta":{"type":"String"}}
+    "placeholders": {
+      "progreso": {
+        "type": "String"
+      },
+      "meta": {
+        "type": "String"
+      }
+    }
   },
   "admUsrVolver": "Volver a usuarios",
   "@admUsrVolver": {
@@ -4315,7 +4509,14 @@
   "admUsrRolEstado": "Rol: {rol}  ·  Estado: {estado}",
   "@admUsrRolEstado": {
     "description": "Header line",
-    "placeholders": {"rol":{"type":"String"},"estado":{"type":"String"}}
+    "placeholders": {
+      "rol": {
+        "type": "String"
+      },
+      "estado": {
+        "type": "String"
+      }
+    }
   },
   "admUsrActualizar": "Actualizar información",
   "@admUsrActualizar": {
@@ -4364,7 +4565,14 @@
   "admUsrTipoReferencia": "Tipo: {tipo}  ·  Referencia: {referencia}",
   "@admUsrTipoReferencia": {
     "description": "Row subtitle",
-    "placeholders": {"tipo":{"type":"String"},"referencia":{"type":"String"}}
+    "placeholders": {
+      "tipo": {
+        "type": "String"
+      },
+      "referencia": {
+        "type": "String"
+      }
+    }
   },
   "admUsrAportesTitulo": "Aportes del usuario",
   "@admUsrAportesTitulo": {
@@ -4373,7 +4581,11 @@
   "admUsrRutasCreadas": "Rutas creadas ({n})",
   "@admUsrRutasCreadas": {
     "description": "Subsection",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "admUsrSinRutas": "No ha creado rutas.",
   "@admUsrSinRutas": {
@@ -4386,12 +4598,23 @@
   "admUsrRutaDetalle": "Estado: {estado}  ·  Distancia: {km} km",
   "@admUsrRutaDetalle": {
     "description": "Row subtitle",
-    "placeholders": {"estado":{"type":"String"},"km":{"type":"String"}}
+    "placeholders": {
+      "estado": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
   },
   "admUsrNodosCreados": "Nodos creados ({n})",
   "@admUsrNodosCreados": {
     "description": "Subsection",
-    "placeholders": {"n":{"type":"int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "admUsrSinNodos": "No ha creado nodos.",
   "@admUsrSinNodos": {
@@ -4404,7 +4627,14 @@
   "admUsrNodoDetalle": "Categoría: {categoria}  ·  Estado: {estado}",
   "@admUsrNodoDetalle": {
     "description": "Row subtitle",
-    "placeholders": {"categoria":{"type":"String"},"estado":{"type":"String"}}
+    "placeholders": {
+      "categoria": {
+        "type": "String"
+      },
+      "estado": {
+        "type": "String"
+      }
+    }
   },
   "admUsrReportesTitulo": "Reportes de incidentes",
   "@admUsrReportesTitulo": {
@@ -4433,12 +4663,29 @@
   "admUsrIncidenteDetalle": "{descripcion}\nGravedad: {gravedad}  ·  Estado: {estado}  ·  Confirmaciones: {confirmaciones}",
   "@admUsrIncidenteDetalle": {
     "description": "Row subtitle",
-    "placeholders": {"descripcion":{"type":"String"},"gravedad":{"type":"String"},"estado":{"type":"String"},"confirmaciones":{"type":"String"}}
+    "placeholders": {
+      "descripcion": {
+        "type": "String"
+      },
+      "gravedad": {
+        "type": "String"
+      },
+      "estado": {
+        "type": "String"
+      },
+      "confirmaciones": {
+        "type": "String"
+      }
+    }
   },
   "admUsrSinDatos": "{titulo}: sin datos",
   "@admUsrSinDatos": {
     "description": "Breakdown empty",
-    "placeholders": {"titulo":{"type":"String"}}
+    "placeholders": {
+      "titulo": {
+        "type": "String"
+      }
+    }
   },
   "admUsrErrorDetalle": "No se pudo cargar el detalle del usuario.",
   "@admUsrErrorDetalle": {
@@ -4447,5 +4694,477 @@
   "admUsrErrorDesconocido": "Error desconocido",
   "@admUsrErrorDesconocido": {
     "description": "Error fallback"
+  },
+  "reportarBoton": "Reportar",
+  "@reportarBoton": {
+    "description": "Button to report content (node, event, route, alert)."
+  },
+  "reportarFotoBoton": "Reportar foto",
+  "@reportarFotoBoton": {
+    "description": "Button to report a photo from the full-screen viewer."
+  },
+  "reportarTitulo": "¿Por qué lo reportas?",
+  "@reportarTitulo": {
+    "description": "Title of the report sheet."
+  },
+  "reportarTituloFoto": "¿Por qué reportas la foto?",
+  "@reportarTituloFoto": {
+    "description": "Title of the report sheet for a photo."
+  },
+  "reportarMotivoOfensivo": "Contenido ofensivo o inapropiado",
+  "@reportarMotivoOfensivo": {
+    "description": "Report reason."
+  },
+  "reportarMotivoFalso": "Información falsa o engañosa",
+  "@reportarMotivoFalso": {
+    "description": "Report reason."
+  },
+  "reportarMotivoSpam": "Spam o publicidad",
+  "@reportarMotivoSpam": {
+    "description": "Report reason."
+  },
+  "reportarMotivoFoto": "Foto inapropiada",
+  "@reportarMotivoFoto": {
+    "description": "Report reason for photos."
+  },
+  "reportarMotivoOtro": "Otro motivo",
+  "@reportarMotivoOtro": {
+    "description": "Report reason."
+  },
+  "reportarDescripcionLabel": "Cuéntanos qué pasa (opcional)",
+  "@reportarDescripcionLabel": {
+    "description": "Label of the free-text field of the report sheet."
+  },
+  "reportarDescripcionObligatoria": "Cuéntanos por qué lo reportas",
+  "@reportarDescripcionObligatoria": {
+    "description": "Label/validation when the reason is \"other\"."
+  },
+  "reportarEnviar": "Enviar reporte",
+  "@reportarEnviar": {
+    "description": "Submit button of the report sheet."
+  },
+  "reportarEnviado": "Reporte enviado. Te enviamos un correo de confirmación.",
+  "@reportarEnviado": {
+    "description": "Toast after sending a report."
+  },
+  "reportarYaReportado": "Ya reportaste este contenido.",
+  "@reportarYaReportado": {
+    "description": "Toast when the user already reported this content."
+  },
+  "reportarPropio": "No puedes reportar tu propio contenido.",
+  "@reportarPropio": {
+    "description": "Toast when reporting own content."
+  },
+  "reportarError": "No se pudo enviar el reporte.",
+  "@reportarError": {
+    "description": "Error toast when sending a report fails."
+  },
+  "admRepTipoEvento": "Evento",
+  "@admRepTipoEvento": {
+    "description": "Admin reports: content type event."
+  },
+  "admRepContenido": "Contenido reportado",
+  "@admRepContenido": {
+    "description": "Admin reports: heading of the reported content block."
+  },
+  "admRepDueno": "Creado por",
+  "@admRepDueno": {
+    "description": "Admin reports: owner of the reported content."
+  },
+  "admRepEstadoContenido": "Estado del contenido",
+  "@admRepEstadoContenido": {
+    "description": "Admin reports: current state of the content."
+  },
+  "admRepContenidoDesactivado": "Desactivado",
+  "@admRepContenidoDesactivado": {
+    "description": "Admin reports: the content is deactivated now."
+  },
+  "admRepContenidoActivo": "Activo",
+  "@admRepContenidoActivo": {
+    "description": "Admin reports: the content is active."
+  },
+  "admRepContenidoNoExiste": "El contenido ya no existe.",
+  "@admRepContenidoNoExiste": {
+    "description": "Admin reports: the reported content was deleted."
+  },
+  "admRepEsFoto": "Reporte de la foto",
+  "@admRepEsFoto": {
+    "description": "Admin reports: the report is about the photo."
+  },
+  "admRepDesactivar": "Desactivar",
+  "@admRepDesactivar": {
+    "description": "Admin reports: deactivate the reported content."
+  },
+  "admRepConservar": "Conservar (no infringe)",
+  "@admRepConservar": {
+    "description": "Admin reports: keep the content, the report does not apply."
+  },
+  "admRepReactivar": "Reactivar",
+  "@admRepReactivar": {
+    "description": "Admin reports: reactivate content deactivated by a report."
+  },
+  "admRepConfirmarDesactivar": "Se desactivará lo reportado (no se elimina) y se le avisará por correo a quien reportó.",
+  "@admRepConfirmarDesactivar": {
+    "description": "Admin reports: confirmation body for deactivating."
+  },
+  "admRepConfirmarConservar": "Se conservará lo reportado y se le avisará por correo a quien reportó que no infringe.",
+  "@admRepConfirmarConservar": {
+    "description": "Admin reports: confirmation body for keeping."
+  },
+  "admRepConfirmarReactivar": "Se volverá a activar lo que este reporte desactivó. No se envía correo.",
+  "@admRepConfirmarReactivar": {
+    "description": "Admin reports: confirmation body for reactivating."
+  },
+  "admRepDesactivado": "Contenido desactivado.",
+  "@admRepDesactivado": {
+    "description": "Admin reports: toast after deactivating."
+  },
+  "admRepConservado": "Se conserva el contenido.",
+  "@admRepConservado": {
+    "description": "Admin reports: toast after keeping."
+  },
+  "admRepReactivado": "Contenido reactivado.",
+  "@admRepReactivado": {
+    "description": "Admin reports: toast after reactivating."
+  },
+  "eventoEstadoDesactivado": "Desactivado",
+  "@eventoEstadoDesactivado": {
+    "description": "Tag of an event deactivated by moderation (company view)."
+  },
+  "planTituloUsuario": "Mi suscripción",
+  "@planTituloUsuario": {
+    "description": "Subscription screen title for regular users"
+  },
+  "planIntroUsuario": "Con una suscripción puedes guardar más rutas para verlas sin conexión: hasta {max} en vez de {gratis}. El equipo revisa cada solicitud antes de activarla.",
+  "@planIntroUsuario": {
+    "description": "Intro for regular users",
+    "placeholders": {"max":{"type":"int"},"gratis":{"type":"int"}}
+  },
+  "planActivoAyudaUsuario": "Ya puedes guardar hasta {max} rutas para verlas sin conexión.",
+  "@planActivoAyudaUsuario": {
+    "description": "Help under the active plan for regular users",
+    "placeholders": {"max":{"type":"int"}}
+  },
+  "planPagoTitulo": "Cómo pagar",
+  "@planPagoTitulo": {
+    "description": "SINPE instructions title"
+  },
+  "planPagoPaso1": "Haz una transferencia por SINPE Móvil al {numero} por {monto}.",
+  "@planPagoPaso1": {
+    "description": "Step 1",
+    "placeholders": {"numero":{"type":"String"},"monto":{"type":"String"}}
+  },
+  "planPagoPaso2": "En el detalle escribe tu número de solicitud ({solicitud}) y tu nombre.",
+  "@planPagoPaso2": {
+    "description": "Step 2",
+    "placeholders": {"solicitud":{"type":"String"}}
+  },
+  "planPagoPaso3": "Envía el comprobante al mismo número ({numero}) para que un administrador active tu plan.",
+  "@planPagoPaso3": {
+    "description": "Step 3",
+    "placeholders": {"numero":{"type":"String"}}
+  },
+  "planNumeroSolicitud": "Tu número de solicitud",
+  "@planNumeroSolicitud": {
+    "description": "Label above the 6-digit number"
+  },
+  "planCopiarDetalle": "Copiar detalle del pago",
+  "@planCopiarDetalle": {
+    "description": "Button"
+  },
+  "planDetalleCopiado": "Detalle copiado. Pégalo en el SINPE.",
+  "@planDetalleCopiado": {
+    "description": "Toast"
+  },
+  "planPaypalProximamente": "El pago con PayPal para tu región estará disponible pronto. Mientras tanto puedes ver los planes.",
+  "@planPaypalProximamente": {
+    "description": "Shown outside Costa Rica"
+  },
+  "planProntoDisponible": "Pronto disponible",
+  "@planProntoDisponible": {
+    "description": "Disabled request button"
+  },
+  "planPagoNoDisponible": "El pago para tu región aún no está disponible.",
+  "@planPagoNoDisponible": {
+    "description": "Toast"
+  },
+  "planNoAplica": "Este plan no es para tu tipo de cuenta.",
+  "@planNoAplica": {
+    "description": "Toast"
+  },
+  "planInvitacionTitulo": "Necesitas una suscripción",
+  "@planInvitacionTitulo": {
+    "description": "Dialog title"
+  },
+  "planInvitacionOffline": "Llegaste al límite de {n} rutas guardadas sin conexión. Con una suscripción puedes guardar hasta {max}.",
+  "@planInvitacionOffline": {
+    "description": "Dialog message when the free offline limit is hit",
+    "placeholders": {"n":{"type":"int"},"max":{"type":"int"}}
+  },
+  "planInvitacionDestacar": "Para destacar necesitas un plan de patrocinio activo. Puedes solicitarlo ahora.",
+  "@planInvitacionDestacar": {
+    "description": "Dialog message when featuring without a plan"
+  },
+  "planInvitacionVer": "Ver planes",
+  "@planInvitacionVer": {
+    "description": "Dialog button"
+  },
+  "admTabRechazadas": "Rechazadas",
+  "@admTabRechazadas": {
+    "description": "Admin tab (feminine)"
+  },
+  "admTabSuspendidas": "Suspendidas",
+  "@admTabSuspendidas": {
+    "description": "Admin tab (feminine)"
+  },
+  "admSusBuscar": "Buscar por número de solicitud, nombre o correo",
+  "@admSusBuscar": {
+    "description": "Search hint"
+  },
+  "admSusVacioTitulo": "Sin suscripciones",
+  "@admSusVacioTitulo": {
+    "description": "Empty title"
+  },
+  "admSusVacioMensaje": "Las solicitudes de plan de empresas y usuarios aparecerán aquí para activarlas.",
+  "@admSusVacioMensaje": {
+    "description": "Empty message"
+  },
+  "admSusFilaTitulo": "#{numero} · {nombre}",
+  "@admSusFilaTitulo": {
+    "description": "Row title",
+    "placeholders": {"numero":{"type":"String"},"nombre":{"type":"String"}}
+  },
+  "admSusFilaSubtitulo": "{plan} · {monto} · {cuenta}",
+  "@admSusFilaSubtitulo": {
+    "description": "Row subtitle",
+    "placeholders": {"plan":{"type":"String"},"monto":{"type":"String"},"cuenta":{"type":"String"}}
+  },
+  "admSusSinNumero": "sin número",
+  "@admSusSinNumero": {
+    "description": "Row title when the request has no number"
+  },
+  "admSusEstadoSolicitada": "Pendiente",
+  "@admSusEstadoSolicitada": {
+    "description": "Status"
+  },
+  "admSusEstadoActiva": "Activa",
+  "@admSusEstadoActiva": {
+    "description": "Status"
+  },
+  "admSusEstadoVencida": "Vencida",
+  "@admSusEstadoVencida": {
+    "description": "Status"
+  },
+  "admSusEstadoSuspendida": "Suspendida",
+  "@admSusEstadoSuspendida": {
+    "description": "Status"
+  },
+  "admSusEstadoRechazada": "Rechazada",
+  "@admSusEstadoRechazada": {
+    "description": "Status"
+  },
+  "admSusDetalleTitulo": "Solicitud #{numero}",
+  "@admSusDetalleTitulo": {
+    "description": "Dialog title",
+    "placeholders": {"numero":{"type":"String"}}
+  },
+  "admSusCampoUsuario": "Usuario",
+  "@admSusCampoUsuario": {
+    "description": "Field"
+  },
+  "admSusCampoCuenta": "Tipo de cuenta",
+  "@admSusCampoCuenta": {
+    "description": "Field"
+  },
+  "admSusCampoPlan": "Plan",
+  "@admSusCampoPlan": {
+    "description": "Field"
+  },
+  "admSusCampoMonto": "Monto a recibir",
+  "@admSusCampoMonto": {
+    "description": "Field"
+  },
+  "admSusCampoPais": "País",
+  "@admSusCampoPais": {
+    "description": "Field"
+  },
+  "admSusCampoSolicitada": "Solicitada el",
+  "@admSusCampoSolicitada": {
+    "description": "Field"
+  },
+  "admSusCampoVigencia": "Vigencia",
+  "@admSusCampoVigencia": {
+    "description": "Field"
+  },
+  "admSusVigencia": "{desde} al {hasta}",
+  "@admSusVigencia": {
+    "description": "Validity range",
+    "placeholders": {"desde":{"type":"String"},"hasta":{"type":"String"}}
+  },
+  "admSusSuspender": "Suspender",
+  "@admSusSuspender": {
+    "description": "Button"
+  },
+  "admSusConfirmarAprobar": "¿Confirmas que recibiste el pago de {monto} con el número de solicitud {numero}? El plan empezará a regir ahora.",
+  "@admSusConfirmarAprobar": {
+    "description": "Approve dialog",
+    "placeholders": {"monto":{"type":"String"},"numero":{"type":"String"}}
+  },
+  "admSusRechazarTitulo": "Rechazar solicitud",
+  "@admSusRechazarTitulo": {
+    "description": "Reject dialog title"
+  },
+  "admSusMotivo": "Motivo (se le muestra a la persona)",
+  "@admSusMotivo": {
+    "description": "Reject reason field"
+  },
+  "admSusMotivoError": "El motivo debe tener entre 10 y 500 caracteres.",
+  "@admSusMotivoError": {
+    "description": "Validation"
+  },
+  "admSusConfirmarSuspender": "¿Suspender el plan de {nombre}? Dejará de valer de inmediato.",
+  "@admSusConfirmarSuspender": {
+    "description": "Suspend dialog",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "admSusAprobada": "Suscripción activada correctamente.",
+  "@admSusAprobada": {
+    "description": "Toast"
+  },
+  "admSusRechazada": "Solicitud rechazada.",
+  "@admSusRechazada": {
+    "description": "Toast"
+  },
+  "admSusSuspendida": "Suscripción suspendida.",
+  "@admSusSuspendida": {
+    "description": "Toast"
+  },
+  "admSusErrorAccion": "No se pudo completar la acción: {error}",
+  "@admSusErrorAccion": {
+    "description": "Toast",
+    "placeholders": {"error":{"type":"String"}}
+  },
+  "admSusErrorCarga": "No se pudieron cargar las suscripciones: {error}",
+  "@admSusErrorCarga": {
+    "description": "Error",
+    "placeholders": {"error":{"type":"String"}}
+  },
+  "bioInicioDesactivado": "Inicio con huella desactivado",
+  "@bioInicioDesactivado": {
+    "description": "Toast"
+  },
+  "bioInicioActivado": "Inicio con huella activado",
+  "@bioInicioActivado": {
+    "description": "Toast"
+  },
+  "bioVerificaAsociar": "Verifica tu huella para asociarla a tu cuenta",
+  "@bioVerificaAsociar": {
+    "description": "System prompt reason"
+  },
+  "bioErrorVerificar": "No se pudo verificar la huella digital",
+  "@bioErrorVerificar": {
+    "description": "Toast"
+  },
+  "bioActivarTitulo": "Activar inicio con huella",
+  "@bioActivarTitulo": {
+    "description": "Dialog title"
+  },
+  "bioActivarMensaje": "Ingresa tu contraseña para vincularla a tu huella y permitir inicios de sesión rápidos:",
+  "@bioActivarMensaje": {
+    "description": "Dialog message"
+  },
+  "bioTuContrasena": "Tu contraseña",
+  "@bioTuContrasena": {
+    "description": "Field hint"
+  },
+  "prefAjustesPrivacidad": "Ajustes y privacidad",
+  "@prefAjustesPrivacidad": {
+    "description": "Preferences subtitle"
+  },
+  "bioTarjetaTitulo": "Ingreso con huella dactilar",
+  "@bioTarjetaTitulo": {
+    "description": "Preferences card title"
+  },
+  "bioTarjetaDesc": "Inicia sesión con tu huella digital cuando cierres sesión, sin tener que volver a escribir tu correo y contraseña.",
+  "@bioTarjetaDesc": {
+    "description": "Preferences card description"
+  },
+  "bioMotivoLogin": "Coloca tu huella para iniciar sesión en FitQuest Go",
+  "@bioMotivoLogin": {
+    "description": "System prompt reason"
+  },
+  "bioMotivoBienvenida": "Coloca tu huella para entrar a FitQuest Go",
+  "@bioMotivoBienvenida": {
+    "description": "System prompt reason"
+  },
+  "bioIngresoTitulo": "Ingreso con huella",
+  "@bioIngresoTitulo": {
+    "description": "Dialog title"
+  },
+  "bioPregunta": "¿Deseas activar el ingreso con tu huella digital para que en el próximo inicio de sesión solo pongas tu huella en vez de escribir la contraseña?",
+  "@bioPregunta": {
+    "description": "Dialog message"
+  },
+  "bioActivar": "Activar",
+  "@bioActivar": {
+    "description": "Button"
+  },
+  "bioVerificaHabilitar": "Verifica tu huella para habilitarla en tu cuenta",
+  "@bioVerificaHabilitar": {
+    "description": "System prompt reason"
+  },
+  "bioConfigurado": "Inicio con huella digital configurado",
+  "@bioConfigurado": {
+    "description": "Toast"
+  },
+  "bioHola": "¡Hola, {nombre}!",
+  "@bioHola": {
+    "description": "Greeting on the quick sign-in card",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "bioIngresoRapido": "Ingreso rápido con huella",
+  "@bioIngresoRapido": {
+    "description": "Quick sign-in card title"
+  },
+  "bioIngresar": "Ingresar con huella",
+  "@bioIngresar": {
+    "description": "Button"
+  },
+  "bioIngresarComo": "Ingresar como {nombre} (huella)",
+  "@bioIngresarComo": {
+    "description": "Welcome button",
+    "placeholders": {"nombre":{"type":"String"}}
+  },
+  "bioOContrasena": "O con contraseña",
+  "@bioOContrasena": {
+    "description": "Divider"
+  },
+  "admRutasFiltrosTitulo": "Filtros de rutas",
+  "@admRutasFiltrosTitulo": {
+    "description": "Admin routes filters dialog"
+  },
+  "admAplicar": "Aplicar",
+  "@admAplicar": {
+    "description": "Button"
+  },
+  "admRutaDetEstado": "Estado: {valor}",
+  "@admRutaDetEstado": {
+    "description": "Admin route detail",
+    "placeholders": {"valor":{"type":"String"}}
+  },
+  "admRutaDetDistancia": "Distancia: {km} km",
+  "@admRutaDetDistancia": {
+    "description": "Admin route detail",
+    "placeholders": {"km":{"type":"String"}}
+  },
+  "admRutaDetDificultad": "Dificultad: {valor}",
+  "@admRutaDetDificultad": {
+    "description": "Admin route detail",
+    "placeholders": {"valor":{"type":"String"}}
+  },
+  "admRutaDetPuntos": "Puntos GPS: {n}",
+  "@admRutaDetPuntos": {
+    "description": "Admin route detail",
+    "placeholders": {"n":{"type":"int"}}
   }
 }

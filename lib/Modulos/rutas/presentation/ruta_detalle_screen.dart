@@ -13,6 +13,10 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/data/calificacion_api.dart';
 import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/invitar_a_plan.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
@@ -37,26 +41,24 @@ class RutaDetalleScreen extends StatefulWidget {
     this.recorridoBuilder,
     this.calificaciones,
     this.abrirUrl,
+    this.offlineDao,
   });
 
   final Ruta ruta;
   final RutaApi? api;
-  /// Muestra el boton de publicar (solo en una ruta propia que sigue privada).
   final bool puedeEnviarARevision;
 
-  /// Muestra el boton de eliminar (solo en una ruta propia).
   final bool puedeEliminar;
 
-  /// Se llama cuando la ruta se elimino desde aqui (la lista la quita sin
-  /// recargar). Sin esto se usa [onCambio].
   final VoidCallback? alEliminar;
   final VoidCallback? onCambio;
   final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
-  /// Pulgares de la ruta, inyectable para pruebas.
   final CalificacionApi? calificaciones;
 
-  /// Abre "Como llegar"; por defecto lanza la app de mapas (inyectable para pruebas).
+  /// Inyectable para pruebas; por defecto el de SQLite.
+  final RutasOfflineDao? offlineDao;
+
   final Future<bool> Function(Uri uri)? abrirUrl;
 
   @override
@@ -68,11 +70,11 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   late final CalificacionApi _calificaciones =
       widget.calificaciones ?? CalificacionApi.predeterminada();
 
-  /// Pulgares de la ruta; null mientras carga (la pantalla funciona sin ellos).
   ResumenCalificacion? _resumen;
   bool _enviando = false;
   bool _esFavorita = false;
-  final RutasOfflineDao _offlineDao = RutasOfflineDao();
+  late final RutasOfflineDao _offlineDao =
+      widget.offlineDao ?? RutasOfflineDao();
   bool _guardadaOffline = false;
   bool _descargando = false;
   double _progresoDescarga = 0;
@@ -84,16 +86,20 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   @override
   void initState() {
     super.initState();
-    _api.favoritasIds().then((Set<int> ids) {
-      if (mounted) {
-        setState(() => _esFavorita = ids.contains(widget.ruta.id));
-      }
-    }).catchError((_) {});
+    _api
+        .favoritasIds()
+        .then((Set<int> ids) {
+          if (mounted) {
+            setState(() => _esFavorita = ids.contains(widget.ruta.id));
+          }
+        })
+        .catchError((_) {});
     _calificaciones
         .resumen(TipoCalificable.ruta, widget.ruta.id)
         .then((ResumenCalificacion r) {
-      if (mounted) setState(() => _resumen = r);
-    }).catchError((_) {});
+          if (mounted) setState(() => _resumen = r);
+        })
+        .catchError((_) {});
     _offlineDao.estaGuardada(widget.ruta.id).then((bool g) {
       if (mounted) setState(() => _guardadaOffline = g);
     });
@@ -113,11 +119,26 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       return;
     }
 
-    // Tope de seguridad: maximo 3 rutas offline simultaneas (protege almacenamiento y cuota gratuita)
+    // Tope de rutas offline (protege almacenamiento y la cuota gratuita de
+    // Mapbox): 3 sin suscripcion, mas con ella.
+    final bool esEmpresa =
+        AuthScope.maybeOf(context)?.usuario?.esEmpresa ?? false;
     final List<Ruta> guardadas = await _offlineDao.listar();
-    if (guardadas.length >= 3) {
+    final int limite = await PlanUsuario.instancia.limiteRutasOffline();
+    if (guardadas.length >= limite) {
       if (!mounted) return;
-      notificarInfo(l10n.rutaDetalleLimiteOffline);
+      if (limite < kLimiteRutasOfflineSuscrito && !esEmpresa) {
+        // Puede guardar mas: se le ofrece pedir la suscripcion.
+        await invitarAPlan(
+          context,
+          mensaje: l10n.planInvitacionOffline(
+            limite,
+            kLimiteRutasOfflineSuscrito,
+          ),
+        );
+      } else {
+        notificarInfo(l10n.rutaDetalleLimiteOffline(limite));
+      }
       return;
     }
 
@@ -132,12 +153,13 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       notificarError(l10n.rutaDetalleErrorGuardarOffline);
       return;
     }
-    final bool mapaOk = await MapasOfflineServicio.instancia.descargarZonaDeRuta(
-      widget.ruta,
-      alProgresar: (double p) {
-        if (mounted) setState(() => _progresoDescarga = p);
-      },
-    );
+    final bool mapaOk = await MapasOfflineServicio.instancia
+        .descargarZonaDeRuta(
+          widget.ruta,
+          alProgresar: (double p) {
+            if (mounted) setState(() => _progresoDescarga = p);
+          },
+        );
     if (!mounted) return;
     setState(() {
       _descargando = false;
@@ -193,9 +215,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   Future<void> _iniciarRecorrido() async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     if (widget.ruta.puntos.length < 2) {
-      notificarInfo(
-        l10n.rutaDetalleSinPuntosSuficientes,
-      );
+      notificarInfo(l10n.rutaDetalleSinPuntosSuficientes);
       return;
     }
     final bool? guardado = await Navigator.of(context).push<bool>(
@@ -217,7 +237,10 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
     final double top = MediaQuery.of(context).padding.top;
 
     final int tiempoEstimadoMin = (ruta.distanciaKm * 6).round().clamp(5, 360);
-    final int desnivelEstimadoM = (ruta.distanciaKm * 28).round().clamp(10, 1500);
+    final int desnivelEstimadoM = (ruta.distanciaKm * 28).round().clamp(
+      10,
+      1500,
+    );
 
     return Scaffold(
       backgroundColor: FqColors.paper,
@@ -240,10 +263,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: <Color>[
-                      Color(0xCC0B1220),
-                      Colors.transparent,
-                    ],
+                    colors: <Color>[Color(0xCC0B1220), Colors.transparent],
                   ),
                 ),
                 child: Row(
@@ -254,8 +274,10 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded,
-                            color: FqColors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: FqColors.white,
+                        ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),
@@ -316,7 +338,9 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                                 if (ruta.actividades.isNotEmpty)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 3),
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFE0F2FE),
                                       borderRadius: BorderRadius.circular(20),
@@ -356,7 +380,9 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                       ruta.creadoPorNombre!.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 8),
                     Text(
-                      AppLocalizations.of(context)!.rutasCreadaPor(ruta.creadoPorNombre!),
+                      AppLocalizations.of(
+                        context,
+                      )!.rutasCreadaPor(ruta.creadoPorNombre!),
                       style: const TextStyle(
                         fontSize: 12,
                         color: FqColors.muted,
@@ -393,6 +419,18 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                                 abrir: widget.abrirUrl,
                               ),
                       ),
+                      if (puedeReportar(context, ruta.creadoPorId))
+                        AccionFicha(
+                          key: const ValueKey<String>('ficha-reportar'),
+                          icono: Icons.flag_outlined,
+                          etiqueta: l10n.reportarBoton,
+                          onTap: () => mostrarHojaReportar(
+                            context,
+                            tipo: TipoReportable.ruta,
+                            contenidoId: ruta.id,
+                            nombre: ruta.nombre,
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -412,7 +450,9 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                       ],
                     ),
                     padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 8),
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
                     child: Row(
                       children: <Widget>[
                         Expanded(
@@ -451,7 +491,9 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                   // Nota de Seguridad / Verificación Comunitaria (RTE-08 style)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF0FDF4),
                       borderRadius: BorderRadius.circular(12),
@@ -523,8 +565,8 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                             _esPrivada
                                 ? Icons.edit_outlined
                                 : (_esFavorita
-                                    ? Icons.bookmark_rounded
-                                    : Icons.bookmark_border_rounded),
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded),
                             size: 16,
                             color: !_esPrivada && _esFavorita
                                 ? const Color(0xFF0D9488)
@@ -533,19 +575,20 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           label: Text(
                             _esPrivada
                                 ? l10n.perfilEditar
-                                : (_esFavorita ? l10n.rutaDetalleGuardada : l10n.rutaDetalleGuardar),
+                                : (_esFavorita
+                                      ? l10n.rutaDetalleGuardada
+                                      : l10n.rutaDetalleGuardar),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: !_esPrivada && _esFavorita
-                                    ? const Color(0xFF0D9488)
-                                    : FqColors.ink,
+                                  ? const Color(0xFF0D9488)
+                                  : FqColors.ink,
                             ),
                           ),
                           onPressed: () {
                             if (_esPrivada) {
-                              notificarInfo(
-                                  l10n.rutaDetalleEditarPronto);
+                              notificarInfo(l10n.rutaDetalleEditarPronto);
                             } else {
                               _toggleFavorita();
                             }
@@ -600,7 +643,9 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              value: _progresoDescarga > 0 ? _progresoDescarga : null,
+                              value: _progresoDescarga > 0
+                                  ? _progresoDescarga
+                                  : null,
                             ),
                           )
                         : Icon(
@@ -614,10 +659,12 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           ),
                     label: Text(
                       _descargando
-                          ? l10n.rutaDetalleDescargando((_progresoDescarga * 100).round())
+                          ? l10n.rutaDetalleDescargando(
+                              (_progresoDescarga * 100).round(),
+                            )
                           : (_guardadaOffline
-                              ? l10n.rutaDetalleDisponibleOfflineQuitar
-                              : l10n.rutaDetalleGuardarOffline),
+                                ? l10n.rutaDetalleDisponibleOfflineQuitar
+                                : l10n.rutaDetalleGuardarOffline),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -639,7 +686,6 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                     ),
                   ],
 
-                  // Eliminar (solo mis rutas)
                   if (widget.puedeEliminar) ...<Widget>[
                     const SizedBox(height: 12),
                     FqButton.danger(
@@ -668,7 +714,6 @@ class _MetricaDetalle extends StatelessWidget {
     this.dificultad,
   });
 
-  /// Si se da, el subtitulo lleva la carita de esa dificultad.
   final String? dificultad;
   final String valor;
   final String unidad;

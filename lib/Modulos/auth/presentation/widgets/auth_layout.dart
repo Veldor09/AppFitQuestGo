@@ -98,10 +98,7 @@ class AuthHero extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (leading != null) ...<Widget>[
-          leading!,
-          const SizedBox(height: 12),
-        ],
+        if (leading != null) ...<Widget>[leading!, const SizedBox(height: 12)],
         if (tagLabel != null) ...<Widget>[
           _LimeTag(tagLabel!),
           const SizedBox(height: FqGap.md),

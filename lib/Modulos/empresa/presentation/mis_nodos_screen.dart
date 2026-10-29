@@ -68,8 +68,6 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
 
   bool get _esEmpresa => widget.modo == ModoNodos.empresa;
 
-  /// Refresca la lista sin repintarla: lo que ya se ve se queda hasta que
-  /// llegan los datos nuevos.
   Future<void> _recargar() => _carga.cargar(silencioso: true);
 
   Future<void> _abrirFormulario([Nodo? nodo]) async {
@@ -122,7 +120,6 @@ class _MisNodosScreenState extends State<MisNodosScreen> {
       await _api.eliminar(nodo.id);
       if (!mounted) return;
       notificarExito(l10n.nodoEmpresaEliminado);
-      // Solo se quita ese nodo: nada mas se repinta ni se vuelve a pedir.
       _carga.quitar((Nodo n) => n.id == nodo.id);
     } on ApiException catch (e) {
       notificarError(e.message);

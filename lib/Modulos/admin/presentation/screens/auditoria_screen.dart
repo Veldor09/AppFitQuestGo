@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -26,10 +25,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
   final TextEditingController _administradorController =
       TextEditingController();
-  final TextEditingController _accionController =
-      TextEditingController();
-  final TextEditingController _entidadController =
-      TextEditingController();
+  final TextEditingController _accionController = TextEditingController();
+  final TextEditingController _entidadController = TextEditingController();
 
   static const int _limite = 20;
   static const Duration _intervalo = Duration(seconds: 5);
@@ -80,9 +77,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     super.dispose();
   }
 
-  Future<void> _cargarRegistros({
-    bool silencioso = false,
-  }) async {
+  Future<void> _cargarRegistros({bool silencioso = false}) async {
     if (_consultando) return;
 
     final administradorTexto = _filtroAdministrador.trim();
@@ -118,24 +113,18 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
         limite: _limite,
       );
 
-      final datos =
-          respuesta['registros'] as List<dynamic>? ?? [];
+      final datos = respuesta['registros'] as List<dynamic>? ?? [];
 
       if (!mounted) return;
 
       setState(() {
         _registros = datos
-            .map(
-              (item) =>
-                  Map<String, dynamic>.from(item as Map),
-            )
+            .map((item) => Map<String, dynamic>.from(item as Map))
             .toList();
 
-        _total =
-            (respuesta['total'] as num?)?.toInt() ?? 0;
+        _total = (respuesta['total'] as num?)?.toInt() ?? 0;
 
-        _totalPaginas =
-            (respuesta['totalPaginas'] as num?)?.toInt() ?? 0;
+        _totalPaginas = (respuesta['totalPaginas'] as num?)?.toInt() ?? 0;
 
         _ultimaActualizacion = DateTime.now();
         _error = null;
@@ -166,8 +155,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   void _aplicarFiltros() {
     if (_consultando) return;
 
-    _filtroAdministrador =
-        _administradorController.text.trim();
+    _filtroAdministrador = _administradorController.text.trim();
     _filtroAccion = _accionController.text.trim();
     _filtroEntidad = _entidadController.text.trim();
     _pagina = 1;
@@ -191,9 +179,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   }
 
   void _cambiarPagina(int pagina) {
-    if (_consultando ||
-        pagina < 1 ||
-        pagina > _totalPaginas) {
+    if (_consultando || pagina < 1 || pagina > _totalPaginas) {
       return;
     }
 
@@ -209,16 +195,14 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
     final local = fecha.toLocal();
 
-    String dos(int numero) =>
-        numero.toString().padLeft(2, '0');
+    String dos(int numero) => numero.toString().padLeft(2, '0');
 
     return '${dos(local.day)}/${dos(local.month)}/${local.year} '
         '${dos(local.hour)}:${dos(local.minute)}';
   }
 
   String _hora(DateTime fecha) {
-    String dos(int numero) =>
-        numero.toString().padLeft(2, '0');
+    String dos(int numero) => numero.toString().padLeft(2, '0');
 
     return '${dos(fecha.hour)}:'
         '${dos(fecha.minute)}:'
@@ -232,8 +216,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       'ESTADO_USUARIO_CAMBIADO': _l10n.admAudAccEstado,
     };
 
-    return nombres[accion] ??
-        accion.replaceAll('_', ' ');
+    return nombres[accion] ?? accion.replaceAll('_', ' ');
   }
 
   String _campoLegible(String campo) {
@@ -253,8 +236,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     if (valor is bool) return valor ? _l10n.admSi : _l10n.admNo;
 
     if (valor is Map || valor is List) {
-      return const JsonEncoder.withIndent('  ')
-          .convert(valor);
+      return const JsonEncoder.withIndent('  ').convert(valor);
     }
 
     final texto = valor.toString();
@@ -303,10 +285,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     IconData? icono,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 11,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
         color: fondo,
         borderRadius: BorderRadius.circular(30),
@@ -354,8 +333,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     _l10n.admAudTitulo,
@@ -380,30 +358,20 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
         );
 
         final estado = Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: const Color(0xFFF0FAF0),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFFD6EDD6),
-            ),
+            border: Border.all(color: const Color(0xFFD6EDD6)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.sync,
-                color: _verdeOscuro,
-                size: 21,
-              ),
+              const Icon(Icons.sync, color: _verdeOscuro, size: 21),
               const SizedBox(width: 10),
               Flexible(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       _l10n.admAudAuto,
@@ -415,7 +383,9 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                     ),
                     if (_ultimaActualizacion != null)
                       Text(
-                        _l10n.admAudUltimaConsulta(_hora(_ultimaActualizacion!)),
+                        _l10n.admAudUltimaConsulta(
+                          _hora(_ultimaActualizacion!),
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 11,
@@ -430,13 +400,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
         if (compacto) {
           return Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              titulo,
-              const SizedBox(height: 18),
-              estado,
-            ],
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [titulo, const SizedBox(height: 18), estado],
           );
         }
 
@@ -470,18 +435,14 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
           prefixIcon: Icon(icono, size: 19),
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(
+          contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 14,
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(11),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(11)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(11),
-            borderSide:
-                const BorderSide(color: _borde),
+            borderSide: const BorderSide(color: _borde),
           ),
         ),
       ),
@@ -496,8 +457,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       child: Wrap(
         spacing: 12,
         runSpacing: 14,
-        crossAxisAlignment:
-            WrapCrossAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _campoFiltro(
             _l10n.admAudIdAdmin,
@@ -519,39 +479,27 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             ejemplo: 'USUARIO',
           ),
           FilledButton.icon(
-            onPressed:
-                _consultando ? null : _aplicarFiltros,
+            onPressed: _consultando ? null : _aplicarFiltros,
             style: FilledButton.styleFrom(
               backgroundColor: _verde,
               foregroundColor: _texto,
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 23,
-                vertical: 19,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 23, vertical: 19),
             ),
             icon: const Icon(Icons.search),
             label: Text(_l10n.admBuscar),
           ),
           OutlinedButton.icon(
-            onPressed:
-                _consultando ? null : _limpiarFiltros,
+            onPressed: _consultando ? null : _limpiarFiltros,
             style: OutlinedButton.styleFrom(
               foregroundColor: _texto,
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 19,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 19),
             ),
             icon: const Icon(Icons.close),
             label: Text(_l10n.planificarLimpiar),
           ),
           IconButton.outlined(
             tooltip: _l10n.admAudActualizar,
-            onPressed: _consultando
-                ? null
-                : () => _cargarRegistros(),
+            onPressed: _consultando ? null : () => _cargarRegistros(),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -559,17 +507,12 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _celda(
-    String texto, {
-    bool destacado = false,
-  }) {
+  Widget _celda(String texto, {bool destacado = false}) {
     return Text(
       texto,
       style: TextStyle(
         color: _texto,
-        fontWeight: destacado
-            ? FontWeight.w600
-            : FontWeight.w400,
+        fontWeight: destacado ? FontWeight.w600 : FontWeight.w400,
         fontSize: 13,
       ),
     );
@@ -578,8 +521,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   Widget _tabla() {
     if (_registros.isEmpty) {
       return Padding(
-        padding:
-            const EdgeInsets.symmetric(vertical: 60),
+        padding: const EdgeInsets.symmetric(vertical: 60),
         child: Center(
           child: Column(
             children: [
@@ -589,9 +531,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                 color: Color(0xFF94A3B8),
               ),
               const SizedBox(height: 12),
-              Text(
-                _l10n.admAudSinRegistros,
-              ),
+              Text(_l10n.admAudSinRegistros),
             ],
           ),
         ),
@@ -600,58 +540,44 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double anchoTabla =
-            constraints.maxWidth > 1350
-                ? constraints.maxWidth
-                : 1350;
+        final double anchoTabla = constraints.maxWidth > 1350
+            ? constraints.maxWidth
+            : 1350;
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: SizedBox(
             width: anchoTabla,
             child: DataTable(
-              headingRowColor:
-                  WidgetStateProperty.all(
-                const Color(0xFFF8FAFC),
-              ),
+              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
               dataRowMinHeight: 65,
               dataRowMaxHeight: 76,
               columnSpacing: 18,
               horizontalMargin: 18,
               columns: [
                 const DataColumn(label: Text('ID')),
-                DataColumn(
-                  label: Text(_l10n.admAudAdministrador),
-                ),
+                DataColumn(label: Text(_l10n.admAudAdministrador)),
                 DataColumn(label: Text(_l10n.admAccion)),
                 DataColumn(label: Text(_l10n.admEntidad)),
-                DataColumn(
-                  label: Text(_l10n.admAudIdAfectado),
-                ),
+                DataColumn(label: Text(_l10n.admAudIdAfectado)),
                 DataColumn(label: Text(_l10n.admFecha)),
                 DataColumn(label: Text(_l10n.admDetalle)),
               ],
               rows: _registros.map((registro) {
-                final accion =
-                    '${registro['accion'] ?? '—'}';
+                final accion = '${registro['accion'] ?? '—'}';
 
                 return DataRow(
                   cells: [
                     DataCell(
-                      _celda(
-                        '${registro['id'] ?? '—'}',
-                        destacado: true,
-                      ),
+                      _celda('${registro['id'] ?? '—'}', destacado: true),
                     ),
                     DataCell(
                       Row(
-                        mainAxisSize:
-                            MainAxisSize.min,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const CircleAvatar(
                             radius: 16,
-                            backgroundColor:
-                                Color(0xFFE6F6E7),
+                            backgroundColor: Color(0xFFE6F6E7),
                             child: Icon(
                               Icons.person_outline,
                               color: _verdeOscuro,
@@ -675,30 +601,16 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                     DataCell(
                       _etiqueta(
                         '${registro['entidad'] ?? '—'}',
-                        fondo:
-                            const Color(0xFFF1EBFF),
-                        color:
-                            const Color(0xFF6941C6),
+                        fondo: const Color(0xFFF1EBFF),
+                        color: const Color(0xFF6941C6),
                       ),
                     ),
-                    DataCell(
-                      _celda(
-                        '${registro['entidadId'] ?? '—'}',
-                      ),
-                    ),
-                    DataCell(
-                      _celda(
-                        _fecha(registro['creadoEn']),
-                      ),
-                    ),
+                    DataCell(_celda('${registro['entidadId'] ?? '—'}')),
+                    DataCell(_celda(_fecha(registro['creadoEn']))),
                     DataCell(
                       OutlinedButton.icon(
-                        onPressed: () =>
-                            _mostrarDetalle(registro),
-                        icon: const Icon(
-                          Icons.visibility_outlined,
-                          size: 17,
-                        ),
+                        onPressed: () => _mostrarDetalle(registro),
+                        icon: const Icon(Icons.visibility_outlined, size: 17),
                         label: Text(_l10n.comunVer),
                       ),
                     ),
@@ -718,38 +630,25 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       child: Wrap(
         spacing: 14,
         runSpacing: 10,
-        crossAxisAlignment:
-            WrapCrossAlignment.center,
-        alignment:
-            WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        alignment: WrapAlignment.spaceBetween,
         children: [
           Text(
             _l10n.admAudTotal(_total),
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: _texto,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, color: _texto),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton.outlined(
                 tooltip: _l10n.admPaginaAnterior,
-                onPressed:
-                    _pagina > 1 && !_consultando
-                        ? () => _cambiarPagina(
-                              _pagina - 1,
-                            )
-                        : null,
-                icon: const Icon(
-                  Icons.chevron_left,
-                ),
+                onPressed: _pagina > 1 && !_consultando
+                    ? () => _cambiarPagina(_pagina - 1)
+                    : null,
+                icon: const Icon(Icons.chevron_left),
               ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   _l10n.admPaginaDe(
                     _pagina,
@@ -759,16 +658,10 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               ),
               IconButton.outlined(
                 tooltip: _l10n.admPaginaSiguiente,
-                onPressed:
-                    _pagina < _totalPaginas &&
-                            !_consultando
-                        ? () => _cambiarPagina(
-                              _pagina + 1,
-                            )
-                        : null,
-                icon: const Icon(
-                  Icons.chevron_right,
-                ),
+                onPressed: _pagina < _totalPaginas && !_consultando
+                    ? () => _cambiarPagina(_pagina + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right),
               ),
             ],
           ),
@@ -782,20 +675,13 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       width: double.infinity,
       decoration: _tarjetaDecoracion(),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_cargando)
-            const LinearProgressIndicator(),
+          if (_cargando) const LinearProgressIndicator(),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.all(18),
-              child: Text(
-                _error!,
-                style: const TextStyle(
-                  color: Colors.red,
-                ),
-              ),
+              child: Text(_error!, style: const TextStyle(color: Colors.red)),
             ),
           _tabla(),
           const Divider(height: 1),
@@ -805,18 +691,11 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _datoDetalle(
-    String etiqueta,
-    String valor, {
-    IconData? icono,
-  }) {
+  Widget _datoDetalle(String etiqueta, String valor, {IconData? icono}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icono ?? Icons.info_outline,
@@ -828,10 +707,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             width: 112,
             child: Text(
               etiqueta,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
             ),
           ),
           Expanded(
@@ -849,24 +725,16 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _seccionTitulo(
-    String titulo,
-    IconData icono,
-  ) {
+  Widget _seccionTitulo(String titulo, IconData icono) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(9),
           decoration: BoxDecoration(
             color: const Color(0xFFEAF3FF),
-            borderRadius:
-                BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icono,
-            color: const Color(0xFF1764C0),
-            size: 19,
-          ),
+          child: Icon(icono, color: const Color(0xFF1764C0), size: 19),
         ),
         const SizedBox(width: 11),
         Expanded(
@@ -883,62 +751,41 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _cambiosDetalle(
-    Map<String, dynamic> cambios,
-  ) {
+  Widget _cambiosDetalle(Map<String, dynamic> cambios) {
     if (cambios.isEmpty) {
-      return Text(
-        _l10n.admAudSinCambios,
-      );
+      return Text(_l10n.admAudSinCambios);
     }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        headingRowColor:
-            WidgetStateProperty.all(
-          const Color(0xFFEAF8E8),
-        ),
+        headingRowColor: WidgetStateProperty.all(const Color(0xFFEAF8E8)),
         columnSpacing: 18,
         dataRowMinHeight: 55,
         dataRowMaxHeight: 100,
         columns: [
-          DataColumn(
-            label: Text(_l10n.admAudCampoModificado),
-          ),
-          DataColumn(
-            label: Text(_l10n.admAudValorAnterior),
-          ),
-          DataColumn(
-            label: Text(_l10n.admAudValorNuevo),
-          ),
+          DataColumn(label: Text(_l10n.admAudCampoModificado)),
+          DataColumn(label: Text(_l10n.admAudValorAnterior)),
+          DataColumn(label: Text(_l10n.admAudValorNuevo)),
         ],
         rows: cambios.entries.map((entrada) {
           final valores = _mapa(entrada.value);
 
           return DataRow(
             cells: [
-              DataCell(
-                Text(
-                  _campoLegible(entrada.key),
-                ),
-              ),
+              DataCell(Text(_campoLegible(entrada.key))),
               DataCell(
                 _etiqueta(
                   _valor(valores?['anterior']),
-                  fondo:
-                      const Color(0xFFFFEEEE),
-                  color:
-                      const Color(0xFFB42318),
+                  fondo: const Color(0xFFFFEEEE),
+                  color: const Color(0xFFB42318),
                 ),
               ),
               DataCell(
                 _etiqueta(
                   _valor(valores?['nuevo']),
-                  fondo:
-                      const Color(0xFFEAF8EA),
-                  color:
-                      const Color(0xFF167337),
+                  fondo: const Color(0xFFEAF8EA),
+                  color: const Color(0xFF167337),
                 ),
               ),
             ],
@@ -948,33 +795,22 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _detalleContenido(
-    Map<String, dynamic> registro,
-  ) {
-    final detalle =
-        _mapa(registro['detalle']);
-    final cambios =
-        _mapa(detalle?['cambios']);
-    final datos =
-        _mapa(detalle?['datosRegistrados']);
+  Widget _detalleContenido(Map<String, dynamic> registro) {
+    final detalle = _mapa(registro['detalle']);
+    final cambios = _mapa(detalle?['cambios']);
+    final datos = _mapa(detalle?['datosRegistrados']);
 
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _seccionTitulo(
-          _l10n.admAudInfoGeneral,
-          Icons.info_outline,
-        ),
+        _seccionTitulo(_l10n.admAudInfoGeneral, Icons.info_outline),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFFF8FAFC),
-            borderRadius:
-                BorderRadius.circular(14),
-            border:
-                Border.all(color: _borde),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _borde),
           ),
           child: Column(
             children: [
@@ -985,16 +821,13 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               ),
               _datoDetalle(
                 _l10n.admAccion,
-                _accionLegible(
-                  '${registro['accion'] ?? '—'}',
-                ),
+                _accionLegible('${registro['accion'] ?? '—'}'),
                 icono: Icons.edit_outlined,
               ),
               _datoDetalle(
                 _l10n.admEntidad,
                 '${registro['entidad'] ?? '—'}',
-                icono:
-                    Icons.inventory_2_outlined,
+                icono: Icons.inventory_2_outlined,
               ),
               _datoDetalle(
                 _l10n.admAudIdAfectado,
@@ -1004,17 +837,14 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
               _datoDetalle(
                 _l10n.admFecha,
                 _fecha(registro['creadoEn']),
-                icono:
-                    Icons.calendar_today_outlined,
+                icono: Icons.calendar_today_outlined,
               ),
             ],
           ),
         ),
         const SizedBox(height: 25),
         _seccionTitulo(
-          cambios != null
-              ? _l10n.admAudCambios
-              : _l10n.admAudDetalleRegistro,
+          cambios != null ? _l10n.admAudCambios : _l10n.admAudDetalleRegistro,
           Icons.compare_arrows,
         ),
         const SizedBox(height: 14),
@@ -1022,54 +852,34 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
           _cambiosDetalle(cambios)
         else if (datos != null)
           Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: datos.entries
-                .map(
-                  (e) => _datoDetalle(
-                    _campoLegible(e.key),
-                    _valor(e.value),
-                  ),
-                )
+                .map((e) => _datoDetalle(_campoLegible(e.key), _valor(e.value)))
                 .toList(),
           )
         else if (detalle == null)
-          Text(
-            _l10n.admAudSinDetalles,
-          )
+          Text(_l10n.admAudSinDetalles)
         else
-          SelectableText(
-            const JsonEncoder.withIndent('  ')
-                .convert(detalle),
-          ),
-        if (detalle?['contrasenaModificada'] ==
-            true) ...[
+          SelectableText(const JsonEncoder.withIndent('  ').convert(detalle)),
+        if (detalle?['contrasenaModificada'] == true) ...[
           const SizedBox(height: 16),
           Text(
             _l10n.admAudContrasena,
-            style: const TextStyle(
-              color: _verdeOscuro,
-            ),
+            style: const TextStyle(color: _verdeOscuro),
           ),
         ],
         if (cambios != null) ...[
           const SizedBox(height: 20),
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color:
-                  const Color(0xFFEDF6FF),
-              borderRadius:
-                  BorderRadius.circular(12),
+              color: const Color(0xFFEDF6FF),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               _l10n.admAudSoloCambios,
-              style: const TextStyle(
-                color: Color(0xFF1764C0),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFF1764C0), fontSize: 12),
             ),
           ),
         ],
@@ -1077,19 +887,12 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _panelDetalle(
-    Map<String, dynamic> registro, {
-    required bool movil,
-  }) {
+  Widget _panelDetalle(Map<String, dynamic> registro, {required bool movil}) {
     return Material(
       color: Colors.white,
       borderRadius: movil
-          ? const BorderRadius.vertical(
-              top: Radius.circular(24),
-            )
-          : const BorderRadius.horizontal(
-              left: Radius.circular(24),
-            ),
+          ? const BorderRadius.vertical(top: Radius.circular(24))
+          : const BorderRadius.horizontal(left: Radius.circular(24)),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: !movil,
@@ -1097,43 +900,25 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
           children: [
             if (movil)
               Container(
-                margin:
-                    const EdgeInsets.only(
-                  top: 12,
-                  bottom: 6,
-                ),
+                margin: const EdgeInsets.only(top: 12, bottom: 6),
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color:
-                      const Color(0xFFCBD5E1),
-                  borderRadius:
-                      BorderRadius.circular(10),
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(
-                24,
-                22,
-                18,
-                18,
-              ),
+              padding: const EdgeInsets.fromLTRB(24, 22, 18, 18),
               child: Row(
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color:
-                          const Color(0xFFE8F7E8),
-                      borderRadius:
-                          BorderRadius.circular(12),
+                      color: const Color(0xFFE8F7E8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.receipt_long,
-                      color: _verdeOscuro,
-                    ),
+                    child: const Icon(Icons.receipt_long, color: _verdeOscuro),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1141,19 +926,15 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                       'Auditoría #${registro['id'] ?? '—'}',
                       style: const TextStyle(
                         fontSize: 21,
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                         color: _texto,
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: _l10n.comunCerrar,
-                    onPressed: () =>
-                        Navigator.of(context).pop(),
-                    icon: const Icon(
-                      Icons.close,
-                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
                   ),
                 ],
               ),
@@ -1161,25 +942,18 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             const Divider(height: 1),
             Expanded(
               child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.all(24),
-                child: _detalleContenido(
-                  registro,
-                ),
+                padding: const EdgeInsets.all(24),
+                child: _detalleContenido(registro),
               ),
             ),
             const Divider(height: 1),
             Padding(
-              padding:
-                  const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Align(
-                alignment:
-                    Alignment.centerRight,
+                alignment: Alignment.centerRight,
                 child: OutlinedButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(),
-                  child:
-                      Text(_l10n.comunCerrar),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(_l10n.comunCerrar),
                 ),
               ),
             ),
@@ -1189,27 +963,20 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  void _mostrarDetalle(
-    Map<String, dynamic> registro,
-  ) {
-    final ancho =
-        MediaQuery.sizeOf(context).width;
+  void _mostrarDetalle(Map<String, dynamic> registro) {
+    final ancho = MediaQuery.sizeOf(context).width;
 
     if (ancho < 700) {
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        backgroundColor:
-            Colors.transparent,
+        backgroundColor: Colors.transparent,
         useSafeArea: true,
         showDragHandle: false,
         builder: (context) {
           return FractionallySizedBox(
             heightFactor: 0.88,
-            child: _panelDetalle(
-              registro,
-              movil: true,
-            ),
+            child: _panelDetalle(registro, movil: true),
           );
         },
       );
@@ -1220,55 +987,25 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       context: context,
       barrierDismissible: true,
       barrierLabel: _l10n.admAudCerrarDetalle,
-      barrierColor:
-          Colors.black.withValues(
-        alpha: 0.42,
-      ),
-      transitionDuration:
-          const Duration(
-        milliseconds: 280,
-      ),
-      pageBuilder: (
-        dialogContext,
-        animation,
-        secondaryAnimation,
-      ) {
+      barrierColor: Colors.black.withValues(alpha: 0.42),
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
         return Align(
-          alignment:
-              Alignment.centerRight,
+          alignment: Alignment.centerRight,
           child: SizedBox(
-            width: ancho < 1050
-                ? ancho * 0.70
-                : 600,
+            width: ancho < 1050 ? ancho * 0.70 : 600,
             height: double.infinity,
-            child: _panelDetalle(
-              registro,
-              movil: false,
-            ),
+            child: _panelDetalle(registro, movil: false),
           ),
         );
       },
-      transitionBuilder: (
-        context,
-        animation,
-        secondaryAnimation,
-        child,
-      ) {
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
         final desplazamiento =
-            Tween<Offset>(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          ),
-        );
+            Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
 
-        return SlideTransition(
-          position: desplazamiento,
-          child: child,
-        );
+        return SlideTransition(position: desplazamiento, child: child);
       },
     );
   }
@@ -1278,17 +1015,12 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     return ColoredBox(
       color: _fondo,
       child: SingleChildScrollView(
-        padding:
-            const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Center(
           child: ConstrainedBox(
-            constraints:
-                const BoxConstraints(
-              maxWidth: 1500,
-            ),
+            constraints: const BoxConstraints(maxWidth: 1500),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _encabezado(),
                 const SizedBox(height: 24),

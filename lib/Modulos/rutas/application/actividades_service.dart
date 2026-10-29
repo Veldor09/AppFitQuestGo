@@ -24,9 +24,9 @@ class ActividadesService {
     ActividadApi? api,
     ActividadesOfflineDao? dao,
     PerfilCacheDao? perfilCache,
-  })  : _api = api ?? ActividadApi(),
-        _dao = dao ?? ActividadesOfflineDao(),
-        _perfilCache = perfilCache ?? PerfilCacheDao();
+  }) : _api = api ?? ActividadApi(),
+       _dao = dao ?? ActividadesOfflineDao(),
+       _perfilCache = perfilCache ?? PerfilCacheDao();
 
   /// Instancia compartida: evita subidas duplicadas simultaneas.
   static final ActividadesService instancia = ActividadesService();

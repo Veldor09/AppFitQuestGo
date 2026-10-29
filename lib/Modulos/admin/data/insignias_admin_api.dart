@@ -1,4 +1,3 @@
-
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/admin/data/insignia_admin_item.dart';
 
@@ -6,8 +5,7 @@ import 'package:fit_quest_go/Modulos/admin/data/insignia_admin_item.dart';
 ///
 /// Todas las operaciones requieren autenticación JWT y rol Admin.
 class InsigniasAdminApi {
-  InsigniasAdminApi([ApiClient? client])
-      : _client = client ?? ApiClient();
+  InsigniasAdminApi([ApiClient? client]) : _client = client ?? ApiClient();
 
   final ApiClient _client;
 
@@ -30,9 +28,7 @@ class InsigniasAdminApi {
   Future<InsigniaAdminItem> obtenerInsignia(int id) async {
     final dynamic data = await _client.get('$_ruta/$id');
 
-    return InsigniaAdminItem.fromJson(
-      Map<String, dynamic>.from(data as Map),
-    );
+    return InsigniaAdminItem.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   /// Crea una nueva insignia.
@@ -110,10 +106,7 @@ class InsigniasAdminApi {
       datos['activa'] = activa;
     }
 
-    final dynamic respuesta = await _client.patch(
-      '$_ruta/$id',
-      datos,
-    );
+    final dynamic respuesta = await _client.patch('$_ruta/$id', datos);
 
     return InsigniaAdminItem.fromJson(
       Map<String, dynamic>.from(respuesta as Map),
@@ -123,12 +116,7 @@ class InsigniasAdminApi {
   /// Activa o desactiva una insignia.
   ///
   /// Solo modifica el estado, sin alterar sus demás propiedades.
-  Future<InsigniaAdminItem> cambiarEstado(
-    InsigniaAdminItem insignia,
-  ) {
-    return editarInsignia(
-      id: insignia.id,
-      activa: !insignia.activa,
-    );
+  Future<InsigniaAdminItem> cambiarEstado(InsigniaAdminItem insignia) {
+    return editarInsignia(id: insignia.id, activa: !insignia.activa);
   }
 }

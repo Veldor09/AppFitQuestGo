@@ -4,8 +4,6 @@ import 'package:fit_quest_go/core/geo/formato_distancia.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
-/// El camino a pie que se esta mostrando en el mapa: a donde va, cuanto falta
-/// y una X para quitarlo.
 class GuiaActiva {
   const GuiaActiva({
     required this.nombre,
@@ -17,13 +15,10 @@ class GuiaActiva {
   final String nombre;
   final double metros;
 
-  /// 0 cuando no se pudo calcular (solo se conoce la linea directa).
   final double segundos;
   final bool lineaRecta;
 }
 
-/// Tarjeta sobre el mapa con el resumen del camino a pie ("Hacia Fuente del
-/// parque · 1,2 km · 15 min a pie") y el boton para cerrarlo.
 class BannerGuia extends StatelessWidget {
   const BannerGuia({super.key, required this.guia, required this.onCerrar});
 

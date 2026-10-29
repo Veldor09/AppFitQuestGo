@@ -33,7 +33,10 @@ class AdminKpiRow extends StatelessWidget {
           runSpacing: gap,
           children: <Widget>[
             for (final AdminKpi kpi in items)
-              SizedBox(width: itemW, child: _MetricCard(kpi: kpi)),
+              SizedBox(
+                width: itemW,
+                child: _MetricCard(kpi: kpi),
+              ),
           ],
         );
       },

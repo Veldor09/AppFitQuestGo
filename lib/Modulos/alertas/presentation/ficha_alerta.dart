@@ -5,6 +5,7 @@ import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/alertas/data/alerta.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 
 /// Abre la ficha corta de una alerta (al elegirla en la busqueda o en el cuadro
@@ -37,7 +38,6 @@ class FichaAlerta extends StatelessWidget {
   final Alerta alerta;
   final double? metros;
 
-  /// Abre "Como llegar" fuera de la app (pruebas); por defecto traza el camino en el mapa.
   final Future<bool> Function(Uri uri)? abrirUrl;
 
   @override
@@ -101,6 +101,22 @@ class FichaAlerta extends StatelessWidget {
                   abrir: abrirUrl,
                 ),
               ),
+              if (puedeReportar(context, alerta.creadoPorId))
+                AccionFicha(
+                  key: const ValueKey<String>('ficha-reportar'),
+                  icono: Icons.flag_outlined,
+                  etiqueta: l10n.reportarBoton,
+                  onTap: () => mostrarHojaReportar(
+                    context,
+                    tipo: TipoReportable.alerta,
+                    contenidoId: alerta.id,
+                    nombre: tipoAlertaLabel(
+                      l10n,
+                      alerta.tipo,
+                      otro: alerta.tipoOtro,
+                    ),
+                  ),
+                ),
             ],
           ),
           if (distancia != null) ...<Widget>[

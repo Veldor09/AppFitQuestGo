@@ -97,7 +97,9 @@ class ResumenGrabacionScreen extends StatelessWidget {
                     child: FqButton.primary(
                       label: l10n.resumenGrabacionGuardar,
                       onPressed: sePuedeGuardar
-                          ? () => Navigator.of(context).pop(ResultadoResumen.guardar)
+                          ? () => Navigator.of(
+                              context,
+                            ).pop(ResultadoResumen.guardar)
                           : null,
                     ),
                   ),

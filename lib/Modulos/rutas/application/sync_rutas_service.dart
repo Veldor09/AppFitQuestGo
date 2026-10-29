@@ -5,8 +5,8 @@ import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 /// Sube al backend las rutas que se guardaron sin conexion (cola outbox).
 class SyncRutasService {
   SyncRutasService({RutaApi? api, SyncRutasDao? dao})
-      : _api = api ?? RutaApi(),
-        _dao = dao ?? SyncRutasDao();
+    : _api = api ?? RutaApi(),
+      _dao = dao ?? SyncRutasDao();
 
   /// Instancia compartida: evita que dos pantallas suban la misma ruta a la vez.
   static final SyncRutasService instancia = SyncRutasService();

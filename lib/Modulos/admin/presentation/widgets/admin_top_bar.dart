@@ -25,76 +25,87 @@ class AdminTopBar extends StatelessWidget {
           height: 54,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-        children: <Widget>[
-          if (onToggleSidebar != null)
-            IconButton(
-              onPressed: onToggleSidebar,
-              icon: const Icon(Icons.menu, size: 18),
-              color: FqColors.white,
-              splashRadius: 18,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-          const SizedBox(width: 4),
-          Container(
-            width: 23,
-            height: 23,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: FqColors.volt,
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: const Text(
-              'FQ',
-              style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.w900,
-                color: FqColors.night,
+            children: <Widget>[
+              if (onToggleSidebar != null)
+                IconButton(
+                  onPressed: onToggleSidebar,
+                  icon: const Icon(Icons.menu, size: 18),
+                  color: FqColors.white,
+                  splashRadius: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+              const SizedBox(width: 4),
+              Container(
+                width: 23,
+                height: 23,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: FqColors.volt,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: const Text(
+                  'FQ',
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                    color: FqColors.night,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: FqColors.white,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: FqColors.white,
+                  ),
+                ),
               ),
-            ),
-          ),
-          _HeaderIcon(icon: Icons.search, onTap: () {}),
-          _HeaderIcon(icon: Icons.notifications_none, onTap: () {}, dot: true),
-          const SizedBox(width: 10),
-          Container(
-            width: 29,
-            height: 29,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: FqColors.volt,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Text(
-              userInitials,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: FqColors.night,
+              _HeaderIcon(icon: Icons.search, onTap: () {}),
+              _HeaderIcon(
+                icon: Icons.notifications_none,
+                onTap: () {},
+                dot: true,
               ),
-            ),
+              const SizedBox(width: 10),
+              Container(
+                width: 29,
+                height: 29,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: FqColors.volt,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  userInitials,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    color: FqColors.night,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-  ),
-);
+    );
   }
 }
 
 class _HeaderIcon extends StatelessWidget {
-  const _HeaderIcon({required this.icon, required this.onTap, this.dot = false});
+  const _HeaderIcon({
+    required this.icon,
+    required this.onTap,
+    this.dot = false,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
@@ -113,12 +124,7 @@ class _HeaderIcon extends StatelessWidget {
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
         ),
-        if (dot)
-          const Positioned(
-            top: 7,
-            right: 6,
-            child: _Dot(),
-          ),
+        if (dot) const Positioned(top: 7, right: 6, child: _Dot()),
       ],
     );
   }

@@ -45,15 +45,21 @@ class _RestablecerContrasenaScreenState
 
   bool _valido(AppLocalizations l10n) {
     return todoValido(<(String, List<Validador>)>[
-      (_codigo.text, <Validador>[
-        requerido(l10n.restablecerTitulo),
-        (String v) =>
-            v.trim().length == 6 ? null : l10n.restablecerCodigoLongitud,
-      ]),
-      (_password.text, <Validador>[
-        requerido(l10n.restablecerValidacionContrasena),
-        minCaracteres(8),
-      ]),
+      (
+        _codigo.text,
+        <Validador>[
+          requerido(l10n.restablecerTitulo),
+          (String v) =>
+              v.trim().length == 6 ? null : l10n.restablecerCodigoLongitud,
+        ],
+      ),
+      (
+        _password.text,
+        <Validador>[
+          requerido(l10n.restablecerValidacionContrasena),
+          minCaracteres(8),
+        ],
+      ),
     ]);
   }
 
@@ -78,9 +84,7 @@ class _RestablecerContrasenaScreenState
         ..pop() // cierra RestablecerContrasenaScreen
         ..pop(); // cierra OlvideContrasenaScreen, vuelve a LoginScreen
     } on ApiException catch (e) {
-      _fallar(
-        e.statusCode == 401 ? l10n.restablecerCodigoInvalido : e.message,
-      );
+      _fallar(e.statusCode == 401 ? l10n.restablecerCodigoInvalido : e.message);
     } catch (_) {
       _fallar(l10n.loginErrorConexion);
     }
@@ -116,8 +120,9 @@ class _RestablecerContrasenaScreenState
                     FqGap.xl,
                   ),
                   child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: kAuthContentMaxWidth),
+                    constraints: const BoxConstraints(
+                      maxWidth: kAuthContentMaxWidth,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[

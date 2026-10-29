@@ -165,12 +165,12 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('idioma-en')));
       await tester.pump();
       expect(c.idioma, IdiomaApp.ingles);
-      expect(find.text('Preferences & privacy'), findsOneWidget);
+      expect(find.text('Preferences and privacy'), findsOneWidget);
       expect(find.text('App language'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey<String>('idioma-pt')));
       await tester.pump();
-      expect(find.text('Preferências e privacidade'), findsOneWidget);
+      expect(find.text('Preferencias e privacidade'), findsOneWidget);
     });
   });
 }

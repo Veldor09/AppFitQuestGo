@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -35,10 +34,7 @@ class AdminToolbar extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: <Widget>[
         ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: 200,
-            maxWidth: 360,
-          ),
+          constraints: const BoxConstraints(minWidth: 200, maxWidth: 360),
           child: Container(
             height: 37,
             decoration: BoxDecoration(
@@ -49,21 +45,14 @@ class AdminToolbar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               children: <Widget>[
-                const Icon(
-                  Icons.search,
-                  size: 15,
-                  color: FqColors.muted,
-                ),
+                const Icon(Icons.search, size: 15, color: FqColors.muted),
                 const SizedBox(width: 7),
                 Expanded(
                   child: TextField(
                     controller: controller,
                     onChanged: onChanged,
                     enabled: controller != null || onChanged != null,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: FqColors.ink,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: FqColors.ink),
                     decoration: InputDecoration(
                       isDense: true,
                       filled: false,
@@ -88,9 +77,7 @@ class AdminToolbar extends StatelessWidget {
 }
 
 class _FiltrosButton extends StatelessWidget {
-  const _FiltrosButton({
-    this.onPressed,
-  });
+  const _FiltrosButton({this.onPressed});
 
   final VoidCallback? onPressed;
 
@@ -101,11 +88,14 @@ class _FiltrosButton extends StatelessWidget {
       borderRadius: FqRadius.allMd,
       child: InkWell(
         borderRadius: FqRadius.allMd,
-        onTap: onPressed ??
+        onTap:
+            onPressed ??
             () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(AppLocalizations.of(context)!.admFiltrosPendiente),
+                  content: Text(
+                    AppLocalizations.of(context)!.admFiltrosPendiente,
+                  ),
                 ),
               );
             },
@@ -118,11 +108,7 @@ class _FiltrosButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             children: <Widget>[
-              const Icon(
-                Icons.tune,
-                size: 14,
-                color: FqColors.ink,
-              ),
+              const Icon(Icons.tune, size: 14, color: FqColors.ink),
               SizedBox(width: 5),
               Text(
                 AppLocalizations.of(context)!.usuariosFiltros,

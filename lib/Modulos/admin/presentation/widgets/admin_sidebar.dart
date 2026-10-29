@@ -114,8 +114,10 @@ class _AdminSidebarState extends State<AdminSidebar>
         child: AnimatedBuilder(
           animation: _t,
           builder: (BuildContext context, Widget? child) {
-            final double w = AdminSidebar.railWidth +
-                (AdminSidebar.expandedWidth - AdminSidebar.railWidth) * _t.value;
+            final double w =
+                AdminSidebar.railWidth +
+                (AdminSidebar.expandedWidth - AdminSidebar.railWidth) *
+                    _t.value;
             return Container(
               width: w,
               decoration: BoxDecoration(
@@ -284,16 +286,16 @@ class _SidebarItemState extends State<_SidebarItem> {
     final Color fg = widget.danger
         ? const Color(0xFFEF9A8A)
         : widget.selected
-            ? FqColors.volt
-            : _hover
-                ? FqColors.white
-                : const Color(0xFFAAB9C9);
+        ? FqColors.volt
+        : _hover
+        ? FqColors.white
+        : const Color(0xFFAAB9C9);
 
     final Color bg = widget.selected
         ? const Color(0x1FFFFFFF)
         : _hover
-            ? const Color(0x12FFFFFF)
-            : Colors.transparent;
+        ? const Color(0x12FFFFFF)
+        : Colors.transparent;
 
     final Widget icon = Icon(widget.icon, size: 18, color: fg);
 
@@ -339,8 +341,9 @@ class _SidebarItemState extends State<_SidebarItem> {
                     overflow: TextOverflow.clip,
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight:
-                          widget.selected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: widget.selected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       color: fg,
                     ),
                   ),

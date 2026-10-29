@@ -54,10 +54,7 @@ PosicionGps puntoMasCercanoEnSegmento(PosicionGps p, PuntoRuta a, PuntoRuta b) {
   if (largo2 == 0) return (lat: a.lat, lng: a.lng);
 
   final double t = (-(ax * dx + ay * dy) / largo2).clamp(0.0, 1.0);
-  return (
-    lat: a.lat + t * (b.lat - a.lat),
-    lng: a.lng + t * (b.lng - a.lng),
-  );
+  return (lat: a.lat + t * (b.lat - a.lat), lng: a.lng + t * (b.lng - a.lng));
 }
 
 /// Punto mas cercano en todo el trazo de la ruta a la posicion [p].

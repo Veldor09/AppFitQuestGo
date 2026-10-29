@@ -12,9 +12,9 @@ import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/foto_nodo.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/destacable.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/etiqueta_destacado.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/interruptor_destacar.dart';
-
 
 Future<void> mostrarFichaNodo(
   BuildContext context,
@@ -68,10 +68,8 @@ class FichaNodo extends StatefulWidget {
   /// el mapa lo dibuje al instante.
   final ValueChanged<Nodo>? alDestacar;
 
-  /// Pulgares del punto, inyectable para pruebas.
   final CalificacionApi? calificaciones;
 
-  /// Abre "Como llegar"; por defecto lanza la app de mapas (inyectable para pruebas).
   final Future<bool> Function(Uri uri)? abrirUrl;
 
   @override
@@ -84,8 +82,6 @@ class _FichaNodoState extends State<FichaNodo> {
   late final CalificacionApi _calificaciones =
       widget.calificaciones ?? CalificacionApi.predeterminada();
 
-  /// Pulgares del punto; null mientras carga (o si no se pudo pedir: la ficha
-  /// funciona igual sin ellos).
   ResumenCalificacion? _resumen;
 
   @override
@@ -102,7 +98,6 @@ class _FichaNodoState extends State<FichaNodo> {
       );
       if (mounted) setState(() => _resumen = r);
     } catch (_) {
-      // Sin pulgares: no es motivo para romper la ficha.
     }
   }
 
@@ -138,8 +133,16 @@ class _FichaNodoState extends State<FichaNodo> {
     final String? beneficio = _nodo.beneficio?.trim();
     final bool esPropio =
         widget.usuarioId != null && _nodo.creadoPorId == widget.usuarioId;
+    final bool sePuedeReportar =
+        widget.usuarioId != null && !esPropio && _nodo.estado == 'Aprobado';
+    Future<bool> reportar({bool foto = false}) => mostrarHojaReportar(
+      context,
+      tipo: TipoReportable.nodo,
+      contenidoId: _nodo.id,
+      nombre: _nodo.nombre,
+      esFoto: foto,
+    );
     final ResumenCalificacion? resumen = _resumen;
-    // Calificar: solo desde el mapa (con GPS), sobre un punto aprobado y ajeno.
     final bool sePuedeCalificar =
         widget.posicionActual != null &&
         _nodo.estado == 'Aprobado' &&
@@ -192,6 +195,13 @@ class _FichaNodoState extends State<FichaNodo> {
                   abrir: widget.abrirUrl,
                 ),
               ),
+              if (sePuedeReportar)
+                AccionFicha(
+                  key: const ValueKey<String>('ficha-reportar'),
+                  icono: Icons.flag_outlined,
+                  etiqueta: l10n.reportarBoton,
+                  onTap: reportar,
+                ),
             ],
           ),
           if (_nodo.conFoto) ...<Widget>[
@@ -202,6 +212,7 @@ class _FichaNodoState extends State<FichaNodo> {
               nodoId: _nodo.id,
               altura: 190,
               titulo: _nodo.nombre,
+              alReportar: sePuedeReportar ? () => reportar(foto: true) : null,
             ),
           ],
           if (beneficio != null && beneficio.isNotEmpty) ...<Widget>[

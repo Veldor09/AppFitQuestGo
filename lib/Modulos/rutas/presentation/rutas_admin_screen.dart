@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/detalle_ruta_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
+import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 
-/// ADM-04 · Gestion de rutas. Pantalla **funcional**: consume
-/// `GET /rutas/pendientes` (JWT + rol Admin). Tocar una fila abre ADM-05
-/// (Revision de ruta) con esa ruta cargada.
+/// ADM-04 · Gestion de rutas publicadas. Consulta `GET /rutas/explorar`.
+/// Permite buscar, filtrar y consultar detalles sin acciones de moderacion.
 class RutasAdminScreen extends StatefulWidget {
   const RutasAdminScreen({super.key, this.api});
 
@@ -25,31 +25,105 @@ class RutasAdminScreen extends StatefulWidget {
 class _RutasAdminScreenState extends State<RutasAdminScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   late Future<List<Ruta>> _futuro;
+  final TextEditingController _busquedaController = TextEditingController();
+  String _busqueda = '';
+  String? _filtroActividad;
+  String? _filtroDificultad;
 
   @override
   void initState() {
     super.initState();
-    _futuro = _api.listarPendientes();
+    _futuro = _api.explorar();
+  }
+
+  @override
+  void dispose() {
+    _busquedaController.dispose();
+    super.dispose();
   }
 
   void _recargar() {
     // Bloque, no expresion: `=> _futuro = x` devuelve el Future asignado,
     // y setState no acepta un callback que devuelva un Future.
     setState(() {
-      _futuro = _api.listarPendientes();
+      _futuro = _api.explorar();
     });
   }
 
-  Future<void> _abrirRevision(Ruta ruta) async {
-    final bool? decidida = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(ruta.nombre)),
-          body: RevisionRutaScreen(ruta: ruta, api: _api),
+  Future<void> _abrirFiltros() async {
+    final l10n = AppLocalizations.of(context)!;
+    String? actividad = _filtroActividad;
+    String? dificultad = _filtroDificultad;
+
+    final resultado = await showDialog<(String?, String?)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, actualizar) => AlertDialog(
+          title: Text(l10n.admRutasFiltrosTitulo),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              DropdownButtonFormField<String>(
+                initialValue: actividad,
+                decoration: InputDecoration(labelText: l10n.rutasActividad),
+                items: <DropdownMenuItem<String>>[
+                  for (final opcion in actividadesRuta)
+                    DropdownMenuItem<String>(
+                      value: opcion.clave,
+                      child: Text(actividadLabel(l10n, opcion.clave)),
+                    ),
+                ],
+                onChanged: (valor) => actualizar(() => actividad = valor),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: dificultad,
+                decoration: InputDecoration(
+                  labelText: l10n.rutasDificultadLabel,
+                ),
+                items: <DropdownMenuItem<String>>[
+                  for (final clave in <String>['facil', 'moderada', 'dificil'])
+                    DropdownMenuItem<String>(
+                      value: clave,
+                      child: Text(dificultadLabel(l10n, clave)),
+                    ),
+                ],
+                onChanged: (valor) => actualizar(() => dificultad = valor),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, (null, null)),
+              child: Text(l10n.planificarLimpiar),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.comunCancelar),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(dialogContext, (actividad, dificultad)),
+              child: Text(l10n.admAplicar),
+            ),
+          ],
         ),
       ),
     );
-    if (decidida == true) _recargar();
+
+    if (!mounted || resultado == null) return;
+    setState(() {
+      _filtroActividad = resultado.$1;
+      _filtroDificultad = resultado.$2;
+    });
+  }
+
+  Future<void> _abrirDetalle(Ruta ruta) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => DetalleRutaAdminScreen(ruta: ruta),
+      ),
+    );
   }
 
   @override
@@ -59,12 +133,30 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Ruta>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error =
-            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
-        final List<Ruta> rutas = snap.data ?? const <Ruta>[];
+        final String? error = snap.hasError
+            ? _mensajeError(l10n, snap.error!)
+            : null;
+        final String termino = _busqueda.trim().toLowerCase();
+        final List<Ruta> rutas = (snap.data ?? const <Ruta>[]).where((ruta) {
+          if (_filtroActividad != null &&
+              !ruta.actividades.contains(_filtroActividad)) {
+            return false;
+          }
+          if (_filtroDificultad != null &&
+              ruta.dificultad != _filtroDificultad) {
+            return false;
+          }
+          if (termino.isEmpty) return true;
+          final String actividades = actividadesLabel(l10n, ruta.actividades);
+          return ruta.nombre.toLowerCase().contains(termino) ||
+              actividades.toLowerCase().contains(termino);
+        }).toList();
 
         return AdminListScaffold(
           searchHint: l10n.rutasAdminSearchHint,
+          onFilters: _abrirFiltros,
+          searchController: _busquedaController,
+          onSearch: (valor) => setState(() => _busqueda = valor),
           child: AdminDataTable(
             loading: cargando,
             error: error,
@@ -83,7 +175,7 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
                           ruta.distanciaKm.toStringAsFixed(1),
                           ruta.creadoPorNombre!,
                         ),
-                  onTap: () => _abrirRevision(ruta),
+                  onTap: () => _abrirDetalle(ruta),
                 ),
             ],
           ),

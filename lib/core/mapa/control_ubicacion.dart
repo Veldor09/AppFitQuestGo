@@ -8,36 +8,22 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
-/// Que hace el boton "mi ubicacion" en este momento.
 enum AccionUbicacion {
-  /// El mapa esta en otra parte (o ya inclinado): vuelve a ti, de frente al
-  /// norte y sin inclinacion.
   centrar,
 
-  /// Ya estas centrado: el mapa se inclina "semihorizontal" y gira hacia
-  /// donde vas, como en una guia de navegacion.
   inclinar,
 
-  /// Estas inclinado y sigues cerca de ti: vuelve a la vista cenital al norte.
   aplanar,
 }
 
-/// A cuantos metros del centro del mapa se considera que ya estas "centrado".
 const double radioCentradoMetros = 60;
 
-/// Desde que inclinacion (grados) el mapa se considera inclinado.
 const double inclinacionMinima = 10;
 
-/// Inclinacion y zoom de la vista de navegacion.
 const double inclinacionNavegacion = 60;
 const double zoomNavegacion = 17;
 const double zoomCentrado = 16;
 
-/// Como el boton de ubicacion de Google Maps: un toque te trae a tu posicion;
-/// un segundo toque, ya centrado, inclina el mapa y lo gira hacia donde miras;
-/// otro toque lo vuelve a poner plano. Se decide mirando la camara, sin
-/// recordar el ultimo toque, asi que si mueves el mapa con el dedo el siguiente
-/// toque simplemente te vuelve a traer.
 AccionUbicacion decidirAccionUbicacion({
   required PosicionGps usuario,
   required PosicionGps centroMapa,
@@ -55,11 +41,9 @@ AccionUbicacion decidirAccionUbicacion({
   return inclinado ? AccionUbicacion.aplanar : AccionUbicacion.inclinar;
 }
 
-/// Boton redondo de "mi ubicacion" para poner encima de un mapa de Mapbox.
 class BotonMiUbicacion extends StatefulWidget {
   const BotonMiUbicacion({super.key, required this.mapa});
 
-  /// El mapa de la pantalla; null mientras todavia no existe.
   final MapboxMap? Function() mapa;
 
   @override
@@ -95,7 +79,6 @@ class _BotonMiUbicacionState extends State<BotonMiUbicacion> {
       await _ejecutar(mapa, accion, usuario, lectura.rumbo, camara.bearing);
       if (mounted) setState(() => _inclinado = accion == AccionUbicacion.inclinar);
     } catch (_) {
-      // Sin ubicacion por ahora: el mapa queda como estaba.
     } finally {
       if (mounted) setState(() => _ocupado = false);
     }
@@ -108,7 +91,6 @@ class _BotonMiUbicacionState extends State<BotonMiUbicacion> {
     double? rumbo,
     double rumboCamara,
   ) async {
-    // El punto azul, con la flecha de hacia donde miras.
     await mapa.location.updateSettings(
       LocationComponentSettings(
         enabled: true,
@@ -120,8 +102,6 @@ class _BotonMiUbicacionState extends State<BotonMiUbicacion> {
     final Point centro = Point(coordinates: Position(usuario.lng, usuario.lat));
     switch (accion) {
       case AccionUbicacion.inclinar:
-        // Vista de navegacion: inclinada, cerca, y girada hacia donde vas (si
-        // no te mueves, el rumbo que ya tenia el mapa).
         await mapa.easeTo(
           CameraOptions(
             center: centro,

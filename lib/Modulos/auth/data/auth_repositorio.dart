@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/db/app_database.dart';
 import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
 import 'package:fit_quest_go/core/push/servicio_push.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 
@@ -23,6 +24,50 @@ class AuthRepositorio extends ChangeNotifier {
   UsuarioSesion? get usuario => _usuario;
 
   bool get autenticado => _usuario != null;
+
+  /// Consulta si el usuario tiene credenciales guardadas para iniciar sesión con huella.
+  Future<bool> tieneCredencialBiometrica() async {
+    return await _tokens.tieneCredencialBiometrica();
+  }
+
+  /// Retorna el correo asociado a la biometría (para mostrar en la pantalla de login).
+  Future<String?> obtenerEmailBiometrico() async {
+    return await _tokens.leerEmailBiometrico();
+  }
+
+  /// Retorna el nombre del usuario asociado a la biometría.
+  Future<String?> obtenerNombreBiometrico() async {
+    return await _tokens.leerNombreBiometrico();
+  }
+
+  /// Guarda de forma segura las credenciales para futuros inicios de sesión con huella.
+  Future<void> guardarCredencialBiometrica({
+    required String email,
+    required String contrasena,
+    String? nombre,
+  }) async {
+    await _tokens.guardarCredencialBiometrica(
+      email: email,
+      password: contrasena,
+      nombre: nombre ?? _usuario?.nombre,
+    );
+    notifyListeners();
+  }
+
+  /// Desactiva y elimina las credenciales biométricas guardadas.
+  Future<void> borrarCredencialBiometrica() async {
+    await _tokens.borrarCredencialBiometrica();
+    notifyListeners();
+  }
+
+  /// Inicia sesión utilizando las credenciales seguras asociadas a la huella digital.
+  Future<void> iniciarSesionConBiometria() async {
+    final cred = await _tokens.leerCredencialBiometrica();
+    if (cred == null) {
+      throw Exception('No hay credenciales guardadas para inicio biométrico.');
+    }
+    await iniciarSesion(email: cred.email, contrasena: cred.password);
+  }
 
   Future<void> cargarSesionGuardada() async {
     final String? access = await _tokens.leerAccess();
@@ -142,6 +187,8 @@ class AuthRepositorio extends ChangeNotifier {
     try {
       await ServicioPush.instancia.quitar().timeout(const Duration(seconds: 3));
     } catch (_) {}
+    // El plan es de la cuenta, no del telefono: no se lo hereda la siguiente.
+    await PlanUsuario.instancia.olvidar();
     final String? refresh = await _tokens.leerRefresh();
     try {
       await _api.cerrarSesion(refresh);

@@ -1,4 +1,3 @@
-
 /// Modelo de datos para ADM-10: Gestión administrativa de insignias.
 ///
 /// Representa una insignia recibida desde el backend NestJS.

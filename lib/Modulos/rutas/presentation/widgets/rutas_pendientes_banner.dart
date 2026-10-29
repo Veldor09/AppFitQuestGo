@@ -35,14 +35,13 @@ class _RutasPendientesBannerState extends State<RutasPendientesBanner> {
     super.initState();
     _sincronizar(silencioso: true);
     try {
-      _red = Connectivity().onConnectivityChanged.listen(
-        (List<ConnectivityResult> r) {
-          if (r.any((ConnectivityResult e) => e != ConnectivityResult.none)) {
-            _sincronizar(silencioso: true);
-          }
-        },
-        onError: (Object _) {},
-      );
+      _red = Connectivity().onConnectivityChanged.listen((
+        List<ConnectivityResult> r,
+      ) {
+        if (r.any((ConnectivityResult e) => e != ConnectivityResult.none)) {
+          _sincronizar(silencioso: true);
+        }
+      }, onError: (Object _) {});
     } catch (_) {}
   }
 
@@ -66,7 +65,9 @@ class _RutasPendientesBannerState extends State<RutasPendientesBanner> {
       _pendientes = restantes;
     });
     if (subidas > 0) {
-      notificarExito(AppLocalizations.of(context)!.rutasPendientesSubidas(subidas));
+      notificarExito(
+        AppLocalizations.of(context)!.rutasPendientesSubidas(subidas),
+      );
       widget.alSincronizar?.call();
     } else if (!silencioso && restantes > 0) {
       notificarError(AppLocalizations.of(context)!.rutasSinConexionReintento);
@@ -86,7 +87,11 @@ class _RutasPendientesBannerState extends State<RutasPendientesBanner> {
       ),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.cloud_upload_outlined, size: 18, color: FqColors.night),
+          const Icon(
+            Icons.cloud_upload_outlined,
+            size: 18,
+            color: FqColors.night,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

@@ -27,11 +27,7 @@ class AdminTabs extends StatelessWidget {
         runSpacing: 4,
         children: <Widget>[
           for (int i = 0; i < tabs.length; i++)
-            _Tab(
-              label: tabs[i],
-              active: i == index,
-              onTap: () => onChanged(i),
-            ),
+            _Tab(label: tabs[i], active: i == index, onTap: () => onChanged(i)),
         ],
       ),
     );

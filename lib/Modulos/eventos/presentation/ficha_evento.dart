@@ -16,6 +16,7 @@ import 'package:fit_quest_go/Modulos/eventos/data/formato_evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/recorrido_evento_screen.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/widgets/tarjeta_evento.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/etiqueta_destacado.dart';
+import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 
 /// Abre la ficha de un evento desde abajo (al tocar su area, su recorrido o su
 /// pin en el mapa): todo lo que hay que saber de el sin salir del mapa.
@@ -44,9 +45,6 @@ Future<void> mostrarFichaEvento(
   );
 }
 
-/// Hacia donde lleva "Como llegar": el centro de la primera area o, si el
-/// evento solo tiene recorridos, el inicio del primero. Null si no tiene nada
-/// dibujado.
 ({double lat, double lng})? destinoDeEvento(Evento evento) {
   for (final ZonaEvento area in evento.areas) {
     if (area.puntos.isEmpty) continue;
@@ -60,9 +58,6 @@ Future<void> mostrarFichaEvento(
   return null;
 }
 
-/// Ficha de un evento: su nombre y categoria, los pulgares, si ya empezo, quien
-/// lo organiza, cuando es, la descripcion, sus areas (cada una se califica) y
-/// sus recorridos.
 class FichaEvento extends StatefulWidget {
   const FichaEvento({
     super.key,
@@ -79,13 +74,10 @@ class FichaEvento extends StatefulWidget {
   /// Reloj inyectable para pruebas.
   final DateTime Function()? ahora;
 
-  /// Pulgares del evento, inyectable para pruebas.
   final CalificacionApi? calificaciones;
 
-  /// Abre "Como llegar"; por defecto lanza la app de mapas.
   final Future<bool> Function(Uri uri)? abrirUrl;
 
-  /// Para bajar la foto del evento, inyectable para pruebas.
   final EventoApi? api;
 
   /// Pantalla de navegación/recorrido inyectable para pruebas.
@@ -127,6 +119,14 @@ class _FichaEventoState extends State<FichaEvento> {
       builder: (BuildContext context, Widget? _) {
         final ResumenCalificacion? resumen = _pulgares.resumen;
         final bool propio = resumen?.motivo == MotivoSinCalificar.propio;
+        final bool reportable = puedeReportar(context, evento.creadoPorId);
+        Future<bool> reportar({bool foto = false}) => mostrarHojaReportar(
+          context,
+          tipo: TipoReportable.evento,
+          contenidoId: evento.id,
+          nombre: evento.nombre,
+          esFoto: foto,
+        );
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
           child: Column(
@@ -158,10 +158,11 @@ class _FichaEventoState extends State<FichaEvento> {
                 const SizedBox(height: 12),
                 Pulgares(resumen: resumen, compacto: true),
               ],
-              if (destino != null) ...<Widget>[
+              if (destino != null || reportable) ...<Widget>[
                 const SizedBox(height: 14),
                 FilaAccionesFicha(
                   acciones: <Widget>[
+                    if (destino != null)
                     AccionFicha(
                       key: const ValueKey<String>('ficha-como-llegar'),
                       icono: Icons.directions_rounded,
@@ -189,19 +190,25 @@ class _FichaEventoState extends State<FichaEvento> {
                         );
                       },
                     ),
+                    if (reportable)
+                      AccionFicha(
+                        key: const ValueKey<String>('ficha-reportar'),
+                        icono: Icons.flag_outlined,
+                        etiqueta: l10n.reportarBoton,
+                        onTap: reportar,
+                      ),
                   ],
                 ),
               ],
               if (evento.conFoto) ...<Widget>[
                 const SizedBox(height: 16),
                 FotoRemota(
-                  // Llave estable: si cambia el orden de lo de arriba (llegan los
-                  // pulgares) la foto no se vuelve a bajar.
                   key: const ValueKey<String>('foto-evento-widget'),
                   llave: const ValueKey<String>('foto-evento'),
                   cargar: () => (widget.api ?? EventoApi()).foto(evento.id),
                   altura: 190,
                   titulo: evento.nombre,
+                  alReportar: reportable ? () => reportar(foto: true) : null,
                 ),
               ],
               const SizedBox(height: 16),
@@ -288,7 +295,6 @@ class _Titulo extends StatelessWidget {
   }
 }
 
-/// Un area del evento con sus pulgares: cada una se califica por separado.
 class _FilaArea extends StatelessWidget {
   const _FilaArea({
     required this.zona,
@@ -302,7 +308,6 @@ class _FilaArea extends StatelessWidget {
   final int indice;
   final int eventoId;
 
-  /// Null mientras no llegan los pulgares: la fila sale sin ellos.
   final ResumenCalificacion? resumen;
   final CalificacionApi? api;
 

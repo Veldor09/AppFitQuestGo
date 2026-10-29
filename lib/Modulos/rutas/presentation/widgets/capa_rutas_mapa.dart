@@ -62,17 +62,14 @@ class CapaRutasMapa {
     _escuchas.clear();
   }
 
-
-  /// Quita del mapa los administradores de anotaciones de esta capa: hace falta
-  /// al cambiar de estilo, para volver a crearla limpia sobre el estilo nuevo.
   Future<void> quitar(MapboxMap mapa) async {
     liberar();
     for (final Object m in <Object>[_lineas, _iconos]) {
       try {
-        await mapa.annotations.removeAnnotationManager(m as BaseAnnotationManager);
-      } catch (_) {
-        // Ya no estaba (el estilo nuevo se lo llevo): no importa.
-      }
+        await mapa.annotations.removeAnnotationManager(
+          m as BaseAnnotationManager,
+        );
+      } catch (_) {}
     }
   }
 
@@ -113,18 +110,17 @@ class CapaRutasMapa {
       if (linea != null) _porLinea[linea.id] = validas[i].id;
     }
 
-    final List<PointAnnotation?> pines = await _iconos.createMulti(
-      <PointAnnotationOptions>[
-        for (final Ruta r in validas)
-          opcionesDePin(
-            lat: r.puntos.first.lat,
-            lng: r.puntos.first.lng,
-            imagen: await imagenPin(TipoPin.rutaInicio),
-            densidad: densidad,
-            etiqueta: r.nombre,
-          ),
-      ],
-    );
+    final List<PointAnnotation?> pines = await _iconos
+        .createMulti(<PointAnnotationOptions>[
+          for (final Ruta r in validas)
+            opcionesDePin(
+              lat: r.puntos.first.lat,
+              lng: r.puntos.first.lng,
+              imagen: await imagenPin(TipoPin.rutaInicio),
+              densidad: densidad,
+              etiqueta: r.nombre,
+            ),
+        ]);
     for (int i = 0; i < pines.length; i++) {
       final PointAnnotation? pin = pines[i];
       if (pin != null) _porPin[pin.id] = validas[i].id;

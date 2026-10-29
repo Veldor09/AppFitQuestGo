@@ -58,10 +58,7 @@ class FqAppHeader extends StatelessWidget {
               ],
             ),
           ),
-          _IconBtn(
-            icon: Icons.more_horiz,
-            onTap: onMore ?? () {},
-          ),
+          _IconBtn(icon: Icons.more_horiz, onTap: onMore ?? () {}),
         ],
       ),
     );

@@ -117,10 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: <Widget>[
-                    const Icon(
-                      Icons.error_outline,
-                      color: FqColors.muted,
-                    ),
+                    const Icon(Icons.error_outline, color: FqColors.muted),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -148,10 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             builder: (BuildContext context, BoxConstraints c) {
               final Widget mapa = FqPanel(
                 title: l10n.admActividadEnVivo,
-                trailing: FqTag(
-                  l10n.admEnLinea,
-                  tone: FqTagTone.green,
-                ),
+                trailing: FqTag(l10n.admEnLinea, tone: FqTagTone.green),
                 child: const FqLiveMapView(height: 260),
               );
 
@@ -161,12 +155,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.fromLTRB(9, 9, 9, 9),
                 child: Column(
                   children: <Widget>[
-                    _QueueRow(
-                      icon: Icons.route_outlined,
-                      label: l10n.admRutasPorRevisar,
-                      value: _valorCola('rutasPorRevisar'),
-                    ),
-                    const SizedBox(height: 7),
                     _QueueRow(
                       icon: Icons.location_on_outlined,
                       label: l10n.admNodosPendientes,
@@ -196,15 +184,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(
-                    flex: 135,
-                    child: mapa,
-                  ),
+                  Expanded(flex: 135, child: mapa),
                   const SizedBox(width: FqGap.md),
-                  Expanded(
-                    flex: 85,
-                    child: colas,
-                  ),
+                  Expanded(flex: 85, child: colas),
                 ],
               );
             },
@@ -263,11 +245,7 @@ class _QueueRow extends StatelessWidget {
               color: FqColors.listIconBg,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              size: 15,
-              color: FqColors.night,
-            ),
+            child: Icon(icon, size: 15, color: FqColors.night),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -289,11 +267,7 @@ class _QueueRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          const Icon(
-            Icons.chevron_right,
-            size: 15,
-            color: FqColors.muted,
-          ),
+          const Icon(Icons.chevron_right, size: 15, color: FqColors.muted),
         ],
       ),
     );
