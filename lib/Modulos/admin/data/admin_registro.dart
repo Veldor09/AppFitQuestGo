@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -9,8 +8,7 @@ import 'package:fit_quest_go/Modulos/admin/presentation/screens/detalle_usuario/
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/insignias_admin_screen.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart'
-    show PatrocinadoresScreen;
+import 'package:fit_quest_go/Modulos/admin/presentation/screens/gestion_suscripciones_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/reportes_contenido_screen.dart'
     as reportes;
 import 'package:fit_quest_go/Modulos/alertas/presentation/alertas_admin_screen.dart';
@@ -25,9 +23,7 @@ import 'package:fit_quest_go/Modulos/usuarios/presentation/usuarios_screen.dart'
 ///
 /// [usuarioSeleccionado] y [onVerDetalle] conectan ADM-02 con ADM-03.
 /// Son opcionales para mantener compatibilidad con llamadas existentes.
-List<AdminSeccion> buildAdminSecciones(
-  AppLocalizations l10n,
-) {
+List<AdminSeccion> buildAdminSecciones(AppLocalizations l10n) {
   return <AdminSeccion>[
     AdminSeccion(
       code: 'ADM-01',
@@ -91,7 +87,7 @@ List<AdminSeccion> buildAdminSecciones(
       headerTitle: l10n.admHeaderPatrocinadores,
       descripcion: l10n.admDescGestionPatrocinadores,
       icono: Icons.storefront_outlined,
-      builder: (_) => const PatrocinadoresScreen(),
+      builder: (_) => const GestionSuscripcionesScreen(),
     ),
     AdminSeccion(
       code: 'ADM-10',

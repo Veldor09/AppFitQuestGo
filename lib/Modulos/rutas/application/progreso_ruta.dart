@@ -35,7 +35,8 @@ ProgresoEnRuta calcularProgreso(PosicionGps posicion, List<PuntoRuta> trazo) {
     );
   }
 
-  final double kx = _radioTierraM * math.cos(posicion.lat * math.pi / 180) * math.pi / 180;
+  final double kx =
+      _radioTierraM * math.cos(posicion.lat * math.pi / 180) * math.pi / 180;
   final double ky = _radioTierraM * math.pi / 180;
 
   double acumulado = 0;
@@ -48,8 +49,10 @@ ProgresoEnRuta calcularProgreso(PosicionGps posicion, List<PuntoRuta> trazo) {
     final PuntoRuta b = trazo[i + 1];
     final double largo = distanciaMetros(a.lat, a.lng, b.lat, b.lng);
 
-    final double ax = (a.lng - posicion.lng) * kx, ay = (a.lat - posicion.lat) * ky;
-    final double bx = (b.lng - posicion.lng) * kx, by = (b.lat - posicion.lat) * ky;
+    final double ax = (a.lng - posicion.lng) * kx,
+        ay = (a.lat - posicion.lat) * ky;
+    final double bx = (b.lng - posicion.lng) * kx,
+        by = (b.lat - posicion.lat) * ky;
     final double dx = bx - ax, dy = by - ay;
     final double largo2 = dx * dx + dy * dy;
     final double t = largo2 == 0
@@ -79,7 +82,8 @@ double rumboEntre(PosicionGps a, PosicionGps b) {
   final double lat2 = b.lat * math.pi / 180;
   final double dLng = (b.lng - a.lng) * math.pi / 180;
   final double y = math.sin(dLng) * math.cos(lat2);
-  final double x = math.cos(lat1) * math.sin(lat2) -
+  final double x =
+      math.cos(lat1) * math.sin(lat2) -
       math.sin(lat1) * math.cos(lat2) * math.cos(dLng);
   return (math.atan2(y, x) * 180 / math.pi + 360) % 360;
 }

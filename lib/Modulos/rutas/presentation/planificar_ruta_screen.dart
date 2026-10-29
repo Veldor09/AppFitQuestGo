@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -117,7 +118,9 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _revisarSesionInterrumpida());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _revisarSesionInterrumpida(),
+    );
   }
 
   /// Si la app se cerro en medio de una grabacion, ofrece reanudarla, guardar
@@ -264,7 +267,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
       if (widget.posicionStream != null) {
         stream = widget.posicionStream!();
       } else {
-        final bool servicioActivo = await geo.Geolocator.isLocationServiceEnabled();
+        final bool servicioActivo =
+            await geo.Geolocator.isLocationServiceEnabled();
         if (!servicioActivo) {
           notificarError(l10n.planificarActivaUbicacion);
           return;
@@ -303,9 +307,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
           );
         }
 
-        stream = geo.Geolocator.getPositionStream(
-          locationSettings: settings,
-        );
+        stream = geo.Geolocator.getPositionStream(locationSettings: settings);
       }
 
       if (!mounted) return;
@@ -326,8 +328,10 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         // En pausa el GPS sigue abierto (para no volver a pedir permisos al
         // reanudar) pero sus puntos no cuentan.
         if (!mounted || _pausada) return;
-        final PuntoRuta punto =
-            PuntoRuta(lat: posicion.latitude, lng: posicion.longitude);
+        final PuntoRuta punto = PuntoRuta(
+          lat: posicion.latitude,
+          lng: posicion.longitude,
+        );
         setState(() => _puntos.add(punto));
         // Buffer en SQLite: si la app muere, la grabacion se puede recuperar.
         unawaited(
@@ -386,16 +390,16 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   /// Pantalla de resumen al terminar. Volver atras (null) no decide nada: la
   /// ruta queda en el panel para guardarla despues.
   Future<void> _mostrarResumen() async {
-    final ResultadoResumen? decision =
-        await Navigator.of(context).push<ResultadoResumen>(
-      MaterialPageRoute<ResultadoResumen>(
-        builder: (BuildContext _) => ResumenGrabacionScreen(
-          puntos: List<PuntoRuta>.of(_puntos),
-          tiempo: _cronometro.transcurrido,
-          distanciaKm: _distanciaKm,
-        ),
-      ),
-    );
+    final ResultadoResumen? decision = await Navigator.of(context)
+        .push<ResultadoResumen>(
+          MaterialPageRoute<ResultadoResumen>(
+            builder: (BuildContext _) => ResumenGrabacionScreen(
+              puntos: List<PuntoRuta>.of(_puntos),
+              tiempo: _cronometro.transcurrido,
+              distanciaKm: _distanciaKm,
+            ),
+          ),
+        );
     if (!mounted) return;
     switch (decision) {
       case ResultadoResumen.guardar:
@@ -536,153 +540,169 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
               ),
               child: SingleChildScrollView(
                 child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      l10n.planificarGuardarRutaTitulo,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.planificarPuntosYDistancia(
-                        _puntos.length,
-                        _distanciaKm.toStringAsFixed(1),
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        l10n.planificarGuardarRutaTitulo,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                      style: const TextStyle(fontSize: 11, color: FqColors.muted),
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: nombre,
-                      decoration: InputDecoration(labelText: l10n.comunNombre),
-                      validator: (String? v) =>
-                          (v == null || v.trim().isEmpty) ? l10n.comunObligatorio : null,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      l10n.rutasActividades,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: FqColors.muted,
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.planificarPuntosYDistancia(
+                          _puntos.length,
+                          _distanciaKm.toStringAsFixed(1),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: FqColors.muted,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    SelectorActividadesCatalogo(
-                      catalogosApi: widget.catalogosApi,
-                      permitirFallbackOffline:
-                          widget.permitirFallbackActividades,
-                      seleccion: actividades,
-                      onChanged: (Set<String> seleccion) {
-                        setSheetState(() {
-                          actividades
-                            ..clear()
-                            ..addAll(seleccion);
-                          errorActividades = null;
-                        });
-                      },
-                      onEstadoCarga: (bool disponible) {
-                        setSheetState(() {
-                          catalogoDisponible = disponible;
-                        });
-                      },
-                      onActividadesDisponibles: (List<String> claves) {
-                        setSheetState(() {
-                          clavesDisponibles = claves;
-                        });
-                      },
-                      errorTexto: errorActividades,
-                    ),
-                    const SizedBox(height: 14),
-                    DropdownButtonFormField<String>(
-                      initialValue: dificultad,
-                      decoration: InputDecoration(labelText: l10n.rutasDificultadLabel),
-                      items: <DropdownMenuItem<String>>[
-                        DropdownMenuItem<String>(
-                          value: 'facil',
-                          child: _OpcionDificultad(
-                            dificultad: 'facil',
-                            texto: dificultadLabel(l10n, 'facil'),
-                          ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: nombre,
+                        decoration: InputDecoration(
+                          labelText: l10n.comunNombre,
                         ),
-                        DropdownMenuItem<String>(
-                          value: 'moderada',
-                          child: _OpcionDificultad(
-                            dificultad: 'moderada',
-                            texto: dificultadLabel(l10n, 'moderada'),
-                          ),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'dificil',
-                          child: _OpcionDificultad(
-                            dificultad: 'dificil',
-                            texto: dificultadLabel(l10n, 'dificil'),
-                          ),
-                        ),
-                      ],
-                      onChanged: (String? v) =>
-                          setSheetState(() => dificultad = v ?? dificultad),
-                    ),
-                    const SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      initialValue: visibilidad,
-                      decoration: InputDecoration(
-                        labelText: l10n.rutasVisibilidadLabel,
-                        helperText: l10n.rutasVisibilidadHelper,
+                        validator: (String? v) =>
+                            (v == null || v.trim().isEmpty)
+                            ? l10n.comunObligatorio
+                            : null,
                       ),
-                      items: <DropdownMenuItem<String>>[
-                        DropdownMenuItem<String>(
-                          value: 'privada',
-                          child: Text(l10n.rutasVisibilidadPrivada),
+                      const SizedBox(height: 10),
+                      Text(
+                        l10n.rutasActividades,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: FqColors.muted,
                         ),
-                        DropdownMenuItem<String>(
-                          value: 'publica',
-                          child: Text(l10n.rutasVisibilidadPublica),
+                      ),
+                      const SizedBox(height: 8),
+                      SelectorActividadesCatalogo(
+                        catalogosApi: widget.catalogosApi,
+                        permitirFallbackOffline:
+                            widget.permitirFallbackActividades,
+                        seleccion: actividades,
+                        onChanged: (Set<String> seleccion) {
+                          setSheetState(() {
+                            actividades
+                              ..clear()
+                              ..addAll(seleccion);
+                            errorActividades = null;
+                          });
+                        },
+                        onEstadoCarga: (bool disponible) {
+                          setSheetState(() {
+                            catalogoDisponible = disponible;
+                          });
+                        },
+                        onActividadesDisponibles: (List<String> claves) {
+                          setSheetState(() {
+                            clavesDisponibles = claves;
+                          });
+                        },
+                        errorTexto: errorActividades,
+                      ),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<String>(
+                        initialValue: dificultad,
+                        decoration: InputDecoration(
+                          labelText: l10n.rutasDificultadLabel,
                         ),
-                      ],
-                      onChanged: (String? v) =>
-                          setSheetState(() => visibilidad = v ?? visibilidad),
-                    ),
-                    const SizedBox(height: 14),
-                    CampoFoto(
-                      foto: foto,
-                      selector: widget.selectorFoto,
-                      alCambiar: (Uint8List? f) =>
-                          setSheetState(() => foto = f),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: !catalogoDisponible ? null : () {
-                        final bool formularioOk =
-                            formKey.currentState?.validate() ?? false;
-                        if (actividades.isEmpty) {
-                          setSheetState(
-                            () => errorActividades = l10n.rutasElegiActividad,
-                          );
-                          return;
-                        }
-                        if (!formularioOk) return;
-                        Navigator.of(ctx).pop(
-                          _DatosRuta(
-                            nombre: nombre.text.trim(),
-                            // En el orden del catalogo, no del orden de toque.
-                            actividades: <String>[
-                              for (final String clave in clavesDisponibles)
-                                if (actividades.contains(clave)) clave,
-                            ],
-                            dificultad: dificultad,
-                            visibilidad: visibilidad,
-                            foto: foto,
+                        items: <DropdownMenuItem<String>>[
+                          DropdownMenuItem<String>(
+                            value: 'facil',
+                            child: _OpcionDificultad(
+                              dificultad: 'facil',
+                              texto: dificultadLabel(l10n, 'facil'),
+                            ),
                           ),
-                        );
-                      },
-                      child: Text(l10n.comunGuardar),
-                    ),
-                  ],
+                          DropdownMenuItem<String>(
+                            value: 'moderada',
+                            child: _OpcionDificultad(
+                              dificultad: 'moderada',
+                              texto: dificultadLabel(l10n, 'moderada'),
+                            ),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'dificil',
+                            child: _OpcionDificultad(
+                              dificultad: 'dificil',
+                              texto: dificultadLabel(l10n, 'dificil'),
+                            ),
+                          ),
+                        ],
+                        onChanged: (String? v) =>
+                            setSheetState(() => dificultad = v ?? dificultad),
+                      ),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        initialValue: visibilidad,
+                        decoration: InputDecoration(
+                          labelText: l10n.rutasVisibilidadLabel,
+                          helperText: l10n.rutasVisibilidadHelper,
+                        ),
+                        items: <DropdownMenuItem<String>>[
+                          DropdownMenuItem<String>(
+                            value: 'privada',
+                            child: Text(l10n.rutasVisibilidadPrivada),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'publica',
+                            child: Text(l10n.rutasVisibilidadPublica),
+                          ),
+                        ],
+                        onChanged: (String? v) =>
+                            setSheetState(() => visibilidad = v ?? visibilidad),
+                      ),
+                      const SizedBox(height: 14),
+                      CampoFoto(
+                        foto: foto,
+                        selector: widget.selectorFoto,
+                        alCambiar: (Uint8List? f) =>
+                            setSheetState(() => foto = f),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: !catalogoDisponible
+                            ? null
+                            : () {
+                                final bool formularioOk =
+                                    formKey.currentState?.validate() ?? false;
+                                if (actividades.isEmpty) {
+                                  setSheetState(
+                                    () => errorActividades =
+                                        l10n.rutasElegiActividad,
+                                  );
+                                  return;
+                                }
+                                if (!formularioOk) return;
+                                Navigator.of(ctx).pop(
+                                  _DatosRuta(
+                                    nombre: nombre.text.trim(),
+                                    // En el orden del catalogo, no del orden de toque.
+                                    actividades: <String>[
+                                      for (final String clave
+                                          in clavesDisponibles)
+                                        if (actividades.contains(clave)) clave,
+                                    ],
+                                    dificultad: dificultad,
+                                    visibilidad: visibilidad,
+                                    foto: foto,
+                                  ),
+                                );
+                              },
+                        child: Text(l10n.comunGuardar),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               ),
             );
           },
@@ -715,7 +735,10 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                 child: Text(
                   'Mapbox necesita ACCESS_TOKEN.\nInicia con --dart-define=ACCESS_TOKEN=pk…',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: FqColors.muted, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: FqColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -748,27 +771,35 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                   children: <Widget>[
                     Expanded(
                       child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: FqColors.white.withValues(alpha: .97),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: FqColors.softShadow,
-                  ),
-                  child: Text(
-                    _modo == _ModoRuta.dibujar
-                        ? (_trazando
-                            ? l10n.planificarModoDibujarInstruccion
-                            : l10n.planificarModoMoverInstruccion)
-                        : (_pausada
-                            ? l10n.grabacionEnPausa(l10n.grabacionReanudar)
-                            : (_grabando
-                                ? l10n.planificarModoGpsGrabando
-                                : l10n.planificarModoGpsInstruccion(
-                                    l10n.planificarIniciarGrabacion,
-                                  ))),
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-                  ),
-                ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: FqColors.white.withValues(alpha: .97),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: FqColors.softShadow,
+                        ),
+                        child: Text(
+                          _modo == _ModoRuta.dibujar
+                              ? (_trazando
+                                    ? l10n.planificarModoDibujarInstruccion
+                                    : l10n.planificarModoMoverInstruccion)
+                              : (_pausada
+                                    ? l10n.grabacionEnPausa(
+                                        l10n.grabacionReanudar,
+                                      )
+                                    : (_grabando
+                                          ? l10n.planificarModoGpsGrabando
+                                          : l10n.planificarModoGpsInstruccion(
+                                              l10n.planificarIniciarGrabacion,
+                                            ))),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ),
                     if (_modo == _ModoRuta.dibujar) ...<Widget>[
                       const SizedBox(width: 8),
@@ -802,7 +833,8 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       if (_modo == _ModoRuta.gps &&
-                          _cronometro.estado != EstadoCronometro.inactivo) ...<Widget>[
+                          _cronometro.estado !=
+                              EstadoCronometro.inactivo) ...<Widget>[
                         _metricasEnVivo(l10n),
                         const SizedBox(height: 10),
                       ],
@@ -813,8 +845,13 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                 _puntos.length,
                                 _distanciaKm.toStringAsFixed(1),
                               ),
-                        textAlign: _modo == _ModoRuta.gps ? TextAlign.center : null,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                        textAlign: _modo == _ModoRuta.gps
+                            ? TextAlign.center
+                            : null,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       _modo == _ModoRuta.dibujar
@@ -824,8 +861,9 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                   child: FqButton.secondary(
                                     label: l10n.planificarDeshacer,
                                     dense: true,
-                                    onPressed:
-                                        _puntos.isEmpty || _guardando ? null : _deshacer,
+                                    onPressed: _puntos.isEmpty || _guardando
+                                        ? null
+                                        : _deshacer,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -833,16 +871,20 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                   child: FqButton.secondary(
                                     label: l10n.planificarLimpiar,
                                     dense: true,
-                                    onPressed:
-                                        _puntos.isEmpty || _guardando ? null : _limpiar,
+                                    onPressed: _puntos.isEmpty || _guardando
+                                        ? null
+                                        : _limpiar,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: FqButton.primary(
-                                    label: _guardando ? l10n.comunGuardando : l10n.comunGuardar,
+                                    label: _guardando
+                                        ? l10n.comunGuardando
+                                        : l10n.comunGuardar,
                                     dense: true,
-                                    onPressed: (_puntos.length < 2 || _guardando)
+                                    onPressed:
+                                        (_puntos.length < 2 || _guardando)
                                         ? null
                                         : _guardar,
                                   ),
@@ -850,54 +892,56 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                               ],
                             )
                           : (_grabando
-                              ? Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: FqButton.secondary(
-                                        label: _pausada
-                                            ? l10n.grabacionReanudar
-                                            : l10n.grabacionPausar,
-                                        dense: true,
-                                        onPressed: _pausada
-                                            ? _reanudarGrabacion
-                                            : _pausarGrabacion,
+                                ? Row(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: FqButton.secondary(
+                                          label: _pausada
+                                              ? l10n.grabacionReanudar
+                                              : l10n.grabacionPausar,
+                                          dense: true,
+                                          onPressed: _pausada
+                                              ? _reanudarGrabacion
+                                              : _pausarGrabacion,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: FqButton.danger(
-                                        label: l10n.planificarDetener,
-                                        dense: true,
-                                        onPressed: _detenerGrabacion,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: FqButton.danger(
+                                          label: l10n.planificarDetener,
+                                          dense: true,
+                                          onPressed: _detenerGrabacion,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                )
-                              : Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: FqButton.secondary(
-                                        label: l10n.planificarIniciarGrabacion,
-                                        dense: true,
-                                        onPressed: _guardando || _iniciando
-                                            ? null
-                                            : _iniciarGrabacion,
+                                    ],
+                                  )
+                                : Row(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: FqButton.secondary(
+                                          label:
+                                              l10n.planificarIniciarGrabacion,
+                                          dense: true,
+                                          onPressed: _guardando || _iniciando
+                                              ? null
+                                              : _iniciarGrabacion,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: FqButton.primary(
-                                        label: _guardando
-                                            ? l10n.comunGuardando
-                                            : l10n.comunGuardar,
-                                        dense: true,
-                                        onPressed: (_puntos.length < 2 || _guardando)
-                                            ? null
-                                            : _guardar,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: FqButton.primary(
+                                          label: _guardando
+                                              ? l10n.comunGuardando
+                                              : l10n.comunGuardar,
+                                          dense: true,
+                                          onPressed:
+                                              (_puntos.length < 2 || _guardando)
+                                              ? null
+                                              : _guardar,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                )),
+                                    ],
+                                  )),
                     ],
                   ),
                 ),

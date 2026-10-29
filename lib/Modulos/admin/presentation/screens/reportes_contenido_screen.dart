@@ -336,8 +336,9 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     final bool esFoto = reporte['esFoto'] == true;
     final bool desactivo = reporte['resolucion']?.toString() == 'desactivado';
     final int contenidoId = reporte['contenidoId'] as int;
-    final Map<String, dynamic>? contenido =
-        reporte['contenido'] is Map ? Map<String, dynamic>.from(reporte['contenido'] as Map) : null;
+    final Map<String, dynamic>? contenido = reporte['contenido'] is Map
+        ? Map<String, dynamic>.from(reporte['contenido'] as Map)
+        : null;
     final String nombre = contenido?['nombre']?.toString() ?? '#$contenidoId';
     final Widget? foto = contenido != null && contenido['conFoto'] == true
         ? _vistaPreviaFoto(tipo, contenidoId, nombre)
@@ -427,7 +428,10 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
                 const SizedBox(height: 18),
                 _campoDetalle(etiqueta: _l10n.admMotivo, valor: motivo),
                 const SizedBox(height: 18),
-                _campoDetalle(etiqueta: _l10n.admDescripcion, valor: descripcion),
+                _campoDetalle(
+                  etiqueta: _l10n.admDescripcion,
+                  valor: descripcion,
+                ),
               ],
             ),
           ),
@@ -490,7 +494,11 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       searchHint: _l10n.admRepBuscar,
       searchController: _busquedaController,
       onSearch: (texto) => setState(() => _busqueda = texto),
-      tabs: [_l10n.admTabPendientes, _l10n.admTabResueltas, _l10n.admTabArchivadas],
+      tabs: [
+        _l10n.admTabPendientes,
+        _l10n.admTabResueltas,
+        _l10n.admTabArchivadas,
+      ],
       tabIndex: _tab,
       onTab: (indice) => setState(() => _tab = indice),
       child: AdminDataTable(

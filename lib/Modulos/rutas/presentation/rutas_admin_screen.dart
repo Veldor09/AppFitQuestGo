@@ -59,13 +59,13 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, actualizar) => AlertDialog(
-          title: const Text('Filtros de rutas'),
+          title: Text(l10n.admRutasFiltrosTitulo),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               DropdownButtonFormField<String>(
                 initialValue: actividad,
-                decoration: const InputDecoration(labelText: 'Actividad'),
+                decoration: InputDecoration(labelText: l10n.rutasActividad),
                 items: <DropdownMenuItem<String>>[
                   for (final opcion in actividadesRuta)
                     DropdownMenuItem<String>(
@@ -78,7 +78,9 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: dificultad,
-                decoration: const InputDecoration(labelText: 'Dificultad'),
+                decoration: InputDecoration(
+                  labelText: l10n.rutasDificultadLabel,
+                ),
                 items: <DropdownMenuItem<String>>[
                   for (final clave in <String>['facil', 'moderada', 'dificil'])
                     DropdownMenuItem<String>(
@@ -93,16 +95,16 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, (null, null)),
-              child: const Text('Limpiar'),
+              child: Text(l10n.planificarLimpiar),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancelar'),
+              child: Text(l10n.comunCancelar),
             ),
             FilledButton(
               onPressed: () =>
                   Navigator.pop(dialogContext, (actividad, dificultad)),
-              child: const Text('Aplicar'),
+              child: Text(l10n.admAplicar),
             ),
           ],
         ),
@@ -131,8 +133,9 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Ruta>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error =
-            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
+        final String? error = snap.hasError
+            ? _mensajeError(l10n, snap.error!)
+            : null;
         final String termino = _busqueda.trim().toLowerCase();
         final List<Ruta> rutas = (snap.data ?? const <Ruta>[]).where((ruta) {
           if (_filtroActividad != null &&

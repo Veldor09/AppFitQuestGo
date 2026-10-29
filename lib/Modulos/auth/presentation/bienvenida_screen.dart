@@ -62,7 +62,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final AuthRepositorio auth = AuthScope.read(context);
     final bool verificado = await BiometriaServicio.instancia.autenticar(
-      motivo: 'Coloca tu huella para entrar a FitQuest Go',
+      motivo: l10n.bioMotivoBienvenida,
     );
     if (!verificado) return;
 
@@ -106,8 +106,8 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
           if (_tieneBiometria) ...<Widget>[
             FqButton.primary(
               label: _nombreBio != null
-                  ? 'Ingresar como $_nombreBio (huella)'
-                  : 'Ingresar con huella',
+                  ? l10n.bioIngresarComo(_nombreBio!)
+                  : l10n.bioIngresar,
               icon: Icons.fingerprint_rounded,
               loading: _cargandoBiometria,
               onPressed: _iniciarConHuella,

@@ -14,6 +14,7 @@ import 'package:fit_quest_go/core/db/daos/notificaciones_cache_dao.dart';
 import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/rutas_pendientes_banner.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/aportes_screen.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/insignias_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/mapas_offline_screen.dart';
 import 'package:fit_quest_go/Modulos/perfil/presentation/notificaciones_screen.dart';
@@ -412,6 +413,16 @@ class _PerfilContenido extends StatelessWidget {
                   ),
                 ),
                 _MenuFila(
+                  key: const ValueKey<String>('menu-mi-suscripcion'),
+                  icono: Icons.workspace_premium_outlined,
+                  texto: l10n.planTituloUsuario,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PlanPatrocinioScreen(),
+                    ),
+                  ),
+                ),
+                _MenuFila(
                   icono: Icons.tune_rounded,
                   texto: l10n.perfilPreferencias,
                   onTap: onPreferencias,
@@ -736,6 +747,7 @@ class _Metrica extends StatelessWidget {
 
 class _MenuFila extends StatelessWidget {
   const _MenuFila({
+    super.key,
     required this.icono,
     required this.texto,
     this.onTap,

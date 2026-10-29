@@ -1,4 +1,3 @@
-
 /// Elemento administrable de los catalogos de FitQuest Go.
 ///
 /// Corresponde a un registro de la tabla `catalogo_items` del backend.

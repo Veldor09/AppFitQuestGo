@@ -311,7 +311,7 @@ void main() {
     testWidgets('"Tengo un comercio" abre el registro de empresa', (
       WidgetTester tester,
     ) async {
-      await montarApp(tester, const BienvenidaScreen());
+      await montarApp(tester, const BienvenidaScreen(), auth: AuthFalso());
 
       await tester.ensureVisible(
         find.byKey(const ValueKey<String>('soy-comercio')),

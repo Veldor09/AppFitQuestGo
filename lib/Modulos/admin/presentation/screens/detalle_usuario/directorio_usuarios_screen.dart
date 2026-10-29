@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
@@ -157,10 +157,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
               const SizedBox(height: 5),
               Text(
                 _l10n.admDirSubtitulo,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
             ],
           ),
@@ -216,18 +213,9 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                   value: null,
                   child: Text(_l10n.usuariosFiltroTodos),
                 ),
-                DropdownMenuItem<int?>(
-                  value: 1,
-                  child: Text(_l10n.rolUsuario),
-                ),
-                DropdownMenuItem<int?>(
-                  value: 2,
-                  child: Text(_l10n.rolEmpresa),
-                ),
-                DropdownMenuItem<int?>(
-                  value: 3,
-                  child: Text(_l10n.rolAdmin),
-                ),
+                DropdownMenuItem<int?>(value: 1, child: Text(_l10n.rolUsuario)),
+                DropdownMenuItem<int?>(value: 2, child: Text(_l10n.rolEmpresa)),
+                DropdownMenuItem<int?>(value: 3, child: Text(_l10n.rolAdmin)),
               ],
               onChanged: (valor) => _actualizarFiltros(() {
                 _rol = valor;
@@ -311,10 +299,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
           else if (_error != null)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.red),
-              ),
+              child: Text(_error!, style: const TextStyle(color: Colors.red)),
             )
           else if (usuarios.isEmpty)
             Padding(

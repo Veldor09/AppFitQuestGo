@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final AuthRepositorio auth = AuthScope.read(context);
     final bool verificado = await BiometriaServicio.instancia.autenticar(
-      motivo: 'Coloca tu huella para iniciar sesión en FitQuest Go',
+      motivo: l10n.bioMotivoLogin,
     );
     if (!verificado) return;
 
@@ -103,10 +103,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _valido(AppLocalizations l10n) {
     return todoValido(<(String, List<Validador>)>[
-      (_email.text, <Validador>[
-        requerido(l10n.validacionCorreoObligatorio),
-        formatoCorreo,
-      ]),
+      (
+        _email.text,
+        <Validador>[requerido(l10n.validacionCorreoObligatorio), formatoCorreo],
+      ),
       (_password.text, <Validador>[requerido(l10n.loginValidacionContrasena)]),
     ]);
   }
@@ -149,17 +149,17 @@ class _LoginScreenState extends State<LoginScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              title: const Row(
+              title: Row(
                 children: <Widget>[
-                  Icon(
+                  const Icon(
                     Icons.fingerprint_rounded,
                     color: FqColors.night,
                     size: 28,
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Text(
-                    'Ingreso con huella',
-                    style: TextStyle(
+                    l10n.bioIngresoTitulo,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: FqColors.ink,
@@ -167,16 +167,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              content: const Text(
-                '¿Deseas activar el ingreso con tu huella digital para que en el próximo inicio de sesión solo pongas tu huella en vez de escribir la contraseña?',
-                style: TextStyle(fontSize: 14, color: FqColors.muted),
+              content: Text(
+                l10n.bioPregunta,
+                style: const TextStyle(fontSize: 14, color: FqColors.muted),
               ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text(
-                    'Ahora no',
-                    style: TextStyle(color: FqColors.muted),
+                  child: Text(
+                    l10n.alertasAhoraNo,
+                    style: const TextStyle(color: FqColors.muted),
                   ),
                 ),
                 ElevatedButton(
@@ -188,24 +188,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text('Activar'),
+                  child: Text(l10n.bioActivar),
                 ),
               ],
             ),
           );
 
           if (deseaActivar == true && mounted) {
-            final bool verificado =
-                await BiometriaServicio.instancia.autenticar(
-                  motivo:
-                      'Verifica tu huella para habilitarla en tu cuenta',
-                );
+            final bool verificado = await BiometriaServicio.instancia
+                .autenticar(motivo: l10n.bioVerificaHabilitar);
             if (verificado && mounted) {
               await auth.guardarCredencialBiometrica(
                 email: correoIngresado,
                 contrasena: contrasenaIngresada,
               );
-              notificarExito('Inicio con huella digital configurado');
+              notificarExito(l10n.bioConfigurado);
             }
           }
         }
@@ -253,8 +250,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     FqGap.xl,
                   ),
                   child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: kAuthContentMaxWidth),
+                    constraints: const BoxConstraints(
+                      maxWidth: kAuthContentMaxWidth,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
@@ -283,8 +281,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: FqColors.volt
-                                            .withValues(alpha: 0.25),
+                                        color: FqColors.volt.withValues(
+                                          alpha: 0.25,
+                                        ),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
@@ -301,8 +300,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                         children: <Widget>[
                                           Text(
                                             _nombreBio != null
-                                                ? '¡Hola, $_nombreBio!'
-                                                : 'Ingreso rápido con huella',
+                                                ? l10n.bioHola(_nombreBio!)
+                                                : l10n.bioIngresoRapido,
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14,
@@ -324,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(height: 14),
                                 FqButton.primary(
-                                  label: 'Ingresar con huella',
+                                  label: l10n.bioIngresar,
                                   icon: Icons.fingerprint_rounded,
                                   loading: _cargandoBiometria,
                                   onPressed: _iniciarConHuella,
@@ -332,14 +331,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                           ),
-                          const Row(
+                          Row(
                             children: <Widget>[
-                              Expanded(child: Divider(color: FqColors.border)),
+                              const Expanded(
+                                child: Divider(color: FqColors.border),
+                              ),
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 child: Text(
-                                  'O con contraseña',
-                                  style: TextStyle(
+                                  l10n.bioOContrasena,
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     color: FqColors.muted,
                                   ),
@@ -370,9 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _password,
                           obscureText: true,
                           textInputAction: TextInputAction.done,
-                          autofillHints: const <String>[
-                            AutofillHints.password,
-                          ],
+                          autofillHints: const <String>[AutofillHints.password],
                           forzarError: _forzarError,
                           onSubmitted: (_) => _iniciar(),
                           reglas: <Validador>[
@@ -390,8 +391,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
                               minimumSize: const Size(0, 0),
-                              tapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               foregroundColor: FqColors.river,
                             ),
                             child: Text(

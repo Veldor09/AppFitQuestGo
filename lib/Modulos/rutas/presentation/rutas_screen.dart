@@ -51,8 +51,12 @@ class _RutasScreenState extends State<RutasScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   late final RutasOfflineDao _offlineDao =
       widget.offlineDao ?? RutasOfflineDao();
-  late final CargaLista<Ruta> _explorar = CargaLista<Ruta>(() => _api.explorar());
-  late final CargaLista<Ruta> _misRutas = CargaLista<Ruta>(() => _api.misRutas());
+  late final CargaLista<Ruta> _explorar = CargaLista<Ruta>(
+    () => _api.explorar(),
+  );
+  late final CargaLista<Ruta> _misRutas = CargaLista<Ruta>(
+    () => _api.misRutas(),
+  );
   late final CargaLista<Ruta> _favoritas = CargaLista<Ruta>(_cargarFavoritas);
   Set<int> _favoritasIds = <int>{};
   bool _esOfflineGuardadas = false;
@@ -92,16 +96,19 @@ class _RutasScreenState extends State<RutasScreen> {
     _explorar.cargar(silencioso: silencioso);
     _misRutas.cargar(silencioso: silencioso);
     _favoritas.cargar(silencioso: silencioso);
-    _api.favoritasIds().then((Set<int> ids) {
-      if (mounted) setState(() => _favoritasIds = ids);
-    }).catchError((_) async {
-      final List<Ruta> offline = await _offlineDao.listar();
-      if (mounted) {
-        setState(() {
-          _favoritasIds = offline.map((Ruta r) => r.id).toSet();
+    _api
+        .favoritasIds()
+        .then((Set<int> ids) {
+          if (mounted) setState(() => _favoritasIds = ids);
+        })
+        .catchError((_) async {
+          final List<Ruta> offline = await _offlineDao.listar();
+          if (mounted) {
+            setState(() {
+              _favoritasIds = offline.map((Ruta r) => r.id).toSet();
+            });
+          }
         });
-      }
-    });
   }
 
   void _recargar() => _cargar(silencioso: true);
@@ -172,8 +179,10 @@ class _RutasScreenState extends State<RutasScreen> {
                   Row(
                     children: <Widget>[
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded,
-                            color: FqColors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: FqColors.white,
+                        ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                       Expanded(
@@ -196,7 +205,7 @@ class _RutasScreenState extends State<RutasScreen> {
                       opciones: <String>[
                         l10n.rutasExplorar,
                         l10n.rutasMisRutas,
-                        'Guardadas'
+                        'Guardadas',
                       ],
                       seleccion: _tab,
                       onSeleccion: (int i) => setState(() => _tab = i),
@@ -207,9 +216,7 @@ class _RutasScreenState extends State<RutasScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Expanded(
-              child: _buildCuerpoTab(),
-            ),
+            Expanded(child: _buildCuerpoTab()),
           ],
         ),
       );
@@ -225,8 +232,10 @@ class _RutasScreenState extends State<RutasScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
                 l10n.rutasTitulo,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
             Padding(
@@ -235,16 +244,14 @@ class _RutasScreenState extends State<RutasScreen> {
                 opciones: <String>[
                   l10n.rutasExplorar,
                   l10n.rutasMisRutas,
-                  'Guardadas'
+                  'Guardadas',
                 ],
                 seleccion: _tab,
                 onSeleccion: (int i) => setState(() => _tab = i),
               ),
             ),
             const SizedBox(height: 8),
-            Expanded(
-              child: _buildCuerpoTab(),
-            ),
+            Expanded(child: _buildCuerpoTab()),
           ],
         ),
       ),
@@ -345,8 +352,8 @@ class _Segmentado extends StatelessWidget {
                       color: i == seleccion
                           ? (enCabeceraOscura ? FqColors.night : FqColors.ink)
                           : (enCabeceraOscura
-                              ? const Color(0xFFB7C3D1)
-                              : FqColors.muted),
+                                ? const Color(0xFFB7C3D1)
+                                : FqColors.muted),
                     ),
                   ),
                 ),
@@ -411,7 +418,10 @@ class _ListaRutas extends StatelessWidget {
             if (esOffline)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(12),
@@ -548,11 +558,15 @@ class _TarjetaRuta extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(
-                esFavorita ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                esFavorita
+                    ? Icons.bookmark_rounded
+                    : Icons.bookmark_border_rounded,
                 color: esFavorita ? const Color(0xFF0F766E) : FqColors.muted,
                 size: 22,
               ),
-              tooltip: esFavorita ? l10n.rutasQuitarGuardada : l10n.rutasGuardarRuta,
+              tooltip: esFavorita
+                  ? l10n.rutasQuitarGuardada
+                  : l10n.rutasGuardarRuta,
               splashRadius: 18,
               onPressed: onToggleFavorita,
             ),
@@ -569,8 +583,11 @@ class _TarjetaRuta extends StatelessWidget {
                 tooltip: AppLocalizations.of(context)!.rutasEliminar,
                 splashRadius: 18,
                 onPressed: () async {
-                  final bool eliminada =
-                      await confirmarYEliminarRuta(context, api, ruta);
+                  final bool eliminada = await confirmarYEliminarRuta(
+                    context,
+                    api,
+                    ruta,
+                  );
                   if (eliminada) onEliminada();
                 },
               ),

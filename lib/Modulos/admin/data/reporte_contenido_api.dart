@@ -13,13 +13,14 @@ class ReporteContenidoApi {
     bool esFoto = false,
   }) async {
     final String detalle = descripcion?.trim() ?? '';
-    final dynamic respuesta = await _client.post('/reportes-contenido', <String, dynamic>{
-      'tipoContenido': tipoContenido,
-      'contenidoId': contenidoId,
-      'motivo': motivo,
-      if (detalle.isNotEmpty) 'descripcion': detalle,
-      if (esFoto) 'esFoto': true,
-    });
+    final dynamic respuesta = await _client
+        .post('/reportes-contenido', <String, dynamic>{
+          'tipoContenido': tipoContenido,
+          'contenidoId': contenidoId,
+          'motivo': motivo,
+          if (detalle.isNotEmpty) 'descripcion': detalle,
+          if (esFoto) 'esFoto': true,
+        });
     return Map<String, dynamic>.from(respuesta as Map);
   }
 

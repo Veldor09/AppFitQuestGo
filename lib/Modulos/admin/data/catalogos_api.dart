@@ -1,4 +1,3 @@
-
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/admin/data/catalogo_item.dart';
 
@@ -27,8 +26,7 @@ class CatalogosApi {
 
     return (data as List<dynamic>)
         .map(
-          (dynamic item) =>
-              CatalogoItem.fromJson(item as Map<String, dynamic>),
+          (dynamic item) => CatalogoItem.fromJson(item as Map<String, dynamic>),
         )
         .toList();
   }
@@ -40,8 +38,7 @@ class CatalogosApi {
 
     return (data as List<dynamic>)
         .map(
-          (dynamic item) =>
-              CatalogoItem.fromJson(item as Map<String, dynamic>),
+          (dynamic item) => CatalogoItem.fromJson(item as Map<String, dynamic>),
         )
         .toList();
   }

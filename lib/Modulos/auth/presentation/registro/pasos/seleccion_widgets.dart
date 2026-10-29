@@ -28,7 +28,11 @@ class PasoIntro extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           bajada,
-          style: const TextStyle(fontSize: 11, height: 1.5, color: FqColors.muted),
+          style: const TextStyle(
+            fontSize: 11,
+            height: 1.5,
+            color: FqColors.muted,
+          ),
         ),
       ],
     );
@@ -83,8 +87,11 @@ class ChoiceOption extends StatelessWidget {
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_circle,
-                    size: 15, color: FqColors.voltDark),
+                const Icon(
+                  Icons.check_circle,
+                  size: 15,
+                  color: FqColors.voltDark,
+                ),
             ],
           ),
         ),

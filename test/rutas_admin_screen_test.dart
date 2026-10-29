@@ -77,7 +77,7 @@ void main() {
 
     expect(find.text('Estado: Publicada'), findsOneWidget);
     expect(find.text('Distancia: 12.0 km'), findsOneWidget);
-    expect(find.text('Dificultad: dificil'), findsOneWidget);
+    expect(find.text('Dificultad: Dificil'), findsOneWidget);
     expect(find.text('Puntos GPS: 0'), findsOneWidget);
 
     expect(find.text('Aprobar'), findsNothing);

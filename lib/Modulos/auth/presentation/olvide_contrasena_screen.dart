@@ -21,8 +21,7 @@ class OlvideContrasenaScreen extends StatefulWidget {
   final AuthApi? api;
 
   @override
-  State<OlvideContrasenaScreen> createState() =>
-      _OlvideContrasenaScreenState();
+  State<OlvideContrasenaScreen> createState() => _OlvideContrasenaScreenState();
 }
 
 class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
@@ -42,7 +41,9 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
   Future<void> _enviar() async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
-    if (!todoValido(<(String, List<Validador>)>[(_email.text, reglasCorreo())])) {
+    if (!todoValido(<(String, List<Validador>)>[
+      (_email.text, reglasCorreo()),
+    ])) {
       setState(() => _forzarError = true);
       notificarError(l10n.olvideCorreoInvalido);
       return;
@@ -95,8 +96,9 @@ class _OlvideContrasenaScreenState extends State<OlvideContrasenaScreen> {
                     FqGap.xl,
                   ),
                   child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: kAuthContentMaxWidth),
+                    constraints: const BoxConstraints(
+                      maxWidth: kAuthContentMaxWidth,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[

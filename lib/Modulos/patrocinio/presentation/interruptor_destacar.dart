@@ -4,6 +4,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/invitar_a_plan.dart';
 
 /// El mensaje para quien intento encender "Destacar" y el servidor lo rechazo:
 /// el codigo viaja en `ApiException.message` (ver `DestacadosService`).
@@ -54,7 +55,12 @@ class _InterruptorDestacarState extends State<InterruptorDestacar> {
       final bool resultado = await widget.alCambiar(destacar);
       if (mounted) setState(() => _activado = resultado);
     } on ApiException catch (e) {
-      notificarError(mensajeErrorDestacar(l10n, e));
+      if (e.message == 'DESTACAR_SIN_PLAN' && mounted) {
+        // Sin plan no se puede destacar: se le ofrece solicitarlo.
+        await invitarAPlan(context, mensaje: l10n.planInvitacionDestacar);
+      } else {
+        notificarError(mensajeErrorDestacar(l10n, e));
+      }
     } catch (_) {
       notificarError(l10n.patrocinioErrorDestacar);
     } finally {

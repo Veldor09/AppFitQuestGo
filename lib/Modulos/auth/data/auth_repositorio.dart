@@ -7,6 +7,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/db/app_database.dart';
 import 'package:fit_quest_go/core/db/daos/perfil_cache_dao.dart';
 import 'package:fit_quest_go/core/push/servicio_push.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_api.dart';
 import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 
@@ -65,10 +66,7 @@ class AuthRepositorio extends ChangeNotifier {
     if (cred == null) {
       throw Exception('No hay credenciales guardadas para inicio biométrico.');
     }
-    await iniciarSesion(
-      email: cred.email,
-      contrasena: cred.password,
-    );
+    await iniciarSesion(email: cred.email, contrasena: cred.password);
   }
 
   Future<void> cargarSesionGuardada() async {
@@ -189,6 +187,8 @@ class AuthRepositorio extends ChangeNotifier {
     try {
       await ServicioPush.instancia.quitar().timeout(const Duration(seconds: 3));
     } catch (_) {}
+    // El plan es de la cuenta, no del telefono: no se lo hereda la siguiente.
+    await PlanUsuario.instancia.olvidar();
     final String? refresh = await _tokens.leerRefresh();
     try {
       await _api.cerrarSesion(refresh);

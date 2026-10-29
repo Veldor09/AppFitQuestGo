@@ -63,8 +63,9 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
     final bool disponible =
         await BiometriaServicio.instancia.dispositivoSoportado;
     if (!mounted) return;
-    final bool activa =
-        await AuthScope.read(context).tieneCredencialBiometrica();
+    final bool activa = await AuthScope.read(
+      context,
+    ).tieneCredencialBiometrica();
     if (mounted) {
       setState(() {
         _biometriaDisponible = disponible;
@@ -78,7 +79,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
       await AuthScope.read(context).borrarCredencialBiometrica();
       if (!mounted) return;
       setState(() => _biometriaActiva = false);
-      notificarInfo('Inicio con huella desactivado');
+      notificarInfo(AppLocalizations.of(context)!.bioInicioDesactivado);
       return;
     }
 
@@ -86,11 +87,11 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
     if (pass == null || pass.isEmpty) return;
 
     final bool ok = await BiometriaServicio.instancia.autenticar(
-      motivo: 'Verifica tu huella para asociarla a tu cuenta',
+      motivo: AppLocalizations.of(context)!.bioVerificaAsociar,
     );
     if (!ok) {
       if (mounted) {
-        notificarError('No se pudo verificar la huella digital');
+        notificarError(AppLocalizations.of(context)!.bioErrorVerificar);
       }
       return;
     }
@@ -103,7 +104,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
     );
     if (!mounted) return;
     setState(() => _biometriaActiva = true);
-    notificarExito('Inicio con huella activado');
+    notificarExito(AppLocalizations.of(context)!.bioInicioActivado);
   }
 
   Future<String?> _pedirContrasenaParaBiometria() async {
@@ -112,12 +113,10 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         backgroundColor: FqColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          'Activar inicio con huella',
-          style: TextStyle(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          AppLocalizations.of(context)!.bioActivarTitulo,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: FqColors.ink,
@@ -127,9 +126,9 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text(
-              'Ingresa tu contraseña para vincularla a tu huella y permitir inicios de sesión rápidos:',
-              style: TextStyle(fontSize: 13, color: FqColors.muted),
+            Text(
+              AppLocalizations.of(context)!.bioActivarMensaje,
+              style: const TextStyle(fontSize: 13, color: FqColors.muted),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -137,7 +136,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
               obscureText: true,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Tu contraseña',
+                hintText: AppLocalizations.of(context)!.bioTuContrasena,
                 filled: true,
                 fillColor: FqColors.cloud,
                 contentPadding: const EdgeInsets.symmetric(
@@ -155,9 +154,9 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(null),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: FqColors.muted),
+            child: Text(
+              AppLocalizations.of(context)!.comunCancelar,
+              style: const TextStyle(color: FqColors.muted),
             ),
           ),
           ElevatedButton(
@@ -169,7 +168,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text('Confirmar'),
+            child: Text(AppLocalizations.of(context)!.admConfirmar),
           ),
         ],
       ),
@@ -273,9 +272,9 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                           color: FqColors.ink,
                         ),
                       ),
-                      const Text(
-                        'Ajustes y privacidad',
-                        style: TextStyle(
+                      Text(
+                        l10n.prefAjustesPrivacidad,
+                        style: const TextStyle(
                           fontSize: 11,
                           color: FqColors.muted,
                         ),
@@ -373,9 +372,8 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                   const SizedBox(height: 12),
                   _Tarjeta(
                     icono: Icons.fingerprint_rounded,
-                    titulo: 'Ingreso con huella dactilar',
-                    bajada:
-                        'Inicia sesión con tu huella digital cuando cierres sesión, sin tener que volver a escribir tu correo y contraseña.',
+                    titulo: l10n.bioTarjetaTitulo,
+                    bajada: l10n.bioTarjetaDesc,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[

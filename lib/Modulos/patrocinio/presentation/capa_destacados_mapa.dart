@@ -56,8 +56,7 @@ class CapaDestacadosMapa {
         await mapa.annotations.removeAnnotationManager(
           m as BaseAnnotationManager,
         );
-      } catch (_) {
-      }
+      } catch (_) {}
     }
   }
 

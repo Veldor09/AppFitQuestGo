@@ -112,8 +112,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   late final ActividadesService _servicio =
       widget.servicio ?? ActividadesService.instancia;
   late final CronometroRuta _cronometro = CronometroRuta(ahora: widget.ahora);
-  late final DesviacionRutaDetector _detector =
-      DesviacionRutaDetector(trazo: widget.ruta.puntos, ahora: widget.ahora);
+  late final DesviacionRutaDetector _detector = DesviacionRutaDetector(
+    trazo: widget.ruta.puntos,
+    ahora: widget.ahora,
+  );
 
   MapboxMap? _mapa;
   PolylineAnnotationManager? _lineasAcercamiento;
@@ -202,11 +204,13 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
 
   void _escucharGps() {
     if (widget.posiciones == null && _ultima == null) {
-      unawaited(obtenerPosicionActualRapida().then((PosicionGps? p) {
-        if (p != null && mounted && _ultima == null) {
-          _alRecibirPosicion(p);
-        }
-      }));
+      unawaited(
+        obtenerPosicionActualRapida().then((PosicionGps? p) {
+          if (p != null && mounted && _ultima == null) {
+            _alRecibirPosicion(p);
+          }
+        }),
+      );
     }
     final Stream<PosicionGps> flujo = widget.posiciones != null
         ? widget.posiciones!()
@@ -214,7 +218,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
             distanciaMinimaM: 3,
             segundoPlano: true,
             tituloNotificacion:
-                AppLocalizations.of(context)?.recorridoNotifTitulo(widget.ruta.nombre) ??
+                AppLocalizations.of(
+                  context,
+                )?.recorridoNotifTitulo(widget.ruta.nombre) ??
                 'Navegando: ${widget.ruta.nombre}',
             mensajeNotificacion:
                 AppLocalizations.of(context)?.recorridoNotifMensaje ??
@@ -234,23 +240,32 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   Future<void> _alRecibirPosicion(PosicionGps p) async {
     if (!mounted) return;
     final PosicionGps? previa = _ultima;
-    if (previa != null && distanciaMetros(previa.lat, previa.lng, p.lat, p.lng) > 3) {
+    if (previa != null &&
+        distanciaMetros(previa.lat, previa.lng, p.lat, p.lng) > 3) {
       _rumbo = rumboEntre(previa, p);
     }
     _ultima = p;
     _sinGps = false;
 
     if (!_enRuta) {
-      final double aInicio =
-          distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
+      final double aInicio = distanciaMetros(
+        p.lat,
+        p.lng,
+        _inicio.lat,
+        _inicio.lng,
+      );
       if (aInicio <= _radioLlegadaM) {
         await _comenzarRecorrido(avisar: true);
       } else {
         _actualizarGuia(p);
       }
     } else if (!_pausado) {
-      final double aInicio =
-          distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
+      final double aInicio = distanciaMetros(
+        p.lat,
+        p.lng,
+        _inicio.lat,
+        _inicio.lng,
+      );
       if (!_alcanzoRuta) {
         if (aInicio <= _radioLlegadaM) {
           _alcanzoRuta = true;
@@ -258,8 +273,13 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
           _indiceSegmentoRuta = 0;
           await _lineasAcercamiento?.deleteAll();
           await _puntosAcercamiento?.deleteAll();
-          final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
-          _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
+          final AppLocalizations? l10n = mounted
+              ? AppLocalizations.of(context)
+              : null;
+          _decir(
+            l10n?.recorridoVozLlegoInicio ??
+                'Has llegado al inicio de la ruta. Comienza el recorrido',
+          );
           _registrarPunto(p);
           _evaluarRuta(p);
           await _actualizarTrazoRutaEnMarcha(p);
@@ -279,18 +299,26 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
 
   void _actualizarGuia(PosicionGps p) {
     final DateTime ahora = (widget.ahora ?? DateTime.now)();
-    final bool puedePedir = !_pidiendoCamino &&
+    final bool puedePedir =
+        !_pidiendoCamino &&
         (_ultimoPedidoCamino == null ||
             ahora.difference(_ultimoPedidoCamino!) >= _intervaloMinimoRepedir);
 
     // Si aún no tenemos camino o es una línea directa previa y ya podemos pedir:
-    if (_camino == null || _camino!.puntos.length < 2 || _camino!.esLineaRecta) {
+    if (_camino == null ||
+        _camino!.puntos.length < 2 ||
+        _camino!.esLineaRecta) {
       if (puedePedir) {
         unawaited(_pedirCamino(p));
       } else if (_camino == null || _camino!.puntos.length < 2) {
         _camino = RutaVial(
           puntos: <PosicionGps>[p, (lat: _inicio.lat, lng: _inicio.lng)],
-          distanciaMetros: distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng),
+          distanciaMetros: distanciaMetros(
+            p.lat,
+            p.lng,
+            _inicio.lat,
+            _inicio.lng,
+          ),
           duracionSegundos: 0,
           esLineaRecta: true,
         );
@@ -303,7 +331,8 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
       double distanciaMinima,
       int indiceSegmento,
       PosicionGps puntoProyectado,
-    }) infoCamino = _distanciaYMasCercanoAlCamino(p, _camino!.puntos);
+    })
+    infoCamino = _distanciaYMasCercanoAlCamino(p, _camino!.puntos);
 
     if (infoCamino.distanciaMinima > _umbralDesviacionCaminoM) {
       // El usuario se salió mucho del camino vial (por ejemplo, entró a otra calle o callejón).
@@ -324,15 +353,17 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
           : <PosicionGps>[infoCamino.puntoProyectado, _camino!.puntos.last];
 
       final double distVial = _distanciaPolilineaMetros(puntosActualizados);
-      final double distOffRoadInicio =
-          infoCamino.distanciaMinima > 5 ? infoCamino.distanciaMinima : 0;
+      final double distOffRoadInicio = infoCamino.distanciaMinima > 5
+          ? infoCamino.distanciaMinima
+          : 0;
       final double distOffRoadFin = distanciaMetros(
         puntosActualizados.last.lat,
         puntosActualizados.last.lng,
         _inicio.lat,
         _inicio.lng,
       );
-      final double distTotal = distVial +
+      final double distTotal =
+          distVial +
           distOffRoadInicio +
           (distOffRoadFin > 8 ? distOffRoadFin : 0);
 
@@ -356,11 +387,15 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
 
   void _evaluarRuta(PosicionGps p) {
     _progreso = calcularProgreso(p, widget.ruta.puntos);
-    final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
+    final AppLocalizations? l10n = mounted
+        ? AppLocalizations.of(context)
+        : null;
 
     switch (_detector.evaluar(p)) {
       case EventoDesviacion.desviado:
-        _decir(l10n?.recorridoVozDesviado ?? 'Atención: te has desviado de la ruta');
+        _decir(
+          l10n?.recorridoVozDesviado ?? 'Atención: te has desviado de la ruta',
+        );
       case EventoDesviacion.regreso:
         _decir(l10n?.recorridoVozRegreso ?? 'Has regresado a la ruta');
       case EventoDesviacion.ninguno:
@@ -402,8 +437,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
       // Null = ya estás a menos de 30 m: trazo directo hasta el pin.
       camino ??= RutaVial(
         puntos: <PosicionGps>[origen, destino],
-        distanciaMetros:
-            distanciaMetros(origen.lat, origen.lng, destino.lat, destino.lng),
+        distanciaMetros: distanciaMetros(
+          origen.lat,
+          origen.lng,
+          destino.lat,
+          destino.lng,
+        ),
         duracionSegundos: 0,
         esLineaRecta: true,
       );
@@ -432,20 +471,15 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (largo2 == 0) return a;
 
     final double t = (-(ax * dx + ay * dy) / largo2).clamp(0.0, 1.0);
-    return (
-      lat: a.lat + t * (b.lat - a.lat),
-      lng: a.lng + t * (b.lng - a.lng),
-    );
+    return (lat: a.lat + t * (b.lat - a.lat), lng: a.lng + t * (b.lng - a.lng));
   }
 
   static ({
     double distanciaMinima,
     int indiceSegmento,
     PosicionGps puntoProyectado,
-  }) _distanciaYMasCercanoAlCamino(
-    PosicionGps p,
-    List<PosicionGps> puntos,
-  ) {
+  })
+  _distanciaYMasCercanoAlCamino(PosicionGps p, List<PosicionGps> puntos) {
     if (puntos.length < 2) {
       if (puntos.isEmpty) {
         return (
@@ -455,8 +489,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
         );
       }
       return (
-        distanciaMinima:
-            distanciaMetros(p.lat, p.lng, puntos.first.lat, puntos.first.lng),
+        distanciaMinima: distanciaMetros(
+          p.lat,
+          p.lng,
+          puntos.first.lat,
+          puntos.first.lng,
+        ),
         indiceSegmento: 0,
         puntoProyectado: puntos.first,
       );
@@ -466,8 +504,11 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     PosicionGps proyMin = puntos.first;
 
     for (int i = 0; i < puntos.length - 1; i++) {
-      final PosicionGps proy =
-          _puntoMasCercanoEnSegmentoGps(p, puntos[i], puntos[i + 1]);
+      final PosicionGps proy = _puntoMasCercanoEnSegmentoGps(
+        p,
+        puntos[i],
+        puntos[i + 1],
+      );
       final double d = distanciaMetros(p.lat, p.lng, proy.lat, proy.lng);
       if (d < minDist) {
         minDist = d;
@@ -496,9 +537,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     return total;
   }
 
-  Future<void> _comenzarRecorrido({
-    required bool avisar,
-  }) async {
+  Future<void> _comenzarRecorrido({required bool avisar}) async {
     if (_enRuta) return;
     _enRuta = true;
     _iniciadoEn = (widget.ahora ?? DateTime.now)();
@@ -515,12 +554,17 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
         ? distanciaATrazoM(p, widget.ruta.puntos)
         : double.infinity;
 
-    final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
+    final AppLocalizations? l10n = mounted
+        ? AppLocalizations.of(context)
+        : null;
     if (aInicio <= _radioLlegadaM || distRuta <= _radioLlegadaM) {
       _alcanzoRuta = true;
       _indiceSegmentoRuta = 0;
       if (avisar) {
-        _decir(l10n?.recorridoVozLlegoInicio ?? 'Has llegado al inicio de la ruta. Comienza el recorrido');
+        _decir(
+          l10n?.recorridoVozLlegoInicio ??
+              'Has llegado al inicio de la ruta. Comienza el recorrido',
+        );
       } else {
         _decir(l10n?.recorridoVozComienza ?? 'Comienza el recorrido');
       }
@@ -576,11 +620,13 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
         ),
       );
     } catch (_) {}
-    _lineasAcercamiento = await mapa.annotations.createPolylineAnnotationManager();
-    _puntosAcercamiento = await mapa.annotations.createCircleAnnotationManager();
+    _lineasAcercamiento = await mapa.annotations
+        .createPolylineAnnotationManager();
+    _puntosAcercamiento = await mapa.annotations
+        .createCircleAnnotationManager();
     _lineasRuta = await mapa.annotations.createPolylineAnnotationManager();
-    final PointAnnotationManager iconos =
-        await mapa.annotations.createPointAnnotationManager();
+    final PointAnnotationManager iconos = await mapa.annotations
+        .createPointAnnotationManager();
     await prepararPines(iconos);
 
     await _dibujarRuta(iconos);
@@ -649,7 +695,8 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     double distanciaMinima,
     int indiceSegmento,
     PosicionGps puntoProyectado,
-  }) _distanciaYMasCercanoEnRuta(
+  })
+  _distanciaYMasCercanoEnRuta(
     PosicionGps p,
     List<PuntoRuta> puntos, {
     int? indiceReferencia,
@@ -663,8 +710,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
         );
       }
       return (
-        distanciaMinima:
-            distanciaMetros(p.lat, p.lng, puntos.first.lat, puntos.first.lng),
+        distanciaMinima: distanciaMetros(
+          p.lat,
+          p.lng,
+          puntos.first.lat,
+          puntos.first.lng,
+        ),
         indiceSegmento: 0,
         puntoProyectado: (lat: puntos.first.lat, lng: puntos.first.lng),
       );
@@ -735,7 +786,8 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
       double distanciaMinima,
       int indiceSegmento,
       PosicionGps puntoProyectado,
-    }) info = _distanciaYMasCercanoEnRuta(
+    })
+    info = _distanciaYMasCercanoEnRuta(
       p,
       puntosRuta,
       indiceReferencia: _indiceSegmentoRuta,
@@ -748,10 +800,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (puntosCirculo != null) {
       await puntosCirculo.deleteAll();
       if (info.distanciaMinima >= _umbralPuntitosRetornoM) {
-        final List<PosicionGps> dots = puntitosEntre(
-          p,
-          info.puntoProyectado,
-        );
+        final List<PosicionGps> dots = puntitosEntre(p, info.puntoProyectado);
         if (dots.isNotEmpty) {
           await puntosCirculo.createMulti(opcionesPuntitos(dots));
         }
@@ -881,7 +930,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     final AppLocalizations? l10n = AppLocalizations.of(context);
     final bool salir = await _confirmar(
       titulo: l10n?.recorridoSalirTitulo ?? '¿Salir del recorrido?',
-      mensaje: l10n?.recorridoSalirMensaje ?? 'Si sales ahora no se guardará lo que llevas.',
+      mensaje:
+          l10n?.recorridoSalirMensaje ??
+          'Si sales ahora no se guardará lo que llevas.',
       aceptar: l10n?.recorridoSalirSinGuardar ?? 'Salir sin guardar',
       peligro: true,
     );
@@ -896,7 +947,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (confirmar) {
       final bool ok = await _confirmar(
         titulo: l10n?.recorridoFinalizarTitulo ?? 'Finalizar recorrido',
-        mensaje: l10n?.recorridoFinalizarMensaje ?? '¿Quieres terminar y guardar tu recorrido?',
+        mensaje:
+            l10n?.recorridoFinalizarMensaje ??
+            '¿Quieres terminar y guardar tu recorrido?',
         aceptar: l10n?.recorridoFinalizarBtn ?? 'Finalizar',
       );
       if (!ok || !mounted) return;
@@ -918,7 +971,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
 
     // Nada que registrar: el servidor exige distancia y tiempo positivos.
     if (_recorrido.length < 2 || km < 0.01 || segundos <= 0) {
-      notificarInfo(l10n?.recorridoDemasiadoCorto ?? 'El recorrido fue demasiado corto y no se registró.');
+      notificarInfo(
+        l10n?.recorridoDemasiadoCorto ??
+            'El recorrido fue demasiado corto y no se registró.',
+      );
       if (mounted) Navigator.of(context).pop(false);
       return;
     }
@@ -944,9 +1000,14 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
           esOffline: r == ResultadoRecorrido.guardadoLocal,
         );
       case ResultadoRecorrido.rechazado:
-        notificarError(l10n?.recorridoServidorRechazo ?? 'El servidor no aceptó el recorrido.');
+        notificarError(
+          l10n?.recorridoServidorRechazo ??
+              'El servidor no aceptó el recorrido.',
+        );
       case ResultadoRecorrido.fallo:
-        notificarError(l10n?.recorridoErrorGuardar ?? 'No se pudo guardar el recorrido.');
+        notificarError(
+          l10n?.recorridoErrorGuardar ?? 'No se pudo guardar el recorrido.',
+        );
     }
     if (mounted) {
       Navigator.of(context).pop(
@@ -1015,7 +1076,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  l10n?.recorridoLlegadaDetalle(km.toStringAsFixed(2), widget.ruta.nombre) ??
+                  l10n?.recorridoLlegadaDetalle(
+                        km.toStringAsFixed(2),
+                        widget.ruta.nombre,
+                      ) ??
                       'Recorriste ${km.toStringAsFixed(2)} km en ${widget.ruta.nombre}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1026,7 +1090,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                 ),
                 const SizedBox(height: 18),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF131A26),
                     borderRadius: BorderRadius.circular(16),
@@ -1046,7 +1113,8 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                         color: FqColors.white.withValues(alpha: 0.12),
                       ),
                       _Metrica(
-                        etiqueta: l10n?.recorridoMetricaDistancia ?? 'DISTANCIA',
+                        etiqueta:
+                            l10n?.recorridoMetricaDistancia ?? 'DISTANCIA',
                         valor: '${km.toStringAsFixed(2)} km',
                       ),
                       Container(
@@ -1055,7 +1123,8 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                         color: FqColors.white.withValues(alpha: 0.12),
                       ),
                       _Metrica(
-                        etiqueta: l10n?.recorridoMetricaRitmoMedio ?? 'RITMO MEDIO',
+                        etiqueta:
+                            l10n?.recorridoMetricaRitmoMedio ?? 'RITMO MEDIO',
                         valor: formatoRitmo(ritmoPorKm(tiempo, km)),
                         unidad: '/km',
                       ),
@@ -1078,9 +1147,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                       child: Text(
                         esOffline
                             ? (l10n?.recorridoGuardadoOffline ??
-                                'Guardado en tu teléfono · Se sincronizará con red')
+                                  'Guardado en tu teléfono · Se sincronizará con red')
                             : (l10n?.recorridoSincronizadoPerfil ??
-                                'Progreso sincronizado con tu perfil'),
+                                  'Progreso sincronizado con tu perfil'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
@@ -1217,7 +1286,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                         _BotonAccionMapa(
                           heroTag: 'pip-recorrido',
                           icono: Icons.picture_in_picture_alt_rounded,
-                          tooltip: AppLocalizations.of(context)?.recorridoTooltipPip ??
+                          tooltip:
+                              AppLocalizations.of(
+                                context,
+                              )?.recorridoTooltipPip ??
                               'Ventana flotante',
                           onPressed: () => ModoPip.instancia.entrar(),
                         ),
@@ -1226,7 +1298,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                           heroTag: 'encuadrar-recorrido',
                           icono: Icons.zoom_out_map_rounded,
                           tooltip:
-                              AppLocalizations.of(context)?.recorridoTooltipVerRutaCompleta ??
+                              AppLocalizations.of(
+                                context,
+                              )?.recorridoTooltipVerRutaCompleta ??
                               'Ver ruta completa',
                           onPressed: _encuadrarRuta,
                         ),
@@ -1237,7 +1311,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                               ? Icons.my_location_rounded
                               : Icons.location_searching_rounded,
                           activo: _siguiendo,
-                          tooltip: AppLocalizations.of(context)?.recorridoTooltipCentrar ??
+                          tooltip:
+                              AppLocalizations.of(
+                                context,
+                              )?.recorridoTooltipCentrar ??
                               'Centrar en mi ubicación',
                           onPressed: _centrar,
                         ),
@@ -1270,18 +1347,23 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   }
 
   ({String texto, Color color, IconData icono}) get _estado {
-    final AppLocalizations? l10n = mounted ? AppLocalizations.of(context) : null;
+    final AppLocalizations? l10n = mounted
+        ? AppLocalizations.of(context)
+        : null;
     final String locale = Localizations.localeOf(context).toString();
     if (_sinGps && _ultima == null) {
       return (
-        texto: l10n?.recorridoEstadoActivaUbicacion ?? 'Activa la ubicación para comenzar',
+        texto:
+            l10n?.recorridoEstadoActivaUbicacion ??
+            'Activa la ubicación para comenzar',
         color: FqColors.risk,
         icono: Icons.location_off_rounded,
       );
     }
     if (_ultima == null) {
       return (
-        texto: l10n?.recorridoEstadoBuscandoUbicacion ?? 'Buscando tu ubicación…',
+        texto:
+            l10n?.recorridoEstadoBuscandoUbicacion ?? 'Buscando tu ubicación…',
         color: FqColors.amber,
         icono: Icons.gps_not_fixed_rounded,
       );
@@ -1293,7 +1375,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
           : distanciaMetros(p.lat, p.lng, _inicio.lat, _inicio.lng);
       final String distStr = formatearDistancia(m, locale: locale);
       return (
-        texto: l10n?.recorridoEstadoRumboInicio(distStr) ?? 'Rumbo al inicio · $distStr',
+        texto:
+            l10n?.recorridoEstadoRumboInicio(distStr) ??
+            'Rumbo al inicio · $distStr',
         color: FqColors.amber,
         icono: Icons.navigation_rounded,
       );
@@ -1306,16 +1390,23 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
       );
     }
     if (_detector.desviado) {
-      final String distStr = formatearDistancia(_detector.distanciaAlTrazoM, locale: locale);
+      final String distStr = formatearDistancia(
+        _detector.distanciaAlTrazoM,
+        locale: locale,
+      );
       return (
-        texto: l10n?.recorridoEstadoFueraRuta(distStr) ?? '¡Fuera de ruta! · $distStr',
+        texto:
+            l10n?.recorridoEstadoFueraRuta(distStr) ??
+            '¡Fuera de ruta! · $distStr',
         color: FqColors.risk,
         icono: Icons.warning_amber_rounded,
       );
     }
     if (_llegoAlFinal) {
       return (
-        texto: l10n?.recorridoEstadoLlegasteFinal ?? 'Llegaste al final · puedes finalizar',
+        texto:
+            l10n?.recorridoEstadoLlegasteFinal ??
+            'Llegaste al final · puedes finalizar',
         color: FqColors.voltDark,
         icono: Icons.flag_rounded,
       );
@@ -1338,10 +1429,7 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     final ProgresoEnRuta? pr = _progreso;
     final String restante = _enRuta && _alcanzoRuta && pr != null
         ? formatearDistancia(pr.restanteM, locale: locale)
-        : formatearDistancia(
-            widget.ruta.distanciaKm * 1000,
-            locale: locale,
-          );
+        : formatearDistancia(widget.ruta.distanciaKm * 1000, locale: locale);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
@@ -1436,8 +1524,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                           },
                           icon: const Icon(Icons.location_on_rounded),
                           label: Text(
-                            l10n?.recorridoEstadoActivaUbicacion ?? 'Activar ubicación',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                            l10n?.recorridoEstadoActivaUbicacion ??
+                                'Activar ubicación',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
                           ),
                         )
                       : FilledButton.icon(
@@ -1451,23 +1543,26 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                           ),
                           onPressed: _ultima == null
                               ? null
-                              : () => _comenzarRecorrido(
-                                    avisar: false,
-                                  ),
+                              : () => _comenzarRecorrido(avisar: false),
                           icon: const Icon(Icons.play_arrow_rounded, size: 22),
                           label: Text(
                             l10n?.recorridoEmpezarAqui ?? 'Empezar aquí',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
                           ),
                         ),
                 ),
               ],
             ),
-          ]
-          else ...<Widget>[
+          ] else ...<Widget>[
             if (!_alcanzoRuta) ...<Widget>[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: FqColors.volt.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
@@ -1504,7 +1599,9 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                 Expanded(
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: _pausado ? FqColors.amber : FqColors.volt,
+                      backgroundColor: _pausado
+                          ? FqColors.amber
+                          : FqColors.volt,
                       foregroundColor: FqColors.night,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -1513,16 +1610,17 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                     ),
                     onPressed: _finalizando ? null : _alternarPausa,
                     icon: Icon(
-                      _pausado
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
+                      _pausado ? Icons.play_arrow_rounded : Icons.pause_rounded,
                       size: 20,
                     ),
                     label: Text(
                       _pausado
                           ? (l10n?.recorridoReanudar ?? 'Reanudar')
                           : (l10n?.recorridoPausar ?? 'Pausar'),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),
@@ -1541,7 +1639,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
                     icon: const Icon(Icons.stop_rounded, size: 20),
                     label: Text(
                       l10n?.recorridoFinalizarBtn ?? 'Finalizar',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),
@@ -1822,11 +1923,7 @@ class _CalificarRecorrido extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          PulgaresObjeto(
-            tipo: TipoCalificable.ruta,
-            id: rutaId,
-            api: api,
-          ),
+          PulgaresObjeto(tipo: TipoCalificable.ruta, id: rutaId, api: api),
         ],
       ),
     );

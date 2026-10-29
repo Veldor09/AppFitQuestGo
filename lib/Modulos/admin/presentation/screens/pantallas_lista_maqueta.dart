@@ -1,4 +1,3 @@
-
 import 'package:flutter/widgets.dart';
 
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';

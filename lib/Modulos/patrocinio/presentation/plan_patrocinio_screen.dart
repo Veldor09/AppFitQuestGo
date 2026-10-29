@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -9,32 +12,55 @@ import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
 
-/// "Plan de patrocinio" de una cuenta de empresa: en que va su plan, o los
-/// planes que puede pedir. El equipo aprueba o rechaza cada solicitud desde el
-/// panel de admin y la persona recibe el aviso en la campana (y en el celular).
+/// La suscripcion de quien usa la app: "Plan de patrocinio" para una cuenta de
+/// empresa (destacar) y "Mi suscripcion" para un usuario normal (guardar mas
+/// rutas sin conexion).
+///
+/// Muestra en que va el plan o los planes que se pueden pedir. En Costa Rica el
+/// pago es por SINPE Movil: la pantalla da el numero de solicitud y los pasos;
+/// un administrador activa el plan al recibir el comprobante. Fuera de Costa
+/// Rica el pago sera por PayPal, que aun no esta configurado.
 class PlanPatrocinioScreen extends StatefulWidget {
-  const PlanPatrocinioScreen({super.key, this.api, this.pais, this.ahora});
+  const PlanPatrocinioScreen({
+    super.key,
+    this.api,
+    this.pais,
+    this.ahora,
+    this.esEmpresa,
+    this.nombre,
+  });
 
   /// Inyectable para pruebas.
   final PlanApi? api;
 
-  /// Codigo ISO de dos letras. Por defecto, el pais del idioma del telefono; si
-  /// no tiene, Costa Rica (donde opera FitQuest Go).
+  /// Codigo ISO de dos letras. Por defecto, la region del telefono; si no tiene,
+  /// Costa Rica (donde opera FitQuest Go).
   final String? pais;
 
   /// Reloj inyectable para pruebas.
   final DateTime Function()? ahora;
+
+  /// Por defecto sale de la sesion (rol Empresa).
+  final bool? esEmpresa;
+
+  /// Nombre que va en el detalle del pago; por defecto el de la sesion.
+  final String? nombre;
 
   @override
   State<PlanPatrocinioScreen> createState() => _PlanPatrocinioScreenState();
 }
 
 class _Datos {
-  const _Datos({required this.suscripcion, required this.planes});
+  const _Datos({required this.suscripcion, required this.respuesta});
   final MiSuscripcion? suscripcion;
-  final List<PlanPatrocinio> planes;
+
+  /// Los planes que se pueden pedir; null cuando no hace falta (plan vigente o
+  /// solicitud en revision).
+  final RespuestaPlanes? respuesta;
 }
 
 class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
@@ -45,12 +71,20 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
 
   DateTime get _ahora => (widget.ahora ?? DateTime.now)();
 
+  bool get _esEmpresa =>
+      widget.esEmpresa ??
+      (AuthScope.maybeOf(context)?.usuario?.esEmpresa ?? false);
+
+  String get _nombre =>
+      widget.nombre ?? AuthScope.maybeOf(context)?.usuario?.nombre ?? '';
+
   String get _pais {
     final String? dado = widget.pais?.trim().toUpperCase();
     if (dado != null && dado.length == 2) return dado;
-    final String? delTelefono = Localizations.maybeLocaleOf(
-      context,
-    )?.countryCode;
+    // La region del telefono, no el idioma de la app: la app resuelve "en-US" a
+    // "en" (sin pais) y todos caerian en Costa Rica.
+    final String? delTelefono =
+        WidgetsBinding.instance.platformDispatcher.locale.countryCode;
     return (delTelefono != null && delTelefono.length == 2)
         ? delTelefono.toUpperCase()
         : 'CR';
@@ -64,15 +98,17 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
 
   Future<_Datos> _cargar() async {
     final MiSuscripcion? suscripcion = await _api.miSuscripcion();
+    // Aprovecha para que las descargas offline sepan si hay plan de usuario.
+    if (!_esEmpresa) unawaited(PlanUsuario.instancia.recordar(suscripcion));
     // Con un plan vigente o una solicitud en revision no hace falta la lista.
     final bool puedePedir =
         suscripcion == null ||
         (!suscripcion.vigente &&
             suscripcion.estado != EstadoSuscripcion.solicitada);
-    final List<PlanPatrocinio> planes = puedePedir
-        ? await _api.planes(_pais)
-        : <PlanPatrocinio>[];
-    return _Datos(suscripcion: suscripcion, planes: planes);
+    return _Datos(
+      suscripcion: suscripcion,
+      respuesta: puedePedir ? await _api.planes(_pais) : null,
+    );
   }
 
   void _recargar() {
@@ -116,9 +152,12 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
       if (!mounted) return;
       notificarExito(l10n.planSolicitudEnviada);
     } on ApiException catch (e) {
-      notificarError(
-        e.statusCode == 409 ? l10n.planYaTiene : l10n.planErrorSolicitar,
-      );
+      notificarError(switch ((e.statusCode, e.message)) {
+        (409, _) => l10n.planYaTiene,
+        (400, 'PAGO_NO_DISPONIBLE') => l10n.planPagoNoDisponible,
+        (403, 'PLAN_NO_APLICA') => l10n.planNoAplica,
+        _ => l10n.planErrorSolicitar,
+      });
     } catch (_) {
       notificarError(l10n.planErrorSolicitar);
     } finally {
@@ -130,6 +169,17 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
     }
   }
 
+  Future<void> _copiarDetalle(String numeroSolicitud) async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final String nombre = _nombre.trim();
+    await Clipboard.setData(
+      ClipboardData(
+        text: nombre.isEmpty ? numeroSolicitud : '$numeroSolicitud $nombre',
+      ),
+    );
+    if (mounted) notificarExito(l10n.planDetalleCopiado);
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
@@ -139,7 +189,7 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
         backgroundColor: FqColors.night,
         foregroundColor: FqColors.white,
         title: Text(
-          l10n.planTitulo,
+          _esEmpresa ? l10n.planTitulo : l10n.planTituloUsuario,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
       ),
@@ -173,7 +223,12 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
     final String locale = Localizations.localeOf(context).toString();
     final List<Widget> hijos = <Widget>[
       Text(
-        l10n.planIntro,
+        _esEmpresa
+            ? l10n.planIntro
+            : l10n.planIntroUsuario(
+                kLimiteRutasOfflineSuscrito,
+                kLimiteRutasOfflineGratis,
+              ),
         style: const TextStyle(fontSize: 12, color: FqColors.muted),
       ),
       const SizedBox(height: FqGap.lg),
@@ -195,7 +250,9 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
                   DateFormat.yMMMMd(locale).format(s.venceEn!),
                 ),
           extra: l10n.planDiasRestantes(dias),
-          ayuda: l10n.planActivoAyuda,
+          ayuda: _esEmpresa
+              ? l10n.planActivoAyuda
+              : l10n.planActivoAyudaUsuario(kLimiteRutasOfflineSuscrito),
         ),
       );
     } else if (s != null && s.estado == EstadoSuscripcion.solicitada) {
@@ -209,6 +266,23 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
           detalle: l10n.planPendienteDetalle(s.planNombre),
         ),
       );
+      if (s.metodoPago == MetodoPago.sinpe &&
+          s.numeroSolicitud != null &&
+          s.monto != null) {
+        hijos.add(const SizedBox(height: FqGap.lg));
+        hijos.add(
+          _InstruccionesSinpe(
+            numeroSolicitud: s.numeroSolicitud!,
+            numeroSinpe: s.sinpeNumero ?? '',
+            monto: formatearImporte(
+              s.monto!,
+              s.moneda ?? 'CRC',
+              locale: locale,
+            ),
+            alCopiar: () => _copiarDetalle(s.numeroSolicitud!),
+          ),
+        );
+      }
     } else {
       final String? aviso = switch (s?.estado) {
         EstadoSuscripcion.rechazada => l10n.planRechazadaAviso,
@@ -230,6 +304,20 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
         );
         hijos.add(const SizedBox(height: FqGap.lg));
       }
+      final RespuestaPlanes respuesta =
+          datos.respuesta ?? const RespuestaPlanes(planes: <PlanPatrocinio>[]);
+      if (!respuesta.pagoDisponible) {
+        hijos.add(
+          _Estado(
+            key: const ValueKey<String>('plan-paypal'),
+            icono: Icons.public_rounded,
+            color: FqColors.river,
+            fondo: FqColors.infoNoteBg,
+            titulo: l10n.planPaypalProximamente,
+          ),
+        );
+        hijos.add(const SizedBox(height: FqGap.lg));
+      }
       hijos.add(
         Text(
           l10n.planDisponibles,
@@ -237,7 +325,7 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
         ),
       );
       hijos.add(const SizedBox(height: FqGap.md));
-      if (datos.planes.isEmpty) {
+      if (respuesta.planes.isEmpty) {
         hijos.add(
           FqEmptyState(
             icon: Icons.campaign_outlined,
@@ -246,13 +334,14 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
           ),
         );
       }
-      for (final PlanPatrocinio plan in datos.planes) {
+      for (final PlanPatrocinio plan in respuesta.planes) {
         hijos.add(
           _TarjetaPlan(
             plan: plan,
             precio: formatearImporte(plan.importe, plan.moneda, locale: locale),
             enviando: _solicitando == plan.id,
             deshabilitado: _solicitando != null,
+            noDisponible: !respuesta.pagoDisponible,
             alSolicitar: () => _solicitar(plan),
           ),
         );
@@ -345,12 +434,123 @@ class _Estado extends StatelessWidget {
   }
 }
 
+/// Los pasos del pago por SINPE Movil, con el numero de solicitud bien visible.
+class _InstruccionesSinpe extends StatelessWidget {
+  const _InstruccionesSinpe({
+    required this.numeroSolicitud,
+    required this.numeroSinpe,
+    required this.monto,
+    required this.alCopiar,
+  });
+
+  final String numeroSolicitud;
+  final String numeroSinpe;
+  final String monto;
+  final VoidCallback alCopiar;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return Container(
+      key: const ValueKey<String>('instrucciones-sinpe'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: FqColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: FqColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l10n.planPagoTitulo,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l10n.planNumeroSolicitud,
+            style: const TextStyle(fontSize: 11, color: FqColors.muted),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            numeroSolicitud,
+            key: const ValueKey<String>('numero-solicitud'),
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 4,
+              color: FqColors.trail,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _Paso(
+            numero: 1,
+            texto: l10n.planPagoPaso1(_conGuion(numeroSinpe), monto),
+          ),
+          _Paso(numero: 2, texto: l10n.planPagoPaso2(numeroSolicitud)),
+          _Paso(numero: 3, texto: l10n.planPagoPaso3(_conGuion(numeroSinpe))),
+          const SizedBox(height: 6),
+          FqButton.secondary(
+            key: const ValueKey<String>('copiar-detalle'),
+            label: l10n.planCopiarDetalle,
+            icon: Icons.copy_rounded,
+            onPressed: alCopiar,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 83722969 -> 8372-2969 (como se dicta un numero de telefono).
+  static String _conGuion(String n) =>
+      n.length == 8 ? '${n.substring(0, 4)}-${n.substring(4)}' : n;
+}
+
+class _Paso extends StatelessWidget {
+  const _Paso({required this.numero, required this.texto});
+
+  final int numero;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: FqColors.volt,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$numero',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: FqColors.primaryInk,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(texto, style: const TextStyle(fontSize: 12.5))),
+        ],
+      ),
+    );
+  }
+}
+
 class _TarjetaPlan extends StatelessWidget {
   const _TarjetaPlan({
     required this.plan,
     required this.precio,
     required this.enviando,
     required this.deshabilitado,
+    required this.noDisponible,
     required this.alSolicitar,
   });
 
@@ -358,6 +558,9 @@ class _TarjetaPlan extends StatelessWidget {
   final String precio;
   final bool enviando;
   final bool deshabilitado;
+
+  /// El pago de esta region aun no esta listo: se ve el plan pero no se pide.
+  final bool noDisponible;
   final VoidCallback alSolicitar;
 
   @override
@@ -404,9 +607,11 @@ class _TarjetaPlan extends StatelessWidget {
           const SizedBox(height: 12),
           FqButton.primary(
             key: ValueKey<String>('solicitar-plan-${plan.id}'),
-            label: l10n.planSolicitar,
+            label: noDisponible
+                ? l10n.planProntoDisponible
+                : l10n.planSolicitar,
             loading: enviando,
-            onPressed: deshabilitado ? null : alSolicitar,
+            onPressed: (deshabilitado || noDisponible) ? null : alSolicitar,
           ),
         ],
       ),

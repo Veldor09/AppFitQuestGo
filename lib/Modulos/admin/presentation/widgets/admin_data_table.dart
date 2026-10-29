@@ -45,6 +45,7 @@ class AdminDataTable extends StatelessWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
+
   /// Sin dato: "Sin registros" en el idioma de la app.
   final String? emptyTitle;
   final String? emptyMessage;
@@ -65,7 +66,10 @@ class AdminDataTable extends StatelessWidget {
         message: error,
         action: onRetry == null
             ? null
-            : TextButton(onPressed: onRetry, child: Text(AppLocalizations.of(context)!.comunReintentar)),
+            : TextButton(
+                onPressed: onRetry,
+                child: Text(AppLocalizations.of(context)!.comunReintentar),
+              ),
       );
     }
     if (rows.isEmpty) {
@@ -81,8 +85,10 @@ class AdminDataTable extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: rows.length,
-      separatorBuilder: (_, _) => const Divider(height: 1, color: FqColors.border),
-      itemBuilder: (BuildContext context, int i) => _AdminTableRow(row: rows[i]),
+      separatorBuilder: (_, _) =>
+          const Divider(height: 1, color: FqColors.border),
+      itemBuilder: (BuildContext context, int i) =>
+          _AdminTableRow(row: rows[i]),
     );
   }
 }
@@ -103,9 +109,7 @@ class _AdminTableRowState extends State<_AdminTableRow> {
   Widget build(BuildContext context) {
     final AdminRow row = widget.row;
     return MouseRegion(
-      cursor: row.onTap == null
-          ? MouseCursor.defer
-          : SystemMouseCursors.click,
+      cursor: row.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(

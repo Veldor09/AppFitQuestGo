@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -11,10 +10,7 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaff
 
 /// ADM-11 · Gestión administrativa de catálogos.
 class CatalogosScreen extends StatefulWidget {
-  const CatalogosScreen({
-    super.key,
-    this.api,
-  });
+  const CatalogosScreen({super.key, this.api});
 
   /// Permite utilizar un servicio simulado durante las pruebas.
   final CatalogosApi? api;
@@ -143,9 +139,7 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          item == null
-              ? _l10n.admCatCreado
-              : _l10n.admCatActualizado,
+          item == null ? _l10n.admCatCreado : _l10n.admCatActualizado,
         ),
       ),
     );
@@ -172,9 +166,7 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
               ? Colors.green.shade50
               : Colors.grey.shade200,
           labelStyle: TextStyle(
-            color: item.activo
-                ? Colors.green.shade800
-                : Colors.grey.shade800,
+            color: item.activo ? Colors.green.shade800 : Colors.grey.shade800,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
@@ -189,7 +181,11 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
       onSearch: (String valor) {
         setState(() => _busqueda = valor);
       },
-      tabs: <String>[l10n.usuariosFiltroTodos, l10n.admTabActivos, l10n.admTabInactivos],
+      tabs: <String>[
+        l10n.usuariosFiltroTodos,
+        l10n.admTabActivos,
+        l10n.admTabInactivos,
+      ],
       tabIndex: _filtroEstado,
       onTab: (int indice) {
         setState(() => _filtroEstado = indice);
@@ -280,13 +276,9 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
   void initState() {
     super.initState();
 
-    _claveController = TextEditingController(
-      text: widget.item?.clave ?? '',
-    );
+    _claveController = TextEditingController(text: widget.item?.clave ?? '');
 
-    _nombreController = TextEditingController(
-      text: widget.item?.nombre ?? '',
-    );
+    _nombreController = TextEditingController(text: widget.item?.nombre ?? '');
 
     _activo = widget.item?.activo ?? true;
   }
@@ -348,9 +340,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        _creando ? _l10n.admCatNuevo : _l10n.admCatEditar,
-      ),
+      title: Text(_creando ? _l10n.admCatNuevo : _l10n.admCatEditar),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -417,9 +407,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
       ),
       actions: <Widget>[
         TextButton(
-          onPressed: _guardando
-              ? null
-              : () => Navigator.of(context).pop(false),
+          onPressed: _guardando ? null : () => Navigator.of(context).pop(false),
           child: Text(_l10n.comunCancelar),
         ),
         FilledButton(
@@ -428,9 +416,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(_creando ? _l10n.admCrear : _l10n.comunGuardarCambios),
         ),

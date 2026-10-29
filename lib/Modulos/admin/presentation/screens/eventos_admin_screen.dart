@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -339,13 +338,11 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (texto.isEmpty) return true;
 
       final nombre = (evento['nombre'] ?? '').toString().toLowerCase();
-      final categoria =
-          (evento['categoria'] ?? '').toString().toLowerCase();
-      final categoriaVisible =
-          categoriaEventoLabel(
-            _l10n,
-            '${evento['categoria'] ?? ''}',
-          ).toLowerCase();
+      final categoria = (evento['categoria'] ?? '').toString().toLowerCase();
+      final categoriaVisible = categoriaEventoLabel(
+        _l10n,
+        '${evento['categoria'] ?? ''}',
+      ).toLowerCase();
       final empresa = _empresa(evento).toLowerCase();
 
       return nombre.contains(texto) ||
@@ -372,10 +369,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     final color = _colorEstado(estado);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
@@ -399,10 +393,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         children: [
           Text(
             titulo,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 3),
           Text(valor),
@@ -428,16 +419,12 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       showDragHandle: true,
       backgroundColor: _colorCrema,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, actualizarModal) {
-            Future<void> elegirRango({
-              required bool esInicio,
-            }) async {
+            Future<void> elegirRango({required bool esInicio}) async {
               final actual = esInicio ? rangoInicio : rangoFin;
 
               final seleccionado = await showDateRangePicker(
@@ -540,10 +527,9 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             key: ValueKey('organizador:$organizador'),
-                            initialValue:
-                                organizadores.containsKey(organizador)
-                                    ? organizador
-                                    : null,
+                            initialValue: organizadores.containsKey(organizador)
+                                ? organizador
+                                : null,
                             isExpanded: true,
                             decoration: InputDecoration(
                               labelText: _l10n.admEvtOrganizador,
@@ -735,10 +721,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _detalle(
-                    _l10n.perfilEstado,
-                    _nombreEstado(_estado(evento)),
-                  ),
+                  _detalle(_l10n.perfilEstado, _nombreEstado(_estado(evento))),
                   _detalle(
                     _l10n.admEvtCategoria,
                     evento['categoria'] == null
@@ -782,9 +765,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
             TextButton.icon(
               icon: const Icon(Icons.delete_outline),
               label: Text(_l10n.admEvtEliminar),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red.shade700,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
               onPressed: _eliminando
                   ? null
                   : () {
@@ -798,9 +779,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     );
   }
 
-  Future<void> _confirmarEliminacion(
-    Map<String, dynamic> evento,
-  ) async {
+  Future<void> _confirmarEliminacion(Map<String, dynamic> evento) async {
     final id = evento['id'];
 
     if (id is! int || _eliminando) return;
@@ -814,9 +793,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
             borderRadius: BorderRadius.circular(24),
           ),
           title: Text(_l10n.admEvtConfirmarTitulo),
-          content: Text(
-            _l10n.admEvtConfirmarMsg('${evento['nombre']}'),
-          ),
+          content: Text(_l10n.admEvtConfirmarMsg('${evento['nombre']}')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -845,19 +822,17 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_l10n.admEvtEliminado),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_l10n.admEvtEliminado)));
 
       await _cargarEventos();
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_mensajeError(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_mensajeError(error))));
     } finally {
       if (mounted) {
         setState(() => _eliminando = false);
@@ -908,9 +883,8 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         error: _error,
         onRetry: _cargarEventos,
         emptyTitle: _l10n.admEvtSin,
-        emptyMessage: _busqueda.isNotEmpty ||
-                _filtro != 0 ||
-                _cantidadFiltrosActivos > 0
+        emptyMessage:
+            _busqueda.isNotEmpty || _filtro != 0 || _cantidadFiltrosActivos > 0
             ? _l10n.admEvtSinCoincidencias
             : _l10n.admEvtSinRegistrados,
         rows: eventos.map((evento) {
@@ -924,7 +898,8 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
           return AdminRow(
             icon: Icons.event_outlined,
             title: nombre,
-            subtitle: '$categoria · $empresa · '
+            subtitle:
+                '$categoria · $empresa · '
                 '${_formatearFecha(evento['fechaInicio'])}',
             trailing: _etiquetaEstado(estado),
             onTap: _eliminando ? null : () => _mostrarDetalle(evento),
