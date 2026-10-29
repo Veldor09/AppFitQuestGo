@@ -76,7 +76,6 @@ class RutaApi {
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
-  /// Adjunta la foto (JPEG, PNG o WebP, hasta 3 MB) a una ruta propia.
   Future<Ruta> subirFoto(int id, Uint8List bytes) async {
     final dynamic data = await _client.subirArchivo(
       '/rutas/$id/foto',
@@ -87,10 +86,8 @@ class RutaApi {
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
-  /// Bytes de la foto de la ruta; 404 (`ApiException`) si no tiene o no te toca verla.
   Future<Uint8List> foto(int id) => _client.getBytes('/rutas/$id/foto');
 
-  /// Elimina una ruta propia (con sus recorridos y guardados). 403 si no es tuya.
   Future<void> eliminar(int id) async {
     await _client.delete('/rutas/$id');
   }

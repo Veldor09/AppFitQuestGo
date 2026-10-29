@@ -9,12 +9,15 @@ import 'package:fit_quest_go/core/geo/distancia.dart';
 import 'package:fit_quest_go/core/geo/formato_distancia.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
+import 'package:fit_quest_go/core/mapa/guia_verde.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_directions_service.dart';
 import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/mapa/ubicacion_mapa.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/pip/modo_pip.dart';
+import 'package:fit_quest_go/core/pip/pip_overlay_compacto.dart';
 import 'package:fit_quest_go/core/voz/aviso_voz.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento.dart';
 import 'package:fit_quest_go/Modulos/eventos/presentation/ficha_evento.dart';
@@ -170,6 +173,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ModoPip.instancia.habilitar();
     if (_tieneRuta) {
       _detector = DesviacionRutaDetector(
         trazo: _puntosRuta,
@@ -193,6 +197,7 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ModoPip.instancia.deshabilitar();
     _reloj?.cancel();
     _suscripcion?.cancel();
     unawaited(_voz.detener());
@@ -557,26 +562,6 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     return total;
   }
 
-  static List<PosicionGps> _generarPuntitos(
-    PosicionGps desde,
-    PosicionGps hasta, {
-    double espaciadoM = 7.0,
-  }) {
-    final double dist =
-        distanciaMetros(desde.lat, desde.lng, hasta.lat, hasta.lng);
-    if (dist < 4.0) return <PosicionGps>[];
-    final int pasos = (dist / espaciadoM).round().clamp(1, 100);
-    final List<PosicionGps> puntos = <PosicionGps>[];
-    for (int i = 1; i <= pasos; i++) {
-      final double t = i / (pasos + 1);
-      puntos.add((
-        lat: desde.lat + t * (hasta.lat - desde.lat),
-        lng: desde.lng + t * (hasta.lng - desde.lng),
-      ));
-    }
-    return puntos;
-  }
-
   // ───────────────────────── Mapa ─────────────────────────
 
   Future<void> _onMapCreated(MapboxMap mapa) async {
@@ -682,110 +667,22 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     );
   }
 
-  /// Camino de guía en verde lima hacia el evento.
-  /// Sigue la carretera con trazo sólido y proyecta "puntitos" estilo Google Maps
-  /// en tramos fuera de la red vial hasta el evento.
+  /// Guia en verde lima hacia el evento: la calle en trazo solido y puntitos
+  /// donde no hay calle (hasta la calle y de la calle al evento).
   Future<void> _dibujarCamino() async {
     final RutaVial? camino = _camino;
-    final PolylineAnnotationManager? lineas = _lineasAcercamiento;
-    final CircleAnnotationManager? puntosCirculo = _puntosAcercamiento;
-    if (lineas == null && puntosCirculo == null) return;
-    await lineas?.deleteAll();
-    await puntosCirculo?.deleteAll();
-    if (camino == null) return;
-
     final ({double lat, double lng})? dest = _destino;
-    if (dest == null) return;
-    final PosicionGps destino = camino.puntos.isNotEmpty
-        ? camino.puntos.last
-        : (lat: dest.lat, lng: dest.lng);
-    final PosicionGps? usuario = _ultima;
-
-    if (camino.esLineaRecta) {
-      // No hay carretera disponible o se está muy cerca: dibujar los puntitos
-      // desde la posición actual del usuario hasta el destino (estilo Google Maps).
-      final PosicionGps desde = usuario ?? camino.puntos.first;
-      final List<PosicionGps> dots = _generarPuntitos(desde, destino);
-      if (puntosCirculo != null && dots.isNotEmpty) {
-        await puntosCirculo.createMulti(<CircleAnnotationOptions>[
-          for (final PosicionGps pt in dots)
-            CircleAnnotationOptions(
-              geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-              circleColor: FqColors.volt.toARGB32(),
-              circleRadius: 4.5,
-              circleStrokeColor: FqColors.night.toARGB32(),
-              circleStrokeWidth: 1.5,
+    await dibujarGuiaVerde(
+      lineas: _lineasAcercamiento,
+      puntos: _puntosAcercamiento,
+      trazo: camino == null || dest == null
+          ? null
+          : trazoGuia(
+              camino: camino,
+              destino: (lat: dest.lat, lng: dest.lng),
+              usuario: _ultima,
             ),
-        ]);
-      }
-      return;
-    }
-
-    // Hay carretera (camino vial de Mapbox):
-    // 1. Trazado sólido verde sobre la carretera
-    final List<PosicionGps> caminoCarretera = camino.puntos;
-    if (caminoCarretera.length >= 2 && lineas != null) {
-      await lineas.create(
-        PolylineAnnotationOptions(
-          geometry: LineString(
-            coordinates: <Position>[
-              for (final PosicionGps p in caminoCarretera) Position(p.lng, p.lat),
-            ],
-          ),
-          lineColor: FqColors.volt.toARGB32(),
-          lineWidth: 6,
-        ),
-      );
-    }
-
-    // 2. Puntitos desde el final de la carretera hasta el evento
-    // cuando el evento queda en un parque, plaza, estadio o sendero.
-    final List<CircleAnnotationOptions> opcionesCirculos = <CircleAnnotationOptions>[];
-    final PosicionGps finCarretera = caminoCarretera.last;
-    final double distFinAInicio =
-        distanciaMetros(finCarretera.lat, finCarretera.lng, destino.lat, destino.lng);
-
-    if (distFinAInicio > 8) {
-      final List<PosicionGps> dots = _generarPuntitos(finCarretera, destino);
-      for (final PosicionGps pt in dots) {
-        opcionesCirculos.add(
-          CircleAnnotationOptions(
-            geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-            circleColor: FqColors.volt.toARGB32(),
-            circleRadius: 4.5,
-            circleStrokeColor: FqColors.night.toARGB32(),
-            circleStrokeWidth: 1.5,
-          ),
-        );
-      }
-    }
-
-    // 3. Si el usuario está fuera de la carretera (> 5m del asfalto),
-    // proyectamos puntitos desde su posición exacta hasta la calle más cercana.
-    if (usuario != null) {
-      final PosicionGps inicioCarretera = caminoCarretera.first;
-      final double distUsuarioACarretera =
-          distanciaMetros(usuario.lat, usuario.lng, inicioCarretera.lat, inicioCarretera.lng);
-      if (distUsuarioACarretera > 5) {
-        final List<PosicionGps> dotsInicio =
-            _generarPuntitos(usuario, inicioCarretera);
-        for (final PosicionGps pt in dotsInicio) {
-          opcionesCirculos.add(
-            CircleAnnotationOptions(
-              geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-              circleColor: FqColors.volt.toARGB32(),
-              circleRadius: 4.5,
-              circleStrokeColor: FqColors.night.toARGB32(),
-              circleStrokeWidth: 1.5,
-            ),
-          );
-        }
-      }
-    }
-
-    if (puntosCirculo != null && opcionesCirculos.isNotEmpty) {
-      await puntosCirculo.createMulti(opcionesCirculos);
-    }
+    );
   }
 
   Future<void> _seguirCamara(PosicionGps p) async {
@@ -968,19 +865,12 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     if (puntosCirculo != null) {
       await puntosCirculo.deleteAll();
       if (info.distanciaMinima >= _umbralPuntitosRetornoM) {
-        final List<PosicionGps> dots =
-            _generarPuntitos(p, info.puntoProyectado);
+        final List<PosicionGps> dots = puntitosEntre(
+          p,
+          info.puntoProyectado,
+        );
         if (dots.isNotEmpty) {
-          await puntosCirculo.createMulti(<CircleAnnotationOptions>[
-            for (final PosicionGps pt in dots)
-              CircleAnnotationOptions(
-                geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-                circleColor: FqColors.volt.toARGB32(),
-                circleRadius: 4.5,
-                circleStrokeColor: FqColors.night.toARGB32(),
-                circleStrokeWidth: 1.5,
-              ),
-          ]);
+          await puntosCirculo.createMulti(opcionesPuntitos(dots));
         }
       }
     }
@@ -1367,75 +1257,113 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
               ),
             ),
 
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) {
+                return PipOverlayCompacto(
+                  texto: _estado.texto,
+                  icono: _estado.icono,
+                  color: _estado.color,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+
           // ── Cabecera flotante superior ──────────────────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-                child: _CabeceraRecorridoEvento(
-                  nombre: widget.evento.nombre,
-                  categoria: widget.evento.categoria,
-                  estado: _estado,
-                  silenciado: _silenciado,
-                  onCerrar: _salir,
-                  onVoz: _alternarVoz,
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) return const SizedBox.shrink();
+              return Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                    child: _CabeceraRecorridoEvento(
+                      nombre: widget.evento.nombre,
+                      categoria: widget.evento.categoria,
+                      estado: _estado,
+                      silenciado: _silenciado,
+                      onCerrar: _salir,
+                      onVoz: _alternarVoz,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
 
           // ── Botones de mapa flotantes ───────────────────────────────
-          Positioned(
-            right: 14,
-            bottom: 215,
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _BotonAccionMapa(
-                    heroTag: 'encuadrar-evento',
-                    icono: Icons.zoom_out_map_rounded,
-                    tooltip: _l10n.eventoRecorridoVerCompleto,
-                    onPressed: _encuadrarEvento,
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) return const SizedBox.shrink();
+              return Positioned(
+                right: 14,
+                bottom: 215,
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _BotonAccionMapa(
+                        heroTag: 'pip-evento',
+                        icono: Icons.picture_in_picture_alt_rounded,
+                        tooltip: AppLocalizations.of(context)?.recorridoTooltipPip ??
+                            'Ventana flotante',
+                        onPressed: () => ModoPip.instancia.entrar(),
+                      ),
+                      const SizedBox(height: 10),
+                      _BotonAccionMapa(
+                        heroTag: 'encuadrar-evento',
+                        icono: Icons.zoom_out_map_rounded,
+                        tooltip: _l10n.eventoRecorridoVerCompleto,
+                        onPressed: _encuadrarEvento,
+                      ),
+                      const SizedBox(height: 10),
+                      _BotonAccionMapa(
+                        heroTag: 'centrar-evento',
+                        icono: _siguiendo
+                            ? Icons.my_location_rounded
+                            : Icons.location_searching_rounded,
+                        activo: _siguiendo,
+                        tooltip: _l10n.recorridoTooltipCentrar,
+                        onPressed: _centrar,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  _BotonAccionMapa(
-                    heroTag: 'centrar-evento',
-                    icono: _siguiendo
-                        ? Icons.my_location_rounded
-                        : Icons.location_searching_rounded,
-                    activo: _siguiendo,
-                    tooltip: _l10n.recorridoTooltipCentrar,
-                    onPressed: _centrar,
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
 
           // ── Panel inferior de navegación ────────────────────────────
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      width: 1,
-                    ),
-                    boxShadow: FqColors.softShadow,
-                  ),
+          ValueListenableBuilder<bool>(
+            valueListenable: ModoPip.instancia.activo,
+            builder: (BuildContext context, bool enPip, Widget? _) {
+              if (enPip) return const SizedBox.shrink();
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          width: 1,
+                        ),
+                        boxShadow: FqColors.softShadow,
+                      ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
@@ -1721,6 +1649,8 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
                 ),
               ),
             ),
+              );
+            },
           ),
         ],
       ),

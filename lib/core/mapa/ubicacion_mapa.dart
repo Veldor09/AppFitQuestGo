@@ -127,10 +127,6 @@ Future<PosicionGps?> obtenerPosicionActualRapida() async {
   }
 }
 
-/// La posicion de ahora mismo y, si el dispositivo se esta moviendo, hacia
-/// donde va (grados desde el norte). A diferencia de
-/// [obtenerPosicionActualRapida] no se conforma con la ultima conocida, que
-/// puede ser de hace rato: si el GPS no responde a tiempo cae a esa, sin rumbo.
 Future<({PosicionGps posicion, double? rumbo})?> obtenerPosicionYRumbo() async {
   try {
     if (!await asegurarPermisoUbicacion()) return null;
@@ -140,7 +136,6 @@ Future<({PosicionGps posicion, double? rumbo})?> obtenerPosicionYRumbo() async {
         timeLimit: Duration(seconds: 5),
       ),
     );
-    // El rumbo del GPS solo vale con el dispositivo en movimiento.
     final bool enMarcha = actual.speed > 0.5 && actual.heading >= 0;
     return (
       posicion: (lat: actual.latitude, lng: actual.longitude),

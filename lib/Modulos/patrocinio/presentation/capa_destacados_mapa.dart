@@ -49,8 +49,6 @@ class CapaDestacadosMapa {
     _escuchas.clear();
   }
 
-  /// Quita del mapa los administradores de anotaciones de esta capa: hace falta
-  /// al cambiar de estilo, para volver a crearla limpia sobre el estilo nuevo.
   Future<void> quitar(MapboxMap mapa) async {
     liberar();
     for (final Object m in <Object>[_iconos]) {
@@ -59,7 +57,6 @@ class CapaDestacadosMapa {
           m as BaseAnnotationManager,
         );
       } catch (_) {
-        // Ya no estaba (el estilo nuevo se lo llevo): no importa.
       }
     }
   }

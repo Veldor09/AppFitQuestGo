@@ -70,6 +70,7 @@ class Evento {
     this.destacado = false,
     this.destacarActivado = false,
     this.conFoto = false,
+    this.desactivado = false,
   });
 
   factory Evento.fromJson(Map<String, dynamic> json) {
@@ -93,6 +94,7 @@ class Evento {
       destacado: json['destacado'] as bool? ?? false,
       destacarActivado: json['destacarActivado'] as bool? ?? false,
       conFoto: json['conFoto'] as bool? ?? false,
+      desactivado: json['desactivado'] as bool? ?? false,
     );
   }
 
@@ -120,8 +122,9 @@ class Evento {
   /// El interruptor "Destacar" de la empresa (solo en sus listas).
   final bool destacarActivado;
 
-  /// Tiene una foto en el servidor (`GET /eventos/:id/foto`).
   final bool conFoto;
+
+  final bool desactivado;
 
   /// Las areas y los recorridos para dibujarlos en un mapa: cada uno lleva el
   /// nombre del EVENTO (no su nombre interno, "Area 1" / "Recorrido 1"), porque

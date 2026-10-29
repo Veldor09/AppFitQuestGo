@@ -37,7 +37,6 @@ class _UserShellState extends State<UserShell> {
     super.dispose();
   }
 
-  /// "Como llegar" desde cualquier pestaña: se vuelve al mapa, donde se traza el camino.
   void _irAlMapa() {
     if (mounted && _tab != 0) setState(() => _tab = 0);
   }

@@ -81,7 +81,6 @@ class MapaTrazosEvento extends StatefulWidget {
   /// trazos tienen que traer su `eventoId`: ver `Evento.areasRotuladas`).
   final void Function(int eventoId)? alTocarEvento;
 
-  /// Los botones de "mi ubicacion" y de tipo de mapa (Mapa / Satelite).
   final bool mostrarControles;
 
   /// Pone los botones abajo a la derecha (sobre un boton flotante) en vez de
@@ -148,8 +147,6 @@ class _MapaTrazosEventoState extends State<MapaTrazosEvento> {
     return Point(coordinates: Position(todos.first.lng, todos.first.lat));
   }
 
-  /// Mantiene el estilo del mapa al dia con el que eligio la persona; al
-  /// cambiarlo, las capas se vuelven a crear (ver [GestorEstiloMapa]).
   late final GestorEstiloMapa _estilo = GestorEstiloMapa(
     mapa: () => _mapa,
     alCambiarEstilo: _recrearCapas,

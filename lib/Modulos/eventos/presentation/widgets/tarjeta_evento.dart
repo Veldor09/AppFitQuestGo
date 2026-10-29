@@ -22,6 +22,9 @@ class EtiquetaEstadoEvento extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
+    if (evento.desactivado) {
+      return FqTag(l10n.eventoEstadoDesactivado, tone: FqTagTone.red);
+    }
     if (evento.haTerminado(ahora)) {
       return FqTag(l10n.eventoEstadoTerminado);
     }

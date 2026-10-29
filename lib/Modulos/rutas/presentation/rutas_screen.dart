@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
 import 'package:fit_quest_go/core/widgets/carga_lista.dart';
 import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
@@ -62,10 +63,12 @@ class _RutasScreenState extends State<RutasScreen> {
     super.initState();
     _tab = widget.initialTab.clamp(0, 2);
     _cargar();
+    ConexionServicio.instancia.reconectado.addListener(_alReconectar);
   }
 
   @override
   void dispose() {
+    ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
     _explorar.dispose();
     _misRutas.dispose();
     _favoritas.dispose();
@@ -85,8 +88,6 @@ class _RutasScreenState extends State<RutasScreen> {
     }
   }
 
-  /// [silencioso]: refresca sin volver a mostrar el circulo de carga ni
-  /// repintar lo que ya se ve (cada lista cambia cuando llegan sus datos).
   void _cargar({bool silencioso = false}) {
     _explorar.cargar(silencioso: silencioso);
     _misRutas.cargar(silencioso: silencioso);
@@ -105,7 +106,10 @@ class _RutasScreenState extends State<RutasScreen> {
 
   void _recargar() => _cargar(silencioso: true);
 
-  /// Una ruta se elimino: sale de las tres listas al instante, sin pedir nada.
+  void _alReconectar() {
+    if (mounted) _cargar(silencioso: true);
+  }
+
   void _rutaEliminada(int id) {
     for (final CargaLista<Ruta> lista in <CargaLista<Ruta>>[
       _explorar,

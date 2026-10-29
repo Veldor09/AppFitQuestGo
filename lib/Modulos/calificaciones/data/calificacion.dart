@@ -1,4 +1,3 @@
-/// Que se califica (el segmento de la ruta `/calificaciones/:tipo/:id`).
 enum TipoCalificable {
   ruta('ruta'),
   nodo('nodo'),
@@ -9,7 +8,6 @@ enum TipoCalificable {
   final String clave;
 }
 
-/// Sentido de la calificacion: pulgar arriba o abajo.
 enum ValorCalificacion {
   arriba('arriba'),
   abajo('abajo');
@@ -26,8 +24,6 @@ enum ValorCalificacion {
   }
 }
 
-/// Por que quien consulta no puede calificar. El servidor lo manda como clave;
-/// la pantalla lo traduce.
 enum MotivoSinCalificar {
   sinRecorrido('sin_recorrido'),
   propio('propio'),
@@ -45,8 +41,6 @@ enum MotivoSinCalificar {
   }
 }
 
-/// Cuantos pulgares tiene algo, el tuyo y si puedes calificar. Para un evento
-/// trae ademas el resumen de cada una de sus areas (en [areas]).
 class ResumenCalificacion {
   const ResumenCalificacion({
     this.arriba = 0,
@@ -75,13 +69,10 @@ class ResumenCalificacion {
   final int arriba;
   final int abajo;
 
-  /// Lo que calificaste tu, o null.
   final ValorCalificacion? mia;
   final bool puedeCalificar;
   final MotivoSinCalificar? motivo;
 
-  /// Solo en el resumen de un evento: un resumen por area, en el orden de
-  /// `Evento.areas`.
   final List<ResumenCalificacion> areas;
 
   int get total => arriba + abajo;
