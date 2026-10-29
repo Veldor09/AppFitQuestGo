@@ -12,6 +12,7 @@ import 'package:fit_quest_go/core/mapa/navegacion_destino.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/tipos_alerta.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
+import 'package:fit_quest_go/core/mapa/guia_verde.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
 import 'package:fit_quest_go/core/mapa/pin_icono.dart';
@@ -170,7 +171,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
   final Map<String, Alerta> _alertaPorPin = <String, Alerta>{};
 
   PolylineAnnotationManager? _lineasGuia;
+  CircleAnnotationManager? _puntosGuia;
   PointAnnotationManager? _pinGuia;
+  PosicionGps? _origenGuia;
   final ValueNotifier<GuiaActiva?> _guia = ValueNotifier<GuiaActiva?>(null);
   final MapboxDirectionsService _directions = MapboxDirectionsService();
   RutaVial? _rutaGuia;
@@ -568,6 +571,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     );
     _lineasGuia = await controller.annotations
         .createPolylineAnnotationManager();
+    _puntosGuia = await controller.annotations.createCircleAnnotationManager();
     final PointAnnotationManager pinGuia = await controller.annotations
         .createPointAnnotationManager();
     await prepararPines(pinGuia);
@@ -604,6 +608,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     await _capaDestacados?.quitar(mapa);
     for (final BaseAnnotationManager? m in <BaseAnnotationManager?>[
       _lineasGuia,
+      _puntosGuia,
       _pinGuia,
       _iconosNodos,
     ]) {
@@ -648,6 +653,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       notificarInfo(l10n.guiaYaEstasAqui);
       return;
     }
+    _origenGuia = origen;
     await _dibujarGuia(ruta, d);
     if (!mounted) return;
     _rutaGuia = ruta;
@@ -658,27 +664,30 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       segundos: ruta.duracionSegundos,
       lineaRecta: ruta.esLineaRecta,
     );
-    await _encuadrar(ruta.puntos);
+    final TrazoGuia trazo = _trazoGuia(ruta, d);
+    await _encuadrar(<PosicionGps>[
+      ...trazo.calle,
+      ...trazo.puntos,
+      (lat: d.lat, lng: d.lng),
+      origen,
+    ]);
   }
 
+  TrazoGuia _trazoGuia(RutaVial ruta, DestinoNavegacion d) => trazoGuia(
+    camino: ruta,
+    destino: (lat: d.lat, lng: d.lng),
+    usuario: _origenGuia,
+  );
+
   Future<void> _dibujarGuia(RutaVial ruta, DestinoNavegacion d) async {
-    final PolylineAnnotationManager? lineas = _lineasGuia;
     final PointAnnotationManager? pin = _pinGuia;
-    if (lineas == null || pin == null) return;
+    if (_lineasGuia == null || pin == null) return;
     final double densidad = MediaQuery.devicePixelRatioOf(context);
-    await lineas.deleteAll();
     await pin.deleteAll();
-    await lineas.create(
-      PolylineAnnotationOptions(
-        geometry: LineString(
-          coordinates: <Position>[
-            for (final PosicionGps p in ruta.puntos) Position(p.lng, p.lat),
-          ],
-        ),
-        lineColor: FqColors.river.toARGB32(),
-        lineWidth: 6,
-        lineOpacity: ruta.esLineaRecta ? 0.6 : 1,
-      ),
+    await dibujarGuiaVerde(
+      lineas: _lineasGuia,
+      puntos: _puntosGuia,
+      trazo: _trazoGuia(ruta, d),
     );
     if (!mounted) return;
     await pin.create(
@@ -696,8 +705,9 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     _guia.value = null;
     _rutaGuia = null;
     _destinoGuia = null;
+    _origenGuia = null;
     try {
-      await _lineasGuia?.deleteAll();
+      await dibujarGuiaVerde(lineas: _lineasGuia, puntos: _puntosGuia, trazo: null);
       await _pinGuia?.deleteAll();
     } catch (_) {
     }

@@ -8,6 +8,7 @@ import 'package:fit_quest_go/core/geo/distancia.dart';
 import 'package:fit_quest_go/core/geo/formato_distancia.dart';
 import 'package:fit_quest_go/core/geo/posicion_gps.dart';
 import 'package:fit_quest_go/core/mapa/adornos_mapa.dart';
+import 'package:fit_quest_go/core/mapa/guia_verde.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_config.dart';
 import 'package:fit_quest_go/core/mapa/mapbox_directions_service.dart';
 import 'package:fit_quest_go/core/mapa/pin_anotacion.dart';
@@ -491,26 +492,6 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     return total;
   }
 
-  static List<PosicionGps> _generarPuntitos(
-    PosicionGps desde,
-    PosicionGps hasta, {
-    double espaciadoM = 7.0,
-  }) {
-    final double dist =
-        distanciaMetros(desde.lat, desde.lng, hasta.lat, hasta.lng);
-    if (dist < 4.0) return <PosicionGps>[];
-    final int pasos = (dist / espaciadoM).round().clamp(1, 100);
-    final List<PosicionGps> puntos = <PosicionGps>[];
-    for (int i = 1; i <= pasos; i++) {
-      final double t = i / (pasos + 1);
-      puntos.add((
-        lat: desde.lat + t * (hasta.lat - desde.lat),
-        lng: desde.lng + t * (hasta.lng - desde.lng),
-      ));
-    }
-    return puntos;
-  }
-
   Future<void> _comenzarRecorrido({
     required bool avisar,
   }) async {
@@ -643,95 +624,21 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     ]);
   }
 
-  /// Camino de guía en verde lima hacia la ruta (al inicio o de retorno si está desviado).
-  /// Sigue la carretera con trazo sólido y proyecta "puntitos" estilo Google Maps
-  /// en tramos fuera de la red vial hasta el inicio real de la ruta.
+  /// Guia en verde lima hacia el inicio de la ruta: la calle en trazo solido
+  /// y puntitos donde no hay calle (hasta la calle y de la calle al inicio).
   Future<void> _dibujarCamino() async {
     final RutaVial? camino = _camino;
-    final PolylineAnnotationManager? lineas = _lineasAcercamiento;
-    final CircleAnnotationManager? puntosCirculo = _puntosAcercamiento;
-    if (lineas == null && puntosCirculo == null) return;
-    await lineas?.deleteAll();
-    await puntosCirculo?.deleteAll();
-    if (camino == null) return;
-
-    final PosicionGps? usuario = _ultima;
-    final PosicionGps destino = camino.puntos.isNotEmpty
-        ? camino.puntos.last
-        : (lat: _inicio.lat, lng: _inicio.lng);
-
-    if (camino.esLineaRecta) {
-      // Modo sin red o sin carretera vial: no se dibuja una línea recta artificial
-      // que atraviese casas o edificios. El usuario ve su pin GPS y el punto de inicio.
-      return;
-    }
-
-    // Hay carretera (camino vial de Mapbox):
-    // 1. Trazado sólido verde sobre la carretera
-    final List<PosicionGps> caminoCarretera = camino.puntos;
-    if (caminoCarretera.length >= 2 && lineas != null) {
-      await lineas.create(
-        PolylineAnnotationOptions(
-          geometry: LineString(
-            coordinates: <Position>[
-              for (final PosicionGps p in caminoCarretera) Position(p.lng, p.lat),
-            ],
-          ),
-          lineColor: FqColors.volt.toARGB32(),
-          lineWidth: 6,
-        ),
-      );
-    }
-
-    // 2. Puntitos desde el final de la carretera hasta el inicio de la ruta
-    // cuando la ruta comienza fuera de la red vial (en un parque, sendero, etc.).
-    final List<CircleAnnotationOptions> opcionesCirculos = <CircleAnnotationOptions>[];
-    final PosicionGps finCarretera = caminoCarretera.last;
-    final double distFinAInicio =
-        distanciaMetros(finCarretera.lat, finCarretera.lng, destino.lat, destino.lng);
-
-    if (distFinAInicio > 8) {
-      final List<PosicionGps> dots = _generarPuntitos(finCarretera, destino);
-      for (final PosicionGps pt in dots) {
-        opcionesCirculos.add(
-          CircleAnnotationOptions(
-            geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-            circleColor: FqColors.volt.toARGB32(),
-            circleRadius: 4.5,
-            circleStrokeColor: FqColors.night.toARGB32(),
-            circleStrokeWidth: 1.5,
-          ),
-        );
-      }
-    }
-
-    // 3. Si el usuario está fuera de la carretera (> 5m del asfalto, ej. metido
-    // en una casa de un familiar, predio o acera), proyectamos puntitos desde su
-    // posición exacta hasta la calle más cercana (inicioCarretera).
-    if (usuario != null) {
-      final PosicionGps inicioCarretera = caminoCarretera.first;
-      final double distUsuarioACarretera =
-          distanciaMetros(usuario.lat, usuario.lng, inicioCarretera.lat, inicioCarretera.lng);
-      if (distUsuarioACarretera > 5) {
-        final List<PosicionGps> dotsInicio =
-            _generarPuntitos(usuario, inicioCarretera);
-        for (final PosicionGps pt in dotsInicio) {
-          opcionesCirculos.add(
-            CircleAnnotationOptions(
-              geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-              circleColor: FqColors.volt.toARGB32(),
-              circleRadius: 4.5,
-              circleStrokeColor: FqColors.night.toARGB32(),
-              circleStrokeWidth: 1.5,
+    await dibujarGuiaVerde(
+      lineas: _lineasAcercamiento,
+      puntos: _puntosAcercamiento,
+      trazo: camino == null
+          ? null
+          : trazoGuia(
+              camino: camino,
+              destino: (lat: _inicio.lat, lng: _inicio.lng),
+              usuario: _ultima,
             ),
-          );
-        }
-      }
-    }
-
-    if (puntosCirculo != null && opcionesCirculos.isNotEmpty) {
-      await puntosCirculo.createMulti(opcionesCirculos);
-    }
+    );
   }
 
   static ({
@@ -837,19 +744,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     if (puntosCirculo != null) {
       await puntosCirculo.deleteAll();
       if (info.distanciaMinima >= _umbralPuntitosRetornoM) {
-        final List<PosicionGps> dots =
-            _generarPuntitos(p, info.puntoProyectado);
+        final List<PosicionGps> dots = puntitosEntre(
+          p,
+          info.puntoProyectado,
+        );
         if (dots.isNotEmpty) {
-          await puntosCirculo.createMulti(<CircleAnnotationOptions>[
-            for (final PosicionGps pt in dots)
-              CircleAnnotationOptions(
-                geometry: Point(coordinates: Position(pt.lng, pt.lat)),
-                circleColor: FqColors.volt.toARGB32(),
-                circleRadius: 4.5,
-                circleStrokeColor: FqColors.night.toARGB32(),
-                circleStrokeWidth: 1.5,
-              ),
-          ]);
+          await puntosCirculo.createMulti(opcionesPuntitos(dots));
         }
       }
     }
