@@ -1,19 +1,88 @@
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/biometria/biometria_servicio.dart';
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_brand_mark.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
+import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/login_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro/registro_flujo.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/registro_empresa_screen.dart';
 import 'package:fit_quest_go/Modulos/auth/presentation/widgets/auth_layout.dart';
 
 /// APP-02 · Bienvenida.
-/// Punto de entrada sin sesion: elegir entre crear cuenta o iniciar sesion.
-class BienvenidaScreen extends StatelessWidget {
+/// Punto de entrada sin sesión: permite iniciar con huella digital si ya está
+/// configurada, o elegir entre crear cuenta e iniciar sesión manualmente.
+class BienvenidaScreen extends StatefulWidget {
   const BienvenidaScreen({super.key});
+
+  @override
+  State<BienvenidaScreen> createState() => _BienvenidaScreenState();
+}
+
+class _BienvenidaScreenState extends State<BienvenidaScreen> {
+  bool _tieneBiometria = false;
+  bool _cargandoBiometria = false;
+  String? _nombreBio;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revisarBiometria();
+    });
+  }
+
+  Future<void> _revisarBiometria() async {
+    final AuthRepositorio auth = AuthScope.read(context);
+    final bool soporteBio =
+        await BiometriaServicio.instancia.dispositivoSoportado;
+    if (!soporteBio) return;
+
+    final bool tiene = await auth.tieneCredencialBiometrica();
+    if (!mounted) return;
+
+    if (tiene) {
+      final String? nombre = await auth.obtenerNombreBiometrico();
+      if (mounted) {
+        setState(() {
+          _tieneBiometria = true;
+          _nombreBio = nombre;
+        });
+      }
+    }
+  }
+
+  Future<void> _iniciarConHuella() async {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final AuthRepositorio auth = AuthScope.read(context);
+    final bool verificado = await BiometriaServicio.instancia.autenticar(
+      motivo: 'Coloca tu huella para entrar a FitQuest Go',
+    );
+    if (!verificado) return;
+
+    setState(() => _cargandoBiometria = true);
+    try {
+      await auth.iniciarSesionConBiometria();
+      if (!mounted) return;
+      notificarExito(l10n.loginExito);
+    } on ApiException catch (e) {
+      if (mounted) {
+        notificarError(
+          e.statusCode == 401 ? l10n.loginCredencialesIncorrectas : e.message,
+        );
+      }
+    } catch (_) {
+      if (mounted) notificarError(l10n.loginErrorConexion);
+    } finally {
+      if (mounted) setState(() => _cargandoBiometria = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,21 +102,51 @@ class BienvenidaScreen extends StatelessWidget {
           ),
           const SizedBox(height: 40),
           const Spacer(),
-          FqButton.primary(
-            label: l10n.comunCrearCuenta,
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(
-                builder: (_) => const RegistroFlujoScreen(),
+
+          if (_tieneBiometria) ...<Widget>[
+            FqButton.primary(
+              label: _nombreBio != null
+                  ? 'Ingresar como $_nombreBio (huella)'
+                  : 'Ingresar con huella',
+              icon: Icons.fingerprint_rounded,
+              loading: _cargandoBiometria,
+              onPressed: _iniciarConHuella,
+            ),
+            const SizedBox(height: FqGap.md),
+            FqButton.secondary(
+              label: l10n.comunIniciarSesion,
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
               ),
             ),
-          ),
-          const SizedBox(height: FqGap.md),
-          FqButton.secondary(
-            label: l10n.comunIniciarSesion,
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+            const SizedBox(height: FqGap.md),
+            FqButton(
+              variant: FqButtonVariant.ghost,
+              label: l10n.comunCrearCuenta,
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const RegistroFlujoScreen(),
+                ),
+              ),
             ),
-          ),
+          ] else ...<Widget>[
+            FqButton.primary(
+              label: l10n.comunCrearCuenta,
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const RegistroFlujoScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: FqGap.md),
+            FqButton.secondary(
+              label: l10n.comunIniciarSesion,
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+              ),
+            ),
+          ],
+
           const SizedBox(height: FqGap.xs),
           TextButton(
             key: const ValueKey<String>('soy-comercio'),

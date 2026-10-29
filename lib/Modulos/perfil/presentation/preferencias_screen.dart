@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/biometria/biometria_servicio.dart';
 import 'package:fit_quest_go/core/idioma/idioma_app.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/push/registro_push.dart';
@@ -10,6 +11,7 @@ import 'package:fit_quest_go/core/push/servicio_push.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
+import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/perfil_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 
@@ -43,6 +45,8 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
   late bool _notificaciones;
   late String _visibilidad;
   bool _guardando = false;
+  bool _biometriaDisponible = false;
+  bool _biometriaActiva = false;
 
   @override
   void initState() {
@@ -50,6 +54,126 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
     _unidad = widget.usuario.unidad;
     _notificaciones = widget.usuario.notificaciones;
     _visibilidad = widget.usuario.visibilidad;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cargarEstadoBiometria();
+    });
+  }
+
+  Future<void> _cargarEstadoBiometria() async {
+    final bool disponible =
+        await BiometriaServicio.instancia.dispositivoSoportado;
+    if (!mounted) return;
+    final bool activa =
+        await AuthScope.read(context).tieneCredencialBiometrica();
+    if (mounted) {
+      setState(() {
+        _biometriaDisponible = disponible;
+        _biometriaActiva = activa;
+      });
+    }
+  }
+
+  Future<void> _cambiarBiometria(bool valor) async {
+    if (!valor) {
+      await AuthScope.read(context).borrarCredencialBiometrica();
+      if (!mounted) return;
+      setState(() => _biometriaActiva = false);
+      notificarInfo('Inicio con huella desactivado');
+      return;
+    }
+
+    final String? pass = await _pedirContrasenaParaBiometria();
+    if (pass == null || pass.isEmpty) return;
+
+    final bool ok = await BiometriaServicio.instancia.autenticar(
+      motivo: 'Verifica tu huella para asociarla a tu cuenta',
+    );
+    if (!ok) {
+      if (mounted) {
+        notificarError('No se pudo verificar la huella digital');
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    await AuthScope.read(context).guardarCredencialBiometrica(
+      email: widget.usuario.emailUser,
+      contrasena: pass,
+      nombre: widget.usuario.nombreUser,
+    );
+    if (!mounted) return;
+    setState(() => _biometriaActiva = true);
+    notificarExito('Inicio con huella activado');
+  }
+
+  Future<String?> _pedirContrasenaParaBiometria() async {
+    final TextEditingController passCtrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        backgroundColor: FqColors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          'Activar inicio con huella',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: FqColors.ink,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              'Ingresa tu contraseña para vincularla a tu huella y permitir inicios de sesión rápidos:',
+              style: TextStyle(fontSize: 13, color: FqColors.muted),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: passCtrl,
+              obscureText: true,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Tu contraseña',
+                filled: true,
+                fillColor: FqColors.cloud,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: FqColors.border),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: FqColors.muted),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(passCtrl.text.trim()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FqColors.night,
+              foregroundColor: FqColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _guardar() async {
@@ -84,11 +208,12 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
     } on ApiException catch (e) {
       if (mounted) notificarError(e.message);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         notificarError(
           l10n?.preferenciasErrorGuardar ??
               'No se pudo guardar. Revisa tu conexion.',
         );
+      }
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -98,55 +223,84 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final double top = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: FqColors.paper,
       body: Column(
         children: <Widget>[
-          // ── Cabecera ──────────────────────────────────────────────────────
           Container(
-            color: FqColors.night,
-            padding: EdgeInsets.fromLTRB(4, top + 4, 16, 12),
+            padding: EdgeInsets.only(
+              top: top + 12,
+              bottom: 12,
+              left: 16,
+              right: 16,
+            ),
+            decoration: const BoxDecoration(
+              color: FqColors.white,
+              border: Border(bottom: BorderSide(color: FqColors.border)),
+            ),
             child: Row(
               children: <Widget>[
-                IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: FqColors.white,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                Expanded(
-                  child: Text(
-                    l10n.preferenciasTitulo,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: FqColors.white,
+                InkWell(
+                  onTap: () => Navigator.of(context).pop(),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: FqColors.cloud,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: FqColors.border),
                     ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 16,
+                      color: FqColors.night,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.perfilPreferencias,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: FqColors.ink,
+                        ),
+                      ),
+                      const Text(
+                        'Ajustes y privacidad',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: FqColors.muted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          // ── Cuerpo ────────────────────────────────────────────────────────
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: <Widget>[
-                // El idioma se aplica al tocarlo (no espera a Guardar) para que se
-                // vea el cambio al instante, y es solo de este dispositivo.
-                ListenableBuilder(
-                  listenable: _idioma,
-                  builder: (BuildContext context, Widget? _) => _Tarjeta(
-                    icono: Icons.language_rounded,
-                    titulo: l10n.preferenciasIdiomaTitulo,
-                    bajada: l10n.preferenciasIdiomaDesc,
-                    child: Wrap(
+                _Tarjeta(
+                  icono: Icons.language_rounded,
+                  titulo: l10n.preferenciasIdiomaTitulo,
+                  bajada: l10n.preferenciasIdiomaDesc,
+                  child: ListenableBuilder(
+                    listenable: _idioma,
+                    builder: (BuildContext context, Widget? _) => Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: <Widget>[
                         _Chip(
-                          key: const ValueKey<String>('idioma-auto'),
                           label: l10n.preferenciasIdiomaAuto,
                           activo: _idioma.idioma == null,
                           onTap: () => _idioma.elegir(null),
@@ -207,7 +361,7 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                         value: _notificaciones,
                         onChanged: (bool v) =>
                             setState(() => _notificaciones = v),
-                        activeColor: FqColors.voltDark,
+                        activeThumbColor: FqColors.voltDark,
                         activeTrackColor: FqColors.volt,
                         inactiveTrackColor: FqColors.toggleOff,
                         inactiveThumbColor: FqColors.white,
@@ -215,6 +369,40 @@ class _PreferenciasScreenState extends State<PreferenciasScreen> {
                     ],
                   ),
                 ),
+                if (_biometriaDisponible) ...<Widget>[
+                  const SizedBox(height: 12),
+                  _Tarjeta(
+                    icono: Icons.fingerprint_rounded,
+                    titulo: 'Ingreso con huella dactilar',
+                    bajada:
+                        'Inicia sesión con tu huella digital cuando cierres sesión, sin tener que volver a escribir tu correo y contraseña.',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(
+                          _biometriaActiva
+                              ? l10n.preferenciasActivadas
+                              : l10n.preferenciasDesactivadas,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _biometriaActiva
+                                ? FqColors.trail
+                                : FqColors.muted,
+                          ),
+                        ),
+                        Switch(
+                          value: _biometriaActiva,
+                          onChanged: _cambiarBiometria,
+                          activeThumbColor: FqColors.voltDark,
+                          activeTrackColor: FqColors.volt,
+                          inactiveTrackColor: FqColors.toggleOff,
+                          inactiveThumbColor: FqColors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 _Tarjeta(
                   icono: Icons.lock_outline_rounded,
