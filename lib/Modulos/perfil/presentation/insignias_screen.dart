@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/db/daos/insignias_cache_dao.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/perfil/data/insignia.dart';
@@ -35,6 +36,22 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
       widget.cacheDao ?? InsigniasCacheDao();
   late Future<List<Insignia>> _futuro = _cargar();
   bool _esOffline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ConexionServicio.instancia.reconectado.addListener(_alReconectar);
+  }
+
+  @override
+  void dispose() {
+    ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
+    super.dispose();
+  }
+
+  void _alReconectar() {
+    if (mounted) _recargar();
+  }
 
   Future<List<Insignia>> _cargar() async {
     final bool propio = widget.idUsuario == null;

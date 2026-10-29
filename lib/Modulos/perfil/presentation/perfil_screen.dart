@@ -1,8 +1,10 @@
+import 'package:fit_quest_go/core/geo/formato_distancia.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -65,6 +67,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     super.initState();
     _cargarNoLeidas();
     _refrescarDesdeApi();
+    ConexionServicio.instancia.reconectado.addListener(_alReconectar);
   }
 
   @override
@@ -152,6 +155,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
       ),
     );
     _cargarNoLeidas();
+  }
+
+  void _alReconectar() {
+    if (mounted) _recargar();
+  }
+
+  @override
+  void dispose() {
+    ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
+    super.dispose();
   }
 
   void _recargar() {
@@ -624,15 +637,26 @@ class _MetricasEjemploState extends State<_MetricasEjemplo> {
   }
 
   @override
+  void didUpdateWidget(covariant _MetricasEjemplo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.usuario.id != widget.usuario.id) {
+      _cargar();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     final Map<String, dynamic>? r = _remotas;
     final MetricasCache? c = _enCache;
-    final String km = r != null
-        ? (r['kmRecorridos'] as num? ?? 0).toStringAsFixed(0)
-        : c != null
-            ? c.km.toStringAsFixed(0)
-            : '—';
+    final double? kmBase = (r?['kmRecorridos'] as num?)?.toDouble() ?? c?.km;
+
+    final String valorDistancia = kmBase != null
+        ? convertirDistancia(kmBase, widget.usuario.unidad).toStringAsFixed(
+            widget.usuario.unidad == 'mi' ? 1 : 0,
+          )
+        : '—';
+    final String etiquetaDistancia = etiquetaUnidad(widget.usuario.unidad);
     final String rutas = r != null
         ? '${(r['rutasCompletadas'] as num?)?.toInt() ?? 0}'
         : c != null
@@ -660,7 +684,7 @@ class _MetricasEjemploState extends State<_MetricasEjemplo> {
       child: IntrinsicHeight(
         child: Row(
           children: <Widget>[
-            Expanded(child: _Metrica(valor: km, etiqueta: l10n.perfilKm)),
+            Expanded(child: _Metrica(valor: valorDistancia, etiqueta: etiquetaDistancia)),
             Container(width: 1, color: FqColors.border),
             Expanded(child: _Metrica(valor: rutas, etiqueta: l10n.perfilMetricaRutas)),
             Container(width: 1, color: FqColors.border),

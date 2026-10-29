@@ -1,8 +1,13 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:fit_quest_go/core/red/conexion_servicio.dart';
+
 class CargaLista<T> extends ChangeNotifier {
-  CargaLista(this._pedir);
+  CargaLista(this._pedir, {bool escucharReconexion = true}) {
+    if (escucharReconexion) {
+      ConexionServicio.instancia.reconectado.addListener(_alReconectar);
+    }
+  }
 
   final Future<List<T>> Function() _pedir;
 
@@ -16,6 +21,12 @@ class CargaLista<T> extends ChangeNotifier {
   List<T>? get datos => _datos;
   Object? get error => _error;
   bool get cargando => _cargando;
+
+  void _alReconectar() {
+    if (!_cerrada) {
+      cargar(silencioso: _datos != null);
+    }
+  }
 
   Future<void> cargar({bool silencioso = false}) async {
     final int version = ++_version;
@@ -66,6 +77,7 @@ class CargaLista<T> extends ChangeNotifier {
   @override
   void dispose() {
     _cerrada = true;
+    ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
     super.dispose();
   }
 }
