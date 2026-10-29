@@ -5,8 +5,15 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/dashboard_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/dashboard_screen.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_maqueta.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
+import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart';
 
+/// API simulada para probar ADM-04 sin conexiones HTTP reales.
+class _RutaApiFake extends RutaApi {
+  @override
+  Future<List<Ruta>> explorar() async => <Ruta>[];
+}
 /// API simulada para probar el Dashboard sin conexiones HTTP reales.
 class _DashboardApiFake extends DashboardApi {
   @override
@@ -33,7 +40,7 @@ class _DashboardApiFake extends DashboardApi {
 void main() {
   final Map<String, Widget> pantallas = <String, Widget>{
     'Dashboard': DashboardScreen(api: _DashboardApiFake()),
-    'Revision de ruta': const RevisionRutaScreen(),
+    'Gestion de rutas': RutasAdminScreen(api: _RutaApiFake()),
     'Eventos': const EventosScreen(),
     'Patrocinadores': const PatrocinadoresScreen(),
     'Insignias': const InsigniasScreen(),

@@ -981,13 +981,13 @@
   "@rutasAdminSearchHint": {
     "description": "Search box hint on the admin routes moderation queue."
   },
-  "rutasAdminSinCola": "Sin rutas en la cola",
+  "rutasAdminSinCola": "No hay rutas publicadas",
   "@rutasAdminSinCola": {
-    "description": "Empty-state title when there are no routes pending moderation."
+    "description": "Empty-state title when there are no published routes."
   },
-  "rutasAdminSinColaMensaje": "Las rutas enviadas a moderacion apareceran aqui para revisarlas.",
+  "rutasAdminSinColaMensaje": "Las rutas publicadas aparecerán aquí para su consulta.",
   "@rutasAdminSinColaMensaje": {
-    "description": "Empty-state message on the admin routes moderation queue."
+    "description": "Empty-state message on the admin published routes list."
   },
   "rutasAdminSubtituloPropuesta": "{actividad} · {km} km · propuesta por {nombre}",
   "@rutasAdminSubtituloPropuesta": {

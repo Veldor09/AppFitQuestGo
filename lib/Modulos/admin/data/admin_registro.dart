@@ -13,7 +13,6 @@ import 'package:fit_quest_go/Modulos/admin/presentation/screens/pantallas_lista_
     show PatrocinadoresScreen;
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/reportes_contenido_screen.dart'
     as reportes;
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/revision_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/alertas/presentation/alertas_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/nodos_admin_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart';
@@ -61,14 +60,6 @@ List<AdminSeccion> buildAdminSecciones(
       descripcion: l10n.admDescGestionRutas,
       icono: Icons.route_outlined,
       builder: (_) => const RutasAdminScreen(),
-    ),
-    AdminSeccion(
-      code: 'ADM-05',
-      navLabel: l10n.admNavRevisionRuta,
-      headerTitle: l10n.admNavRevisionRuta,
-      descripcion: l10n.admDescRevisionRuta,
-      icono: Icons.fact_check_outlined,
-      builder: (_) => const RevisionRutaScreen(),
     ),
     AdminSeccion(
       code: 'ADM-06',

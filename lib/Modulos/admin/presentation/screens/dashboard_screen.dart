@@ -162,12 +162,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   children: <Widget>[
                     _QueueRow(
-                      icon: Icons.route_outlined,
-                      label: l10n.admRutasPorRevisar,
-                      value: _valorCola('rutasPorRevisar'),
-                    ),
-                    const SizedBox(height: 7),
-                    _QueueRow(
                       icon: Icons.location_on_outlined,
                       label: l10n.admNodosPendientes,
                       value: _valorCola('nodosPendientes'),

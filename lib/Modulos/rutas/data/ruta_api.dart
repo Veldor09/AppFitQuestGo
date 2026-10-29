@@ -45,12 +45,6 @@ class RutaApi {
     return false;
   }
 
-  /// ADM-04 · Cola de moderacion. Solo Admin.
-  Future<List<Ruta>> listarPendientes() async {
-    final dynamic data = await _client.get('/rutas/pendientes');
-    return _lista(data);
-  }
-
   Future<Ruta> obtener(int id) async {
     final dynamic data = await _client.get('/rutas/$id');
     return Ruta.fromJson(data as Map<String, dynamic>);
@@ -99,14 +93,6 @@ class RutaApi {
   /// Elimina una ruta propia (con sus recorridos y guardados). 403 si no es tuya.
   Future<void> eliminar(int id) async {
     await _client.delete('/rutas/$id');
-  }
-
-  /// ADM-05 · Retirar una ruta. Solo Admin. Ya no se aprueban: se publican solas.
-  Future<Ruta> cambiarEstado(int id, String estado) async {
-    final dynamic data = await _client.patch('/rutas/$id/estado', {
-      'estado': estado,
-    });
-    return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
   List<Ruta> _lista(dynamic data) {
