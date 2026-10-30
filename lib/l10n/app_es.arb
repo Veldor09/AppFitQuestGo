@@ -962,6 +962,9 @@
     "description": "Empty-state title when there are no proposed points of interest to moderate."
   },
   "nodosSinPropuestosMensaje": "Los puntos de interes propuestos por la comunidad llegaran aqui.",
+  "nodosBusquedaSinResultados": "No se encontraron nodos",
+"admNodosTabAprobados": "Aprobados",
+"admNodosTabObsoletos": "Obsoletos",
   "@nodosSinPropuestosMensaje": {
     "description": "Empty-state message on the admin points-of-interest screen."
   },
