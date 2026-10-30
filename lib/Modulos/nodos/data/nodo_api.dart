@@ -113,6 +113,14 @@ class NodoApi {
   }
 
   /// ADM-07 · Cola de moderacion. Solo Admin.
+  /// ADM-07: Listado completo de nodos para administradores.
+  Future<List<Nodo>> listarTodosAdmin() async {
+    final dynamic data = await _client.get('/nodos/admin');
+    return (data as List<dynamic>)
+        .map((dynamic e) => Nodo.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<Nodo>> listarPendientes() async {
     final dynamic data = await _client.get('/nodos/pendientes');
     return (data as List<dynamic>)
