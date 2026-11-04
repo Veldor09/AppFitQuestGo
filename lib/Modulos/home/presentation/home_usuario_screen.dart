@@ -795,7 +795,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     if (ruta == null || !mounted) return;
 
     // 1. Resaltar únicamente el trazado de la ruta seleccionada en azul sobre el mapa
-    await _capaRutas?.seleccionarRuta(ruta);
+    await _capaRutas?.seleccionarRuta(ruta, densidad: MediaQuery.devicePixelRatioOf(context));
 
     // 2. Animar cámara suavemente hacia el inicio de la ruta
     final MapboxMap? mapa = _mapa;
@@ -1079,24 +1079,28 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     }
   }
 
-  /// Mueve la cámara para que quepan todos los [puntos] del evento dentro de la mitad
-  /// superior de la pantalla (dejando el 50% inferior despejado para el bottom sheet).
+  /// Mueve la cámara para que quepan todos los [puntos] del evento dentro del área visible
+  /// útil (debajo de la barra de búsqueda y filtros superiores, y encima del bottom sheet inferior).
   Future<void> _encuadrarEvento(List<({double lat, double lng})> puntos) async {
     final MapboxMap? mapa = _mapa;
     if (mapa == null || puntos.isEmpty) return;
     try {
       final double pantallaAlto = MediaQuery.sizeOf(context).height;
-      // La ficha ocupa el 50% inferior. Con padding extra para la barra superior (top 100)
-      // y margen inferior de (pantallaAlto * 0.5 + 24), el área útil queda en la mitad superior.
-      final double bottomPadding = (pantallaAlto * 0.5) + 24.0;
+      final double statusBar = MediaQuery.paddingOf(context).top;
+      // Barra de búsqueda + filtros superiores + holgura amplia para asegurar que la ruta
+      // quede completamente abajo de los filtros flotantes y no se traslape.
+      final double topPadding = statusBar + 175.0;
+      // La ficha inferior ocupa el 50% de la pantalla con margen de separación
+      final double bottomPadding = (pantallaAlto * 0.5) + 32.0;
+
       final CameraOptions camara = await mapa.cameraForCoordinatesPadding(
         <Point>[
           for (final ({double lat, double lng}) p in puntos)
             Point(coordinates: Position(p.lng, p.lat)),
         ],
         CameraOptions(),
-        MbxEdgeInsets(top: 100, left: 32, bottom: bottomPadding, right: 32),
-        16.5,
+        MbxEdgeInsets(top: topPadding, left: 40, bottom: bottomPadding, right: 40),
+        15.5,
         null,
       );
       await mapa.flyTo(camara, MapAnimationOptions(duration: 900));
