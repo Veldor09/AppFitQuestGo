@@ -1,3 +1,4 @@
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -71,6 +72,12 @@ class _PlanApiFalsa extends PlanApi {
 
   @override
   Future<MiSuscripcion?> miSuscripcion() async => respuesta;
+
+  @override
+  Future<RespuestaPlanes> planes(String pais) async => const RespuestaPlanes(
+        planes: <PlanPatrocinio>[],
+        sinpeNumero: '88888888',
+      );
 }
 
 void main() {
@@ -105,6 +112,7 @@ void main() {
         api: _RutaApiFalsa(),
         calificaciones: CalificacionApiFalsa(),
         offlineDao: dao,
+        planApi: planApi,
       ),
       auth: auth,
     );
@@ -133,20 +141,15 @@ void main() {
   }
 
   testWidgets(
-    'sin suscripcion, en la ruta 4 le sale la invitacion a pedir un plan (no un error)',
+    'sin suscripcion, al superar el limite de 1 ruta le redirige a Mi suscripcion',
     (WidgetTester tester) async {
-      final _OfflineFalso dao = await abrir(tester, guardadas: 3);
+      final _OfflineFalso dao = await abrir(tester, guardadas: 1);
 
       await tocarGuardarOffline(tester);
 
-      expect(find.text('Necesitas una suscripción'), findsOneWidget);
+      expect(find.byType(PlanPatrocinioScreen), findsOneWidget);
       expect(
-        find.textContaining('límite de 3 rutas guardadas sin conexión'),
-        findsOneWidget,
-      );
-      expect(find.textContaining('hasta 15'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('invitacion-ver-planes')),
+        find.textContaining('límite de 1 ruta guardada sin conexión'),
         findsOneWidget,
       );
       expect(dao.intentosDeGuardar, 0);
@@ -164,7 +167,7 @@ void main() {
       venceEn: DateTime(2026, 11, 20),
       audiencia: AudienciaPlan.usuario,
     );
-    final _OfflineFalso dao = await abrir(tester, guardadas: 3);
+    final _OfflineFalso dao = await abrir(tester, guardadas: 1);
 
     await tocarGuardarOffline(tester, esperarAlFinal: false);
 
@@ -209,14 +212,14 @@ void main() {
           rol: RolUsuario.empresa,
         ),
       );
-      await abrir(tester, guardadas: 3, auth: empresa);
+      await abrir(tester, guardadas: 1, auth: empresa);
 
       await tocarGuardarOffline(tester);
 
       expect(find.text('Necesitas una suscripción'), findsNothing);
       expect(
         find.text(
-          'Límite de 3 rutas sin conexión alcanzado. Elimina una para descargar otra.',
+          'Límite de 1 ruta sin conexión alcanzado. Elimina una para descargar otra.',
         ),
         findsOneWidget,
       );

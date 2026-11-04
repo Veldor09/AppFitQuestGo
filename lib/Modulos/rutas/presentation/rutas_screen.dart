@@ -13,6 +13,8 @@ import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/eliminar_ruta.dart';
@@ -29,7 +31,19 @@ class RutasScreen extends StatefulWidget {
     this.offlineDao,
     this.initialTab = 0,
     this.showBackButton,
+    this.activa = true,
   });
+
+  /// Notificador global para refrescar las listas de rutas al crear, editar o eliminar.
+  static final ValueNotifier<int> cambiosEnRutas = ValueNotifier<int>(0);
+
+  /// Avisa a cualquier pantalla de Rutas que debe recargar sus datos.
+  static void notificarCambio() {
+    cambiosEnRutas.value++;
+  }
+
+  /// Indica si la pestaña está activa (visible para el usuario).
+  final bool activa;
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
@@ -60,6 +74,7 @@ class _RutasScreenState extends State<RutasScreen> {
   );
   late final CargaLista<Ruta> _favoritas = CargaLista<Ruta>(_cargarFavoritas);
   Set<int> _favoritasIds = <int>{};
+  Set<int> _bloqueadasOfflineIds = <int>{};
   bool _esOfflineGuardadas = false;
   late int _tab;
 
@@ -69,11 +84,25 @@ class _RutasScreenState extends State<RutasScreen> {
     _tab = widget.initialTab.clamp(0, 2);
     _cargar();
     ConexionServicio.instancia.reconectado.addListener(_alReconectar);
+    RutasScreen.cambiosEnRutas.addListener(_alCambiarRutas);
+  }
+
+  @override
+  void didUpdateWidget(covariant RutasScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.activa && !oldWidget.activa) {
+      _recargar();
+    }
+  }
+
+  void _alCambiarRutas() {
+    if (mounted) _recargar();
   }
 
   @override
   void dispose() {
     ConexionServicio.instancia.reconectado.removeListener(_alReconectar);
+    RutasScreen.cambiosEnRutas.removeListener(_alCambiarRutas);
     _explorar.dispose();
     _misRutas.dispose();
     _favoritas.dispose();
@@ -97,6 +126,9 @@ class _RutasScreenState extends State<RutasScreen> {
     _explorar.cargar(silencioso: silencioso);
     _misRutas.cargar(silencioso: silencioso);
     _favoritas.cargar(silencioso: silencioso);
+    PlanUsuario.instancia.rutasOfflineBloqueadas().then((Set<int> ids) {
+      if (mounted) setState(() => _bloqueadasOfflineIds = ids);
+    }).catchError((_) {});
     _api
         .favoritasIds()
         .then((Set<int> ids) {
@@ -110,6 +142,13 @@ class _RutasScreenState extends State<RutasScreen> {
             });
           }
         });
+  }
+
+  void _cambiarTab(int i) {
+    setState(() => _tab = i);
+    if (i == 0) _explorar.cargar(silencioso: true);
+    if (i == 1) _misRutas.cargar(silencioso: true);
+    if (i == 2) _favoritas.cargar(silencioso: true);
   }
 
   void _recargar() => _cargar(silencioso: true);
@@ -209,7 +248,7 @@ class _RutasScreenState extends State<RutasScreen> {
                         'Guardadas',
                       ],
                       seleccion: _tab,
-                      onSeleccion: (int i) => setState(() => _tab = i),
+                      onSeleccion: _cambiarTab,
                       enCabeceraOscura: true,
                     ),
                   ),
@@ -248,7 +287,7 @@ class _RutasScreenState extends State<RutasScreen> {
                   'Guardadas',
                 ],
                 seleccion: _tab,
-                onSeleccion: (int i) => setState(() => _tab = i),
+                onSeleccion: _cambiarTab,
               ),
             ),
             const SizedBox(height: 8),
@@ -293,6 +332,7 @@ class _RutasScreenState extends State<RutasScreen> {
       api: _api,
       carga: _favoritas,
       favoritasIds: _favoritasIds,
+      bloqueadasIds: _bloqueadasOfflineIds,
       onToggleFavorita: _toggleFavorita,
       onCambio: _recargar,
       onEliminada: _rutaEliminada,
@@ -372,6 +412,7 @@ class _ListaRutas extends StatelessWidget {
     required this.api,
     required this.carga,
     required this.favoritasIds,
+    this.bloqueadasIds = const <int>{},
     required this.onToggleFavorita,
     required this.onCambio,
     required this.onEliminada,
@@ -384,6 +425,7 @@ class _ListaRutas extends StatelessWidget {
   final RutaApi api;
   final CargaLista<Ruta> carga;
   final Set<int> favoritasIds;
+  final Set<int> bloqueadasIds;
   final ValueChanged<int> onToggleFavorita;
   final VoidCallback onCambio;
   final ValueChanged<int> onEliminada;
@@ -459,6 +501,7 @@ class _ListaRutas extends StatelessWidget {
                   api: api,
                   ruta: rutas[i],
                   esFavorita: favoritasIds.contains(rutas[i].id),
+                  bloqueada: bloqueadasIds.contains(rutas[i].id),
                   onToggleFavorita: () => onToggleFavorita(rutas[i].id),
                   mostrarEstado: mostrarEstado,
                   onCambio: onCambio,
@@ -484,6 +527,7 @@ class _TarjetaRuta extends StatelessWidget {
     required this.api,
     required this.ruta,
     required this.esFavorita,
+    this.bloqueada = false,
     required this.onToggleFavorita,
     required this.mostrarEstado,
     required this.onCambio,
@@ -493,6 +537,7 @@ class _TarjetaRuta extends StatelessWidget {
   final RutaApi api;
   final Ruta ruta;
   final bool esFavorita;
+  final bool bloqueada;
   final VoidCallback onToggleFavorita;
   final bool mostrarEstado;
   final VoidCallback onCambio;
@@ -503,13 +548,16 @@ class _TarjetaRuta extends StatelessWidget {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => _abrirDetalle(context),
+      onTap: bloqueada ? () => _mostrarAvisoBloqueada(context) : () => _abrirDetalle(context),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: FqColors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: FqColors.border),
+          border: Border.all(
+            color: bloqueada ? const Color(0xFFF59E0B) : FqColors.border,
+            width: bloqueada ? 1.5 : 1.0,
+          ),
         ),
         child: Row(
           children: <Widget>[
@@ -517,23 +565,58 @@ class _TarjetaRuta extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: FqColors.listIconBg,
+                color: bloqueada ? const Color(0xFFFEF3C7) : FqColors.listIconBg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.route_rounded, color: FqColors.night),
+              child: Icon(
+                bloqueada ? Icons.lock_rounded : Icons.route_rounded,
+                color: bloqueada ? const Color(0xFFD97706) : FqColors.night,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    ruta.nombre,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: FqColors.ink,
-                    ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          ruta.nombre,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: FqColors.ink,
+                          ),
+                        ),
+                      ),
+                      if (bloqueada) ...<Widget>[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Icon(Icons.lock_rounded, size: 11, color: Color(0xFFB45309)),
+                              const SizedBox(width: 3),
+                              Text(
+                                l10n.mapasOfflineBloqueadaBadge,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFFB45309),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -625,6 +708,40 @@ class _TarjetaRuta extends StatelessWidget {
     if (res != null) {
       onCambio();
     }
+  }
+
+  void _mostrarAvisoBloqueada(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Row(
+          children: <Widget>[
+            const Icon(Icons.lock_rounded, color: Color(0xFFD97706)),
+            const SizedBox(width: 8),
+            Text(l10n.mapasOfflineBloqueadaBadge),
+          ],
+        ),
+        content: Text(l10n.mapasOfflineBloqueadaAviso),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.comunCancelar),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext _) => const PlanPatrocinioScreen(),
+                ),
+              );
+            },
+            child: Text(l10n.planInvitacionVer),
+          ),
+        ],
+      ),
+    );
   }
 
   void _abrirDetalle(BuildContext context) {

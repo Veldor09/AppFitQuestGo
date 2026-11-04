@@ -89,4 +89,48 @@ void main() {
       expect(creada.actividades, <String>['running', 'mtb']);
     });
   });
+
+  group('RutaApi.actualizar', () {
+    test('envia PATCH /rutas/:id con los campos modificados', () async {
+      String? metodo;
+      String? urlPath;
+      Map<String, dynamic>? cuerpo;
+
+      final MockClient client = MockClient((http.Request req) async {
+        metodo = req.method;
+        urlPath = req.url.path;
+        cuerpo = jsonDecode(req.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode(
+            _json(<String, dynamic>{
+              'id': 42,
+              'nombre': 'Ruta Renovada',
+              'actividades': <String>['hiking'],
+              'dificultad': 'dificil',
+            }),
+          ),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      });
+
+      final RutaApi api = RutaApi(
+        ApiClient(client: client, baseUrl: 'http://test', tokens: _SinTokens()),
+      );
+
+      final Ruta actualizada = await api.actualizar(
+        id: 42,
+        nombre: 'Ruta Renovada',
+        actividades: <String>['hiking'],
+        dificultad: 'dificil',
+      );
+
+      expect(metodo, 'PATCH');
+      expect(urlPath, '/rutas/42');
+      expect(cuerpo!['nombre'], 'Ruta Renovada');
+      expect(cuerpo!['dificultad'], 'dificil');
+      expect(actualizada.id, 42);
+      expect(actualizada.nombre, 'Ruta Renovada');
+    });
+  });
 }

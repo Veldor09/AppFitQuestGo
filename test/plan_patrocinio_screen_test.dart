@@ -130,7 +130,7 @@ void main() {
 
     expect(find.text('Mi suscripción'), findsOneWidget);
     expect(
-      find.textContaining('sin conexión: hasta 15 en vez de 3'),
+      find.textContaining('sin conexión: hasta 15 en vez de 1'),
       findsOneWidget,
     );
     expect(find.textContaining('destacar'), findsNothing);

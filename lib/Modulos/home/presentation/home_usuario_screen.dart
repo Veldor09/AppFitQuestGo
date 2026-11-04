@@ -468,7 +468,7 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       case Nodo nodo:
         _abrirFicha(nodo);
       case Evento evento:
-        if (mounted) unawaited(mostrarFichaEvento(context, evento));
+        _abrirEvento(evento.id);
     }
   }
 
@@ -749,8 +749,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     );
   }
 
-  /// Tocar el area, el recorrido o el pin de un evento abre su ficha.
-  void _abrirEvento(int eventoId) {
+  /// Tocar el pin de un evento resalta su área/recorrido dinámicamente y abre su ficha.
+  Future<void> _abrirEvento(int eventoId) async {
     Evento? evento;
     for (final Evento e in _eventos) {
       if (e.id == eventoId) {
@@ -759,7 +759,28 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       }
     }
     if (evento == null || !mounted) return;
-    unawaited(mostrarFichaEvento(context, evento));
+
+    // 1. Resaltar únicamente las áreas, trazados y pin final de este evento
+    await _capaEventos?.seleccionarEvento(
+      evento,
+      densidad: MediaQuery.devicePixelRatioOf(context),
+    );
+
+    // 2. Encuadrar y enfocar el mapa en los trazados del evento en la mitad superior
+    final List<({double lat, double lng})> puntosEvento = <({double lat, double lng})>[
+      for (final PuntoGeo p in evento.todosLosPuntos)
+        (lat: p.lat, lng: p.lng),
+    ];
+    if (puntosEvento.isNotEmpty) {
+      unawaited(_encuadrarEvento(puntosEvento));
+    }
+
+    // 3. Mostrar la ficha flotante del evento (máximo mitad de pantalla hacia abajo)
+    if (!mounted) return;
+    await mostrarFichaEvento(context, evento);
+
+    // 3. Al cerrar la ficha, limpiar el polígono/área del evento para no saturar el mapa
+    await _capaEventos?.limpiarSeleccion();
   }
 
   /// Tocar el pin de una ruta resalta su trazo en azul y abre su ficha informativa.
@@ -888,6 +909,8 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
         for (final Evento e in eventos)
           if (e.destacado) e.id,
       },
+      soloPines: true,
+      incluirFinRecorrido: false,
     );
   }
 
@@ -1053,6 +1076,31 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
       );
     } catch (_) {
       // El mapa se cerro mientras se movia: no importa.
+    }
+  }
+
+  /// Mueve la cámara para que quepan todos los [puntos] del evento dentro de la mitad
+  /// superior de la pantalla (dejando el 50% inferior despejado para el bottom sheet).
+  Future<void> _encuadrarEvento(List<({double lat, double lng})> puntos) async {
+    final MapboxMap? mapa = _mapa;
+    if (mapa == null || puntos.isEmpty) return;
+    try {
+      final double pantallaAlto = MediaQuery.sizeOf(context).height;
+      // La ficha ocupa el 50% inferior. Con padding extra para la barra superior (top 100)
+      // y margen inferior de (pantallaAlto * 0.5 + 24), el área útil queda en la mitad superior.
+      final double bottomPadding = (pantallaAlto * 0.5) + 24.0;
+      final CameraOptions camara = await mapa.cameraForCoordinatesPadding(
+        <Point>[
+          for (final ({double lat, double lng}) p in puntos)
+            Point(coordinates: Position(p.lng, p.lat)),
+        ],
+        CameraOptions(),
+        MbxEdgeInsets(top: 100, left: 32, bottom: bottomPadding, right: 32),
+        16.5,
+        null,
+      );
+      await mapa.flyTo(camara, MapAnimationOptions(duration: 900));
+    } catch (_) {
     }
   }
 

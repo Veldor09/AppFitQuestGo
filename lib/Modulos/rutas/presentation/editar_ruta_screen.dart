@@ -1,3 +1,5 @@
+import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -7,7 +9,6 @@ import 'package:fit_quest_go/Modulos/rutas/application/metricas_ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
-import 'package:fit_quest_go/Modulos/rutas/presentation/planificar_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/selector_actividades_catalogo.dart';
 import 'package:fit_quest_go/core/fotos/selector_foto.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
@@ -18,8 +19,7 @@ import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Pantalla para editar una ruta propia: permite modificar nombre,
-/// actividades deportivas, dificultad, visibilidad, foto de portada y
-/// retocar o redibujar el trazo en el mapa.
+/// actividades deportivas, dificultad, visibilidad y foto de portada.
 class EditarRutaScreen extends StatefulWidget {
   const EditarRutaScreen({
     super.key,
@@ -51,7 +51,7 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
   late String _dificultad = widget.ruta.dificultad;
   late String _visibilidad =
       widget.ruta.estado == 'Publicada' ? 'publica' : 'privada';
-  late List<PuntoRuta> _puntos = List<PuntoRuta>.of(widget.ruta.puntos);
+  late final List<PuntoRuta> _puntos = List<PuntoRuta>.of(widget.ruta.puntos);
 
   Uint8List? _fotoNueva;
   bool _guardando = false;
@@ -64,33 +64,6 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
   void dispose() {
     _nombreController.dispose();
     super.dispose();
-  }
-
-  Future<void> _abrirEditorTrazo() async {
-    final List<PuntoRuta>? puntosModificados =
-        await Navigator.of(context).push<List<PuntoRuta>>(
-          MaterialPageRoute<List<PuntoRuta>>(
-            builder: (BuildContext _) => PlanificarRutaScreen(
-              puntosIniciales: _puntos,
-              modoSeleccionarTrazo: true,
-              api: _api,
-              catalogosApi: widget.catalogosApi,
-              selectorFoto: widget.selectorFoto,
-              accessToken: widget.accessToken,
-            ),
-          ),
-        );
-
-    if (puntosModificados != null && mounted) {
-      setState(() => _puntos = puntosModificados);
-      final AppLocalizations l10n = AppLocalizations.of(context)!;
-      notificarInfo(
-        l10n.planificarPuntosYDistancia(
-          _puntos.length,
-          _distanciaKm.toStringAsFixed(2),
-        ),
-      );
-    }
   }
 
   Future<void> _guardar() async {
@@ -133,8 +106,13 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
       }
 
       if (!mounted) return;
+      RutasScreen.notificarCambio();
       notificarExito('Ruta actualizada con éxito');
       Navigator.of(context).pop(actualizada);
+    } on ApiException catch (e) {
+      if (mounted) {
+        notificarError(e.message.isNotEmpty ? e.message : l10n.planificarNoSePudoGuardar);
+      }
     } catch (_) {
       if (mounted) {
         notificarError(l10n.planificarNoSePudoGuardar);
@@ -339,154 +317,52 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Tarjeta de Trazado de Ruta y modificación en mapa
+            // Tarjeta informativa con la distancia del recorrido
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: FqColors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: FqColors.border),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Row(
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: FqColors.volt.withValues(alpha: .25),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.route_rounded,
-                          color: FqColors.night,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              'Trazado de la ruta',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: FqColors.night,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Puedes ver o ajustar el recorrido sobre el mapa',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: FqColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: FqColors.paper,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                l10n.rutasDistancia,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: FqColors.muted,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${_distanciaKm.toStringAsFixed(2)} km',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: FqColors.night,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: FqColors.paper,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              const Text(
-                                'Puntos',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: FqColors.muted,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${_puntos.length} puntos',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: FqColors.night,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: const BorderSide(color: FqColors.night, width: 1.5),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: FqColors.volt.withValues(alpha: .25),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    icon: const Icon(
-                      Icons.edit_location_alt_rounded,
-                      size: 18,
+                    child: const Icon(
+                      Icons.route_rounded,
                       color: FqColors.night,
+                      size: 20,
                     ),
-                    label: const Text(
-                      'Modificar trazo en el mapa',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: FqColors.night,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          l10n.rutasDistancia,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: FqColors.muted,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_distanciaKm.toStringAsFixed(2)} km de recorrido',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: FqColors.night,
+                          ),
+                        ),
+                      ],
                     ),
-                    onPressed: _abrirEditorTrazo,
                   ),
                 ],
               ),

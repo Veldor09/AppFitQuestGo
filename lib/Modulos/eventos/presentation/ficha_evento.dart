@@ -34,6 +34,9 @@ Future<void> mostrarFichaEvento(
     isScrollControlled: true,
     useSafeArea: true,
     shape: formaFichaLugar,
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+    ),
     builder: (BuildContext _) => FichaEvento(
       evento: evento,
       ahora: ahora,
@@ -127,12 +130,15 @@ class _FichaEventoState extends State<FichaEvento> {
           nombre: evento.nombre,
           esFoto: foto,
         );
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
+        final double maxAltura = MediaQuery.sizeOf(context).height * 0.5;
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxAltura),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
               CabeceraFicha(
                 titulo: evento.nombre,
                 keyTitulo: const ValueKey<String>('ficha-evento-nombre'),
@@ -154,10 +160,7 @@ class _FichaEventoState extends State<FichaEvento> {
                   if (evento.destacado) const EtiquetaDestacado(),
                 ],
               ),
-              if (resumen != null) ...<Widget>[
-                const SizedBox(height: 12),
-                Pulgares(resumen: resumen, compacto: true),
-              ],
+
               if (destino != null || reportable) ...<Widget>[
                 const SizedBox(height: 14),
                 FilaAccionesFicha(
@@ -260,13 +263,9 @@ class _FichaEventoState extends State<FichaEvento> {
                     api: widget.calificaciones,
                   ),
               ],
-              if (evento.recorridos.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 10),
-                _Titulo(l10n.eventoRecorridosTitulo),
-                for (final ZonaEvento z in evento.recorridos)
-                  _FilaRecorrido(nombre: z.nombre),
-              ],
+
             ],
+          ),
           ),
         );
       },
@@ -342,31 +341,4 @@ class _FilaArea extends StatelessWidget {
   }
 }
 
-class _FilaRecorrido extends StatelessWidget {
-  const _FilaRecorrido({required this.nombre});
 
-  final String nombre;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.directions_walk_rounded,
-            size: 18,
-            color: colorRecorridoEvento,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              nombre,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -2476,7 +2476,7 @@
   "@interesesModalError": {
     "description": "Error notification when updating interests fails"
   },
-  "rutaDetalleLimiteOffline": "Límite de {n} rutas sin conexión alcanzado. Elimina una para descargar otra.",
+  "rutaDetalleLimiteOffline": "Límite de {n, plural, =1{1 ruta} other{{n} rutas}} sin conexión alcanzado. Elimina una para descargar otra.",
   "@rutaDetalleLimiteOffline": {
     "placeholders": {"n": {"type": "int"}},
     "description": "Warning when maximum offline routes limit is reached"
@@ -4899,7 +4899,7 @@
   "@planInvitacionTitulo": {
     "description": "Dialog title"
   },
-  "planInvitacionOffline": "Llegaste al límite de {n} rutas guardadas sin conexión. Con una suscripción puedes guardar hasta {max}.",
+  "planInvitacionOffline": "Llegaste al límite de {n, plural, =1{1 ruta guardada} other{{n} rutas guardadas}} sin conexión. Con una suscripción puedes guardar hasta {max}.",
   "@planInvitacionOffline": {
     "description": "Dialog message when the free offline limit is hit",
     "placeholders": {"n":{"type":"int"},"max":{"type":"int"}}
@@ -5185,5 +5185,17 @@
   "planRegionAyuda": "El método de pago y los precios dependen de tu país. Cambia esto si tu teléfono está configurado en otro país.",
   "@planRegionAyuda": {
     "description": "Help text under the region selector"
+  },
+  "mapasOfflineBloqueadaBadge": "Bloqueada",
+  "@mapasOfflineBloqueadaBadge": {
+    "description": "Badge for locked offline routes"
+  },
+  "mapasOfflineBloqueadaSubtitulo": "Requiere suscripción activa para usarla",
+  "@mapasOfflineBloqueadaSubtitulo": {
+    "description": "Subtitle for locked offline routes"
+  },
+  "mapasOfflineBloqueadaAviso": "Esta ruta descargada requiere una suscripción activa para usarla sin conexión.",
+  "@mapasOfflineBloqueadaAviso": {
+    "description": "Notice when tapping a locked offline route"
   }
 }

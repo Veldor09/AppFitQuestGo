@@ -92,7 +92,7 @@ class RutaApi {
         for (final PuntoRuta p in puntos) {'lat': p.lat, 'lng': p.lng},
       ];
     }
-    final dynamic data = await _client.patch('/rutas/', body);
+    final dynamic data = await _client.patch('/rutas/$id', body);
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
