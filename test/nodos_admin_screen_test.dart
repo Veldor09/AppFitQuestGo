@@ -24,6 +24,9 @@ class _NodoApiFalsa extends NodoApi {
   Future<List<Nodo>> listarPendientes() async => pendientes;
 
   @override
+  Future<List<Nodo>> listarAdmin() async => pendientes;
+
+  @override
   Future<Uint8List> foto(int id) async {
     fotosPedidas.add(id);
     return _png;
@@ -49,7 +52,8 @@ Future<void> _abrir(WidgetTester tester, NodoApi api) async {
   await tester.pumpAndSettle();
 }
 
-Nodo _nodo(int id, String categoria, {String? otro, bool conFoto = false}) {
+Nodo _nodo(int id, String categoria, {String? otro, bool conFoto = false,
+  String estado = 'Pendiente'}) {
   return Nodo(
     id: id,
     nombre: 'Punto $id',
@@ -57,7 +61,7 @@ Nodo _nodo(int id, String categoria, {String? otro, bool conFoto = false}) {
     categoriaOtro: otro,
     lat: 9.93,
     lng: -84.09,
-    estado: 'Pendiente',
+    estado: estado,
     creadoPorNombre: 'Ana',
     conFoto: conFoto,
   );
@@ -75,18 +79,20 @@ void main() {
     ]);
     await _abrir(tester, api);
 
-    expect(find.text('Primeros auxilios · propuesto por Ana'), findsOneWidget);
-    expect(find.text('Zona de picnic · propuesto por Ana'), findsOneWidget);
+    expect(find.text('Pendiente · Primeros auxilios · propuesto por Ana'), findsOneWidget);
+    expect(find.text('Pendiente · Zona de picnic · propuesto por Ana'), findsOneWidget);
     expect(find.textContaining('primeros_auxilios'), findsNothing);
   });
 
-  testWidgets('tocar una fila abre la ficha con la foto para poder decidir', (
+  testWidgets('la foto queda disponible en las acciones del nodo', (
     WidgetTester tester,
   ) async {
     final _NodoApiFalsa api = _NodoApiFalsa(<Nodo>[_nodo(1, 'agua', conFoto: true)]);
     await _abrir(tester, api);
 
-    await tester.tap(find.text('Punto 1'));
+    await tester.tap(find.byTooltip('Acciones'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ver foto'));
     await tester.pumpAndSettle();
 
     expect(api.fotosPedidas, <int>[1]);
@@ -104,5 +110,28 @@ void main() {
 
     expect(api.fotosPedidas, isEmpty);
     expect(find.byType(Image), findsNothing);
+  });
+
+  testWidgets('muestra nodos de todos los estados y permite filtrarlos', (
+    WidgetTester tester,
+  ) async {
+    final api = _NodoApiFalsa(<Nodo>[
+      _nodo(1, 'agua'),
+      _nodo(2, 'mirador', estado: 'Aprobado'),
+      _nodo(3, 'agua', estado: 'Rechazado'),
+      _nodo(4, 'agua', estado: 'Obsoleto'),
+    ]);
+    await _abrir(tester, api);
+    expect(find.text('Punto 1'), findsOneWidget);
+    expect(find.text('Punto 2'), findsOneWidget);
+    expect(find.text('Punto 3'), findsOneWidget);
+    expect(find.text('Punto 4'), findsOneWidget);
+
+    await tester.tap(find.text('Desactivados'));
+    await tester.pumpAndSettle();
+    expect(find.text('Punto 1'), findsNothing);
+    expect(find.text('Punto 2'), findsNothing);
+    expect(find.text('Punto 3'), findsOneWidget);
+    expect(find.text('Punto 4'), findsOneWidget);
   });
 }

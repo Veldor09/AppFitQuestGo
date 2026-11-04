@@ -49,6 +49,9 @@ class RutaApi {
     return _lista(data);
   }
 
+  Future<List<Ruta>> listarAdmin() async =>
+      _lista(await _client.get('/rutas/admin/todas'));
+
   Future<Ruta> obtener(int id) async {
     final dynamic data = await _client.get('/rutas/$id');
     return Ruta.fromJson(data as Map<String, dynamic>);

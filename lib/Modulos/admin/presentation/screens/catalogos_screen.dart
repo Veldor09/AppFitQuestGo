@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -8,13 +7,11 @@ import 'package:fit_quest_go/Modulos/admin/data/catalogo_item.dart';
 import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 /// ADM-11 · Gestión administrativa de catálogos.
 class CatalogosScreen extends StatefulWidget {
-  const CatalogosScreen({
-    super.key,
-    this.api,
-  });
+  const CatalogosScreen({super.key, this.api});
 
   /// Permite utilizar un servicio simulado durante las pruebas.
   final CatalogosApi? api;
@@ -157,20 +154,25 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         icon: _iconoCatalogo(),
         title: item.nombre,
         subtitle: item.clave,
-        trailing: Chip(
-          label: Text(item.activo ? 'Activo' : 'Inactivo'),
-          backgroundColor: item.activo
-              ? Colors.green.shade50
-              : Colors.grey.shade200,
-          labelStyle: TextStyle(
-            color: item.activo
-                ? Colors.green.shade800
-                : Colors.grey.shade800,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
+        trailing: PopupMenuButton<String>(
+          tooltip: 'Acciones',
+          onSelected: (accion) {
+            if (accion == 'editar') _abrirFormulario(item: item);
+          },
+          itemBuilder: (_) => const <PopupMenuEntry<String>>[
+            PopupMenuItem(value: 'editar', child: Text('Editar')),
+          ],
         ),
-        onTap: () => _abrirFormulario(item: item),
+        onTap: () => mostrarDetalleAdmin(context,
+          titulo: item.nombre,
+          icono: _iconoCatalogo(),
+          estado: item.activo ? 'Activo' : 'Inactivo',
+          campos: <String, String>{
+            'Nombre': item.nombre,
+            'Categoría': _catalogos[_catalogoSeleccionado] ?? _catalogoSeleccionado,
+            'Estado': item.activo ? 'Activo' : 'Inactivo',
+          },
+        ),
       );
     }).toList();
 
@@ -269,13 +271,9 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
   void initState() {
     super.initState();
 
-    _claveController = TextEditingController(
-      text: widget.item?.clave ?? '',
-    );
+    _claveController = TextEditingController(text: widget.item?.clave ?? '');
 
-    _nombreController = TextEditingController(
-      text: widget.item?.nombre ?? '',
-    );
+    _nombreController = TextEditingController(text: widget.item?.nombre ?? '');
 
     _activo = widget.item?.activo ?? true;
   }
@@ -337,9 +335,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        _creando ? 'Nuevo elemento' : 'Editar elemento',
-      ),
+      title: Text(_creando ? 'Nuevo elemento' : 'Editar elemento'),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -355,17 +351,18 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _claveController,
-                enabled: _creando && !_guardando,
-                decoration: const InputDecoration(
-                  labelText: 'Clave',
-                  hintText: 'ejemplo_nuevo',
-                  helperText:
-                      'Identificador único. No se puede modificar después.',
-                  border: OutlineInputBorder(),
+              if (_creando)
+                TextField(
+                  controller: _claveController,
+                  enabled: _creando && !_guardando,
+                  decoration: const InputDecoration(
+                    labelText: 'Clave',
+                    hintText: 'ejemplo_nuevo',
+                    helperText:
+                        'Identificador único. No se puede modificar después.',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _nombreController,
@@ -407,9 +404,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
       ),
       actions: <Widget>[
         TextButton(
-          onPressed: _guardando
-              ? null
-              : () => Navigator.of(context).pop(false),
+          onPressed: _guardando ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancelar'),
         ),
         FilledButton(
@@ -418,9 +413,7 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(_creando ? 'Crear' : 'Guardar cambios'),
         ),

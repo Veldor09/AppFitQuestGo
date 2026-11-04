@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/catalogos/categorias_nodo.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
-import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
@@ -28,18 +28,20 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
   late final NodoApi _api = widget.api ?? NodoApi();
   late Future<List<Nodo>> _futuro;
   final Set<int> _procesando = <int>{};
+  String _busqueda = '';
+  int _filtroEstado = 0;
 
   @override
   void initState() {
     super.initState();
-    _futuro = _api.listarPendientes();
+    _futuro = _api.listarAdmin();
   }
 
   void _recargar() {
     // Bloque, no expresion: `=> _futuro = x` devuelve el Future asignado,
     // y setState no acepta un callback que devuelva un Future.
     setState(() {
-      _futuro = _api.listarPendientes();
+      _futuro = _api.listarAdmin();
     });
   }
 
@@ -70,62 +72,111 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
       future: _futuro,
       builder: (BuildContext context, AsyncSnapshot<List<Nodo>> snap) {
         final bool cargando = snap.connectionState == ConnectionState.waiting;
-        final String? error =
-            snap.hasError ? _mensajeError(l10n, snap.error!) : null;
+        final String? error = snap.hasError
+            ? _mensajeError(l10n, snap.error!)
+            : null;
         final List<Nodo> nodos = snap.data ?? const <Nodo>[];
+        final List<Nodo> visibles = nodos.where((nodo) {
+          if (_filtroEstado == 1 && nodo.estado != 'Pendiente') return false;
+          if (_filtroEstado == 2 && nodo.estado != 'Aprobado') return false;
+          if (_filtroEstado == 3 &&
+              nodo.estado != 'Rechazado' &&
+              nodo.estado != 'Obsoleto') {
+            return false;
+          }
+          final categoria = categoriaNodoLabel(
+            l10n,
+            nodo.categoria,
+            otro: nodo.categoriaOtro,
+          );
+          return '${nodo.nombre} $categoria ${nodo.creadoPorNombre ?? ''} ${nodo.estado} ${nodo.descripcion ?? ''}'
+              .toLowerCase()
+              .contains(_busqueda);
+        }).toList();
 
         return AdminListScaffold(
           searchHint: l10n.nodosSearchHint,
+          onSearch: (value) =>
+              setState(() => _busqueda = value.trim().toLowerCase()),
+          tabs: const <String>[
+            'Todos',
+            'Pendientes',
+            'Aprobados',
+            'Desactivados',
+          ],
+          tabIndex: _filtroEstado,
+          onTab: (indice) => setState(() => _filtroEstado = indice),
           child: AdminDataTable(
             loading: cargando,
             error: error,
             onRetry: _recargar,
-            emptyTitle: l10n.nodosSinPropuestos,
-            emptyMessage: l10n.nodosSinPropuestosMensaje,
+            emptyTitle: nodos.isEmpty ? 'Sin nodos' : 'Sin resultados',
+            emptyMessage: nodos.isEmpty
+                ? 'Todavía no hay nodos registrados.'
+                : 'No hay nodos que coincidan con la búsqueda o el filtro.',
             rows: <AdminRow>[
-              for (final Nodo nodo in nodos)
+              for (final Nodo nodo in visibles)
                 AdminRow(
                   icon: Icons.location_on_outlined,
                   title: nodo.nombre,
-                  subtitle: nodo.creadoPorNombre == null
-                      ? categoriaNodoLabel(
-                          l10n,
-                          nodo.categoria,
-                          otro: nodo.categoriaOtro,
-                        )
-                      : l10n.nodosPropuestoPor(
-                          categoriaNodoLabel(
-                            l10n,
-                            nodo.categoria,
-                            otro: nodo.categoriaOtro,
-                          ),
-                          nodo.creadoPorNombre!,
-                        ),
+                  subtitle:
+                      '${nodo.estado} · ${nodo.creadoPorNombre == null ? categoriaNodoLabel(l10n, nodo.categoria, otro: nodo.categoriaOtro) : l10n.nodosPropuestoPor(categoriaNodoLabel(l10n, nodo.categoria, otro: nodo.categoriaOtro), nodo.creadoPorNombre!)}',
                   // La ficha muestra la foto: lo que el admin necesita para decidir.
-                  onTap: () => mostrarFichaNodo(context, nodo, _api),
+                  onTap: () => mostrarDetalleAdmin(
+                    context,
+                    titulo: nodo.nombre,
+                    icono: Icons.location_on_outlined,
+                    estado: nodo.estado,
+                    campos: <String, String>{
+                      'Nombre': nodo.nombre,
+                      'Categoría': categoriaNodoLabel(
+                        l10n,
+                        nodo.categoria,
+                        otro: nodo.categoriaOtro,
+                      ),
+                      'Creado por': nodo.creadoPorNombre ?? '—',
+                      'Descripción': nodo.descripcion ?? '—',
+                      'Beneficio': nodo.beneficio ?? '—',
+                      'Ubicación':
+                          '${nodo.lat.toStringAsFixed(5)}, ${nodo.lng.toStringAsFixed(5)}',
+                      'Estado': nodo.estado,
+                    },
+                  ),
                   trailing: _procesando.contains(nodo.id)
                       ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            _accionIcono(
-                              icon: Icons.close_rounded,
-                              color: FqColors.risk,
-                              tooltip: l10n.comunRechazar,
-                              onPressed: () =>
-                                  _decidir(l10n, nodo, 'Rechazado'),
+                      : PopupMenuButton<String>(
+                          tooltip: 'Acciones',
+                          onSelected: (accion) {
+                            if (accion == 'foto') {
+                              mostrarFichaNodo(context, nodo, _api);
+                            }
+                            if (accion == 'aprobar') {
+                              _decidir(l10n, nodo, 'Aprobado');
+                            }
+                            if (accion == 'desactivar') {
+                              _decidir(l10n, nodo, 'Rechazado');
+                            }
+                          },
+                          itemBuilder: (_) => <PopupMenuEntry<String>>[
+                            const PopupMenuItem(
+                              value: 'foto',
+                              child: Text('Ver foto'),
                             ),
-                            _accionIcono(
-                              icon: Icons.check_rounded,
-                              color: FqColors.trail,
-                              tooltip: l10n.comunAprobar,
-                              onPressed: () =>
-                                  _decidir(l10n, nodo, 'Aprobado'),
-                            ),
+                            if (nodo.estado == 'Pendiente')
+                              const PopupMenuItem(
+                                value: 'aprobar',
+                                child: Text('Aprobar'),
+                              ),
+                            if (nodo.estado == 'Pendiente' ||
+                                nodo.estado == 'Aprobado')
+                              const PopupMenuItem(
+                                value: 'desactivar',
+                                child: Text('Desactivar'),
+                              ),
                           ],
                         ),
                 ),
@@ -133,21 +184,6 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _accionIcono({
-    required IconData icon,
-    required Color color,
-    required String tooltip,
-    required VoidCallback onPressed,
-  }) {
-    return IconButton(
-      icon: Icon(icon, size: 18, color: color),
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      onPressed: onPressed,
     );
   }
 

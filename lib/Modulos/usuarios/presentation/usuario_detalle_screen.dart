@@ -148,8 +148,10 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                   children: [
                     Text(
                       usuario.nombreUser,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: FqColors.ink,
                       ),
@@ -157,12 +159,18 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                     const SizedBox(height: 4),
                     Text(
                       usuario.emailUser,
-                      style: const TextStyle(color: FqColors.muted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: FqColors.muted,
+                      ),
                     ),
                     const SizedBox(height: 5),
                     Text(
                       'Rol: ${usuario.etiquetaRol}  ·  '
                       'Estado: ${usuario.estado}',
+                      maxLines: 2,
                       style: const TextStyle(
                         fontSize: 12,
                         color: FqColors.muted,
@@ -188,53 +196,74 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
     final aportes = _mapa(datos.aportes['resumen']);
     final reportes = _mapa(datos.reportes['resumen']);
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        _indicador(
-          'Interacciones',
-          historial['totalInteracciones'],
-          Icons.history,
-        ),
-        _indicador('Rutas creadas', aportes['totalRutas'], Icons.route),
-        _indicador(
-          'Nodos creados',
-          aportes['totalNodos'],
-          Icons.place_outlined,
-        ),
-        _indicador(
-          'Reportes',
-          reportes['totalReportes'],
-          Icons.report_outlined,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columnas = constraints.maxWidth >= 760 ? 4 : 2;
+        final ancho = (constraints.maxWidth - 12 * (columnas - 1)) / columnas;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                'Interacciones',
+                historial['totalInteracciones'],
+                Icons.history,
+              ),
+            ),
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                'Rutas creadas',
+                aportes['totalRutas'],
+                Icons.route,
+              ),
+            ),
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                'Nodos creados',
+                aportes['totalNodos'],
+                Icons.place_outlined,
+              ),
+            ),
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                'Reportes',
+                reportes['totalReportes'],
+                Icons.report_outlined,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _indicador(String titulo, dynamic valor, IconData icono) {
-    return SizedBox(
-      width: 190,
-      child: _panel(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icono, color: FqColors.muted),
-            const SizedBox(height: 10),
-            Text(
-              '${valor ?? 0}',
-              style: const TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.w800,
-                color: FqColors.ink,
-              ),
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, color: FqColors.muted),
+          const SizedBox(height: 6),
+          Text(
+            '${valor ?? 0}',
+            style: const TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.w800,
+              color: FqColors.ink,
             ),
-            Text(
-              titulo,
-              style: const TextStyle(fontSize: 12, color: FqColors.muted),
-            ),
-          ],
-        ),
+          ),
+          Text(
+            titulo,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: FqColors.muted),
+          ),
+        ],
       ),
     );
   }
@@ -446,40 +475,54 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: FqColors.border)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icono, size: 20, color: FqColors.muted),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: FqColors.ink,
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icono, size: 20, color: FqColors.muted),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: FqColors.ink,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  subtitulo,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.5,
-                    color: FqColors.muted,
+                  const SizedBox(height: 5),
+                  Text(
+                    subtitulo,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.5,
+                      color: FqColors.muted,
+                    ),
                   ),
-                ),
-              ],
+                  if (constraints.maxWidth < 420) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      detalle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: FqColors.muted,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            detalle,
-            style: const TextStyle(fontSize: 11, color: FqColors.muted),
-          ),
-        ],
+            if (constraints.maxWidth >= 420) ...[
+              const SizedBox(width: 10),
+              Text(
+                detalle,
+                style: const TextStyle(fontSize: 11, color: FqColors.muted),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

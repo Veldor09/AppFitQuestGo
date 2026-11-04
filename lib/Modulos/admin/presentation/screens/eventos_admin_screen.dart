@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -7,8 +6,7 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaff
 
 /// ADM-08: gestión administrativa de eventos.
 ///
-/// Los eventos no requieren aprobación previa.
-/// El administrador puede consultar todos los eventos y eliminarlos.
+/// Los trazos de cada evento requieren aprobación antes de publicarse.
 class EventosAdminScreen extends StatefulWidget {
   const EventosAdminScreen({super.key, this.api});
 
@@ -28,6 +26,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   List<Map<String, dynamic>> _eventos = [];
   bool _cargando = true;
   bool _eliminando = false;
+  bool _decidiendo = false;
   String? _error;
   String _busqueda = '';
   int _filtro = 0;
@@ -50,6 +49,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     'Próximos',
     'En curso',
     'Finalizados',
+    'Pendientes',
   ];
 
   static const Map<String, String> _categorias = {
@@ -188,6 +188,49 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     return 'En curso';
   }
 
+  bool _tienePendientes(Map<String, dynamic> evento) =>
+      <String>['areas', 'recorridos'].any(
+        (tipo) => (evento[tipo] as List? ?? const []).any(
+          (zona) => zona is Map && zona['estado'] == 'Pendiente',
+        ),
+      );
+
+  Future<void> _decidirTrazo(
+    Map<String, dynamic> evento,
+    String tipo,
+    int indice,
+    String estado,
+  ) async {
+    final id = evento['id'];
+    if (id is! int || _decidiendo) return;
+    setState(() => _decidiendo = true);
+    try {
+      await _api.patch(
+        '/eventos/admin/$id/$tipo/$indice/estado',
+        <String, String>{'estado': estado},
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            estado == 'Aprobado'
+                ? 'Trazo aprobado.'
+                : 'Trazo denegado.',
+          ),
+        ),
+      );
+      await _cargarEventos();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_mensajeError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _decidiendo = false);
+    }
+  }
+
   String _empresa(Map<String, dynamic> evento) {
     final creador = evento['creadoPor'];
 
@@ -195,6 +238,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       final datos = Map<String, dynamic>.from(creador);
 
       for (final campo in [
+        'nombreUser',
         'nombreEmpresa',
         'nombreComercial',
         'nombre',
@@ -297,6 +341,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (_filtro == 1 && estado != 'Próximo') return false;
       if (_filtro == 2 && estado != 'En curso') return false;
       if (_filtro == 3 && estado != 'Finalizado') return false;
+      if (_filtro == 4 && !_tienePendientes(evento)) return false;
 
       if (_categoriaFiltro != null &&
           evento['categoria']?.toString() != _categoriaFiltro) {
@@ -327,10 +372,9 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (texto.isEmpty) return true;
 
       final nombre = (evento['nombre'] ?? '').toString().toLowerCase();
-      final categoria =
-          (evento['categoria'] ?? '').toString().toLowerCase();
-      final categoriaVisible =
-          (_categorias[evento['categoria']] ?? '').toLowerCase();
+      final categoria = (evento['categoria'] ?? '').toString().toLowerCase();
+      final categoriaVisible = (_categorias[evento['categoria']] ?? '')
+          .toLowerCase();
       final empresa = _empresa(evento).toLowerCase();
 
       return nombre.contains(texto) ||
@@ -357,10 +401,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     final color = _colorEstado(estado);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
@@ -384,10 +425,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         children: [
           Text(
             titulo,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 3),
           Text(valor),
@@ -413,16 +451,12 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       showDragHandle: true,
       backgroundColor: _colorCrema,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, actualizarModal) {
-            Future<void> elegirRango({
-              required bool esInicio,
-            }) async {
+            Future<void> elegirRango({required bool esInicio}) async {
               final actual = esInicio ? rangoInicio : rangoFin;
 
               final seleccionado = await showDateRangePicker(
@@ -523,10 +557,9 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             key: ValueKey('organizador:$organizador'),
-                            initialValue:
-                                organizadores.containsKey(organizador)
-                                    ? organizador
-                                    : null,
+                            initialValue: organizadores.containsKey(organizador)
+                                ? organizador
+                                : null,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Organizador',
@@ -568,7 +601,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                               rangoInicio == null
                                   ? 'Seleccionar rango de inicio'
                                   : 'Inicio: ${_formatearDia(rangoInicio!.start)}'
-                                      ' - ${_formatearDia(rangoInicio!.end)}',
+                                        ' - ${_formatearDia(rangoInicio!.end)}',
                             ),
                           ),
                           if (rangoInicio != null)
@@ -596,7 +629,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                               rangoFin == null
                                   ? 'Seleccionar rango de finalización'
                                   : 'Fin: ${_formatearDia(rangoFin!.start)}'
-                                      ' - ${_formatearDia(rangoFin!.end)}',
+                                        ' - ${_formatearDia(rangoFin!.end)}',
                             ),
                           ),
                           if (rangoFin != null)
@@ -609,8 +642,9 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                                 onPressed: () {
                                   actualizarModal(() => rangoFin = null);
                                 },
-                                child:
-                                    const Text('Quitar rango de finalización'),
+                                child: const Text(
+                                  'Quitar rango de finalización',
+                                ),
                               ),
                             ),
                           const SizedBox(height: 20),
@@ -716,23 +750,13 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _detalle('Estado', _estado(evento)),
-                  _detalle(
-                    'Categoría',
-                    evento['categoria']?.toString() ?? '-',
-                  ),
+                  _detalle('Categoría', evento['categoria']?.toString() ?? '-'),
                   _detalle('Empresa', _empresa(evento)),
-                  _detalle(
-                    'Inicio',
-                    _formatearFecha(evento['fechaInicio']),
-                  ),
-                  _detalle(
-                    'Fin',
-                    _formatearFecha(evento['fechaFin']),
-                  ),
+                  _detalle('Inicio', _formatearFecha(evento['fechaInicio'])),
+                  _detalle('Fin', _formatearFecha(evento['fechaFin'])),
                   _detalle(
                     'Descripción',
-                    evento['descripcion']?.toString() ??
-                        'Sin descripción',
+                    evento['descripcion']?.toString() ?? 'Sin descripción',
                   ),
                   _detalle(
                     'Áreas',
@@ -754,9 +778,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
             TextButton.icon(
               icon: const Icon(Icons.delete_outline),
               label: const Text('Eliminar evento'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red.shade700,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
               onPressed: _eliminando
                   ? null
                   : () {
@@ -770,9 +792,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     );
   }
 
-  Future<void> _confirmarEliminacion(
-    Map<String, dynamic> evento,
-  ) async {
+  Future<void> _confirmarEliminacion(Map<String, dynamic> evento) async {
     final id = evento['id'];
 
     if (id is! int || _eliminando) return;
@@ -819,18 +839,16 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Evento eliminado correctamente.'),
-        ),
+        const SnackBar(content: Text('Evento eliminado correctamente.')),
       );
 
       await _cargarEventos();
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_mensajeError(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_mensajeError(error))));
     } finally {
       if (mounted) {
         setState(() => _eliminando = false);
@@ -881,26 +899,63 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         error: _error,
         onRetry: _cargarEventos,
         emptyTitle: 'Sin eventos',
-        emptyMessage: _busqueda.isNotEmpty ||
-                _filtro != 0 ||
-                _cantidadFiltrosActivos > 0
+        emptyMessage:
+            _busqueda.isNotEmpty || _filtro != 0 || _cantidadFiltrosActivos > 0
             ? 'No hay eventos que coincidan con los filtros.'
             : 'Todavía no hay eventos registrados.',
-        rows: eventos.map((evento) {
-          final nombre = (evento['nombre'] ?? 'Sin nombre').toString();
-          final categoria = (evento['categoria'] ?? '-').toString();
-          final empresa = _empresa(evento);
-          final estado = _estado(evento);
+        rows: <AdminRow>[
+          for (final evento in eventos)
+            for (final tipo in <String>['areas', 'recorridos'])
+              for (
+                var indice = 0;
+                indice < (evento[tipo] as List? ?? const []).length;
+                indice++
+              )
+                if (((evento[tipo] as List)[indice] as Map)['estado'] ==
+                    'Pendiente')
+                  AdminRow(
+                    icon: tipo == 'areas' ? Icons.crop_square : Icons.route,
+                    title:
+                        ((evento[tipo] as List)[indice] as Map)['nombre']
+                            ?.toString() ??
+                        'Sin nombre',
+                    subtitle:
+                        '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)} · Pendiente de aprobación',
+                    trailing: PopupMenuButton<String>(
+                      enabled: !_decidiendo,
+                      tooltip: 'Revisar trazo',
+                      onSelected: (estado) =>
+                          _decidirTrazo(evento, tipo, indice, estado),
+                      itemBuilder: (_) => const <PopupMenuEntry<String>>[
+                        PopupMenuItem(
+                          value: 'Aprobado',
+                          child: Text('Aprobar'),
+                        ),
+                        PopupMenuItem(
+                          value: 'Denegado',
+                          child: Text('Denegar'),
+                        ),
+                      ],
+                    ),
+                  ),
+          if (_filtro != 4)
+            ...eventos.map((evento) {
+              final nombre = (evento['nombre'] ?? 'Sin nombre').toString();
+              final categoria = (evento['categoria'] ?? '-').toString();
+              final empresa = _empresa(evento);
+              final estado = _estado(evento);
 
-          return AdminRow(
-            icon: Icons.event_outlined,
-            title: nombre,
-            subtitle: '$categoria · $empresa · '
-                '${_formatearFecha(evento['fechaInicio'])}',
-            trailing: _etiquetaEstado(estado),
-            onTap: _eliminando ? null : () => _mostrarDetalle(evento),
-          );
-        }).toList(),
+              return AdminRow(
+                icon: Icons.event_outlined,
+                title: nombre,
+                subtitle:
+                    '$categoria · $empresa · '
+                    '${_formatearFecha(evento['fechaInicio'])}',
+                trailing: _etiquetaEstado(estado),
+                onTap: _eliminando ? null : () => _mostrarDetalle(evento),
+              );
+            }),
+        ],
       ),
     );
   }

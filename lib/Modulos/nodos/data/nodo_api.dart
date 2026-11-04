@@ -106,15 +106,19 @@ class NodoApi {
   }
 
   /// NOD-04 · "Ya no existe": con suficientes votos el punto sale del mapa.
-  Future<Nodo> marcarObsoleto(int id, {required double lat, required double lng}) {
+  Future<Nodo> marcarObsoleto(
+    int id, {
+    required double lat,
+    required double lng,
+  }) {
     return _votar(id, 'obsoleto', lat, lng);
   }
 
   Future<Nodo> _votar(int id, String voto, double lat, double lng) async {
-    final dynamic data = await _client.patch('/nodos/$id/$voto', <String, dynamic>{
-      'lat': lat,
-      'lng': lng,
-    });
+    final dynamic data = await _client.patch(
+      '/nodos/$id/$voto',
+      <String, dynamic>{'lat': lat, 'lng': lng},
+    );
     return Nodo.fromJson(data as Map<String, dynamic>);
   }
 
@@ -122,9 +126,10 @@ class NodoApi {
   /// servidor responde 403 con `DESTACAR_SIN_PLAN`, `DESTACAR_TOPE` o
   /// `DESTACAR_NO_ELEGIBLE` en `ApiException.message`.
   Future<ResultadoDestacar> destacar(int id, {required bool destacar}) async {
-    final dynamic data = await _client.patch('/nodos/$id/destacar', <String, dynamic>{
-      'destacar': destacar,
-    });
+    final dynamic data = await _client.patch(
+      '/nodos/$id/destacar',
+      <String, dynamic>{'destacar': destacar},
+    );
     final Map<String, dynamic> json = data as Map<String, dynamic>;
     return (
       destacarActivado: json['destacarActivado'] as bool? ?? false,
@@ -135,6 +140,13 @@ class NodoApi {
   /// ADM-07 · Cola de moderacion. Solo Admin.
   Future<List<Nodo>> listarPendientes() async {
     final dynamic data = await _client.get('/nodos/pendientes');
+    return (data as List<dynamic>)
+        .map((dynamic e) => Nodo.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<Nodo>> listarAdmin() async {
+    final dynamic data = await _client.get('/nodos/admin/todos');
     return (data as List<dynamic>)
         .map((dynamic e) => Nodo.fromJson(e as Map<String, dynamic>))
         .toList();

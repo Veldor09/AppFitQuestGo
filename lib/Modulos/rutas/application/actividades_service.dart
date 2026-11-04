@@ -91,7 +91,7 @@ class ActividadesService {
             duracionSegundos: a.duracionSegundos,
             iniciadoEn: a.iniciadoEn,
             finalizadoEn: a.finalizadoEn,
-            puntos: a.puntos,
+            puntos : a.puntos
           );
           await _dao.eliminar(a.idLocal);
           subidas++;

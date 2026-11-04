@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -8,27 +7,23 @@ import 'package:fit_quest_go/Modulos/admin/data/insignia_admin_item.dart';
 import 'package:fit_quest_go/Modulos/admin/data/insignias_admin_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 /// ADM-10 · Gestión administrativa de insignias.
 class InsigniasAdminScreen extends StatefulWidget {
-  const InsigniasAdminScreen({
-    super.key,
-    this.api,
-  });
+  const InsigniasAdminScreen({super.key, this.api});
 
   /// Permite inyectar un servicio simulado durante las pruebas.
   final InsigniasAdminApi? api;
 
   @override
-  State<InsigniasAdminScreen> createState() =>
-      _InsigniasAdminScreenState();
+  State<InsigniasAdminScreen> createState() => _InsigniasAdminScreenState();
 }
 
 class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
   late final InsigniasAdminApi _api;
 
-  final TextEditingController _busquedaController =
-      TextEditingController();
+  final TextEditingController _busquedaController = TextEditingController();
 
   List<InsigniaAdminItem> _insignias = <InsigniaAdminItem>[];
 
@@ -64,8 +59,7 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     });
 
     try {
-      final List<InsigniaAdminItem> insignias =
-          await _api.listarInsignias();
+      final List<InsigniaAdminItem> insignias = await _api.listarInsignias();
 
       if (!mounted || version != _versionCarga) return;
 
@@ -98,17 +92,12 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     }).toList();
   }
 
-  Future<void> _abrirFormulario({
-    InsigniaAdminItem? insignia,
-  }) async {
+  Future<void> _abrirFormulario({InsigniaAdminItem? insignia}) async {
     final bool? guardado = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        return _FormularioInsignia(
-          api: _api,
-          insignia: insignia,
-        );
+        return _FormularioInsignia(api: _api, insignia: insignia);
       },
     );
 
@@ -142,19 +131,16 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
     final List<InsigniaAdminItem> filtradas = _insigniasFiltradas;
-    final int totalPaginas =
-        (filtradas.length / _insigniasPorPagina).ceil();
+    final int totalPaginas = (filtradas.length / _insigniasPorPagina).ceil();
     final int paginaVisible = totalPaginas == 0
         ? 0
         : _paginaActual.clamp(0, totalPaginas - 1);
     final int inicio = paginaVisible * _insigniasPorPagina;
-    final int fin = (inicio + _insigniasPorPagina).clamp(
-      0,
-      filtradas.length,
-    );
+    final int fin = (inicio + _insigniasPorPagina).clamp(0, filtradas.length);
 
-    final List<AdminRow> filas =
-        filtradas.sublist(inicio, fin).map((InsigniaAdminItem insignia) {
+    final List<AdminRow> filas = filtradas.sublist(inicio, fin).map((
+      InsigniaAdminItem insignia,
+    ) {
       final String descripcion =
           '${insignia.codigo} · ${insignia.metrica ?? "Sin métrica"}'
           ' · Meta: ${_formatearMeta(insignia.meta)}';
@@ -163,20 +149,28 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
         icon: Icons.military_tech_outlined,
         title: '${insignia.emoji} ${insignia.nombre}',
         subtitle: descripcion,
-        trailing: Chip(
-          label: Text(insignia.activa ? 'Activa' : 'Inactiva'),
-          backgroundColor: insignia.activa
-              ? Colors.green.shade50
-              : Colors.grey.shade200,
-          labelStyle: TextStyle(
-            color: insignia.activa
-                ? Colors.green.shade800
-                : Colors.grey.shade800,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
+        trailing: PopupMenuButton<String>(
+          tooltip: 'Acciones',
+          onSelected: (accion) {
+            if (accion == 'editar') _abrirFormulario(insignia: insignia);
+          },
+          itemBuilder: (_) => const <PopupMenuEntry<String>>[
+            PopupMenuItem(value: 'editar', child: Text('Editar')),
+          ],
         ),
-        onTap: () => _abrirFormulario(insignia: insignia),
+        onTap: () => mostrarDetalleAdmin(context,
+          titulo: insignia.nombre,
+          icono: Icons.military_tech_outlined,
+          estado: insignia.activa ? 'Activa' : 'Inactiva',
+          campos: <String, String>{
+            'Nombre': insignia.nombre,
+            'Descripción': insignia.descripcion,
+            'Tipo': insignia.tipo,
+            'Métrica': insignia.metrica ?? '—',
+            'Meta': _formatearMeta(insignia.meta),
+            'Estado': insignia.activa ? 'Activa' : 'Inactiva',
+          },
+        ),
       );
     }).toList();
 
@@ -184,12 +178,18 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       searchHint: l10n.admInsigniasSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {
-        setState(() { _busqueda = valor; _paginaActual = 0; });
+        setState(() {
+          _busqueda = valor;
+          _paginaActual = 0;
+        });
       },
       tabs: const <String>['Todas', 'Activas', 'Inactivas'],
       tabIndex: _filtroEstado,
       onTab: (int indice) {
-        setState(() { _filtroEstado = indice; _paginaActual = 0; });
+        setState(() {
+          _filtroEstado = indice;
+          _paginaActual = 0;
+        });
       },
       toolbarTrailing: FqButton.primary(
         label: l10n.comunNuevo,
@@ -244,17 +244,13 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
 /// Formulario independiente para crear y editar insignias.
 class _FormularioInsignia extends StatefulWidget {
-  const _FormularioInsignia({
-    required this.api,
-    this.insignia,
-  });
+  const _FormularioInsignia({required this.api, this.insignia});
 
   final InsigniasAdminApi api;
   final InsigniaAdminItem? insignia;
 
   @override
-  State<_FormularioInsignia> createState() =>
-      _FormularioInsigniaState();
+  State<_FormularioInsignia> createState() => _FormularioInsigniaState();
 }
 
 class _FormularioInsigniaState extends State<_FormularioInsignia> {
@@ -292,29 +288,21 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
 
     final InsigniaAdminItem? insignia = widget.insignia;
 
-    _codigoController = TextEditingController(
-      text: insignia?.codigo ?? '',
-    );
+    _codigoController = TextEditingController(text: insignia?.codigo ?? '');
 
-    _nombreController = TextEditingController(
-      text: insignia?.nombre ?? '',
-    );
+    _nombreController = TextEditingController(text: insignia?.nombre ?? '');
 
     _descripcionController = TextEditingController(
       text: insignia?.descripcion ?? '',
     );
 
-    _emojiController = TextEditingController(
-      text: insignia?.emoji ?? '',
-    );
+    _emojiController = TextEditingController(text: insignia?.emoji ?? '');
 
     _metaController = TextEditingController(
       text: insignia?.meta?.toString() ?? '',
     );
 
-    _tipo = _tipos.containsKey(insignia?.tipo)
-        ? insignia!.tipo
-        : 'hito';
+    _tipo = _tipos.containsKey(insignia?.tipo) ? insignia!.tipo : 'hito';
 
     _metrica = _metricas.containsKey(insignia?.metrica)
         ? insignia!.metrica!
@@ -340,8 +328,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
   Future<void> _guardar() async {
     if (_guardando) return;
 
-    final String codigo =
-        _codigoController.text.trim().toUpperCase();
+    final String codigo = _codigoController.text.trim().toUpperCase();
     final String nombre = _nombreController.text.trim();
     final String descripcion = _descripcionController.text.trim();
     final String emoji = _emojiController.text.trim();
@@ -352,14 +339,12 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         emoji.isEmpty ||
         (_creando && codigo.isEmpty)) {
       setState(() {
-        _errorFormulario =
-            'Completa todos los campos obligatorios.';
+        _errorFormulario = 'Completa todos los campos obligatorios.';
       });
       return;
     }
 
-    if (_creando &&
-        !RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(codigo)) {
+    if (_creando && !RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(codigo)) {
       setState(() {
         _errorFormulario =
             'El código debe iniciar con una letra y contener '
@@ -368,18 +353,14 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
       return;
     }
 
-    if (codigo.length > 50 ||
-        nombre.length > 100 ||
-        emoji.runes.length > 10) {
+    if (codigo.length > 50 || nombre.length > 100 || emoji.runes.length > 10) {
       setState(() {
-        _errorFormulario =
-            'Revisá las longitudes máximas de los campos.';
+        _errorFormulario = 'Revisá las longitudes máximas de los campos.';
       });
       return;
     }
 
-    final double? meta =
-        double.tryParse(textoMeta.replaceAll(',', '.'));
+    final double? meta = double.tryParse(textoMeta.replaceAll(',', '.'));
 
     // Una insignia especial existente con meta nula
     // puede conservar ese valor durante la edición.
@@ -396,8 +377,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
             !meta.isFinite ||
             meta < 0.01 ||
             meta > 99999999.99 ||
-            ((meta * 100) - (meta * 100).round()).abs() >
-                0.000001)) {
+            ((meta * 100) - (meta * 100).round()).abs() > 0.000001)) {
       setState(() {
         _errorFormulario =
             'La meta debe ser positiva y tener como máximo '
@@ -476,195 +456,185 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
         ),
       ),
       child: AlertDialog(
-      title: Text(
-        _creando ? 'Nueva insignia' : 'Editar insignia',
-      ),
-      content: SizedBox(
-        width: 480,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const Text(
-                'Configuración de la insignia',
-                style: TextStyle(
-                  color: FqColors.muted,
-                  fontWeight: FontWeight.w600,
+        title: Text(_creando ? 'Nueva insignia' : 'Editar insignia'),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const Text(
+                  'Configuración de la insignia',
+                  style: TextStyle(
+                    color: FqColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _codigoController,
-                enabled: _creando && !_guardando,
-                maxLength: 50,
-                decoration: const InputDecoration(
-                  labelText: 'Código único',
-                  hintText: 'RUTAS_10',
-                  helperText:
-                      'El código no se puede modificar después.',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _nombreController,
-                enabled: !_guardando,
-                maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _descripcionController,
-                enabled: !_guardando,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Descripción',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emojiController,
-                enabled: !_guardando,
-                decoration: const InputDecoration(
-                  labelText: 'Emoji',
-                  hintText: '🏅',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _tipo,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo',
-                  border: OutlineInputBorder(),
-                ),
-                items: _tipos.entries.map((entry) {
-                  return DropdownMenuItem<String>(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  );
-                }).toList(),
-                onChanged: _guardando
-                    ? null
-                    : (String? valor) {
-                        if (valor == null) return;
-
-                        setState(() {
-                          _tipo = valor;
-
-                          if (_tipo == 'km') {
-                            _metrica = 'km';
-                          }
-                        });
-                      },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                // Fuerza la actualización visual de la métrica
-                // cuando cambia el tipo de insignia.
-                key: ValueKey<String>('metrica_$_tipo'),
-                initialValue: _metrica,
-                decoration: const InputDecoration(
-                  labelText: 'Métrica',
-                  border: OutlineInputBorder(),
-                ),
-                items: _metricas.entries
-                    .where(
-                      (entry) =>
-                          _tipo != 'km' || entry.key == 'km',
-                    )
-                    .map((entry) {
-                  return DropdownMenuItem<String>(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  );
-                }).toList(),
-                onChanged: _guardando
-                    ? null
-                    : (String? valor) {
-                        if (valor != null) {
-                          setState(() => _metrica = valor);
-                        }
-                      },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _metaController,
-                enabled: !_guardando,
-                keyboardType:
-                    const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Meta',
-                  hintText: '10',
-                  helperText: !_creando &&
-                          widget.insignia?.meta == null &&
-                          _tipo == 'hito' &&
-                          _metrica == 'especial'
-                      ? 'Opcional: dejá vacío para conservar '
-                          'la meta nula.'
-                      : 'Número positivo, máximo dos decimales.',
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Insignia activa'),
-                subtitle: Text(
-                  _activa
-                      ? 'Disponible para los usuarios'
-                      : 'No disponible para nuevos desbloqueos',
-                ),
-                value: _activa,
-                onChanged: _guardando
-                    ? null
-                    : (bool valor) {
-                        setState(() => _activa = valor);
-                      },
-              ),
-              if (_errorFormulario != null) ...<Widget>[
+                const SizedBox(height: 16),
+                if (_creando)
+                  TextField(
+                    controller: _codigoController,
+                    enabled: _creando && !_guardando,
+                    maxLength: 50,
+                    decoration: const InputDecoration(
+                      labelText: 'Código único',
+                      hintText: 'RUTAS_10',
+                      helperText: 'El código no se puede modificar después.',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 const SizedBox(height: 12),
-                Text(
-                  _errorFormulario!,
-                  style: const TextStyle(color: Colors.red),
+                TextField(
+                  controller: _nombreController,
+                  enabled: !_guardando,
+                  maxLength: 100,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descripcionController,
+                  enabled: !_guardando,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _emojiController,
+                  enabled: !_guardando,
+                  decoration: const InputDecoration(
+                    labelText: 'Emoji',
+                    hintText: '🏅',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _tipo,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _tipos.entries.map((entry) {
+                    return DropdownMenuItem<String>(
+                      value: entry.key,
+                      child: Text(entry.value),
+                    );
+                  }).toList(),
+                  onChanged: _guardando
+                      ? null
+                      : (String? valor) {
+                          if (valor == null) return;
+
+                          setState(() {
+                            _tipo = valor;
+
+                            if (_tipo == 'km') {
+                              _metrica = 'km';
+                            }
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  // Fuerza la actualización visual de la métrica
+                  // cuando cambia el tipo de insignia.
+                  key: ValueKey<String>('metrica_$_tipo'),
+                  initialValue: _metrica,
+                  decoration: const InputDecoration(
+                    labelText: 'Métrica',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _metricas.entries
+                      .where((entry) => _tipo != 'km' || entry.key == 'km')
+                      .map((entry) {
+                        return DropdownMenuItem<String>(
+                          value: entry.key,
+                          child: Text(entry.value),
+                        );
+                      })
+                      .toList(),
+                  onChanged: _guardando
+                      ? null
+                      : (String? valor) {
+                          if (valor != null) {
+                            setState(() => _metrica = valor);
+                          }
+                        },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _metaController,
+                  enabled: !_guardando,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Meta',
+                    hintText: '10',
+                    helperText:
+                        !_creando &&
+                            widget.insignia?.meta == null &&
+                            _tipo == 'hito' &&
+                            _metrica == 'especial'
+                        ? 'Opcional: dejá vacío para conservar '
+                              'la meta nula.'
+                        : 'Número positivo, máximo dos decimales.',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Insignia activa'),
+                  subtitle: Text(
+                    _activa
+                        ? 'Disponible para los usuarios'
+                        : 'No disponible para nuevos desbloqueos',
+                  ),
+                  value: _activa,
+                  onChanged: _guardando
+                      ? null
+                      : (bool valor) {
+                          setState(() => _activa = valor);
+                        },
+                ),
+                if (_errorFormulario != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorFormulario!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
-          onPressed: _guardando
-              ? null
-              : () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: _guardando ? null : _guardar,
-          child: _guardando
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  _creando
-                      ? 'Crear insignia'
-                      : 'Guardar cambios',
-                ),
-        ),
-      ],
+        actions: <Widget>[
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+            onPressed: _guardando
+                ? null
+                : () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: _guardando ? null : _guardar,
+            child: _guardando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(_creando ? 'Crear insignia' : 'Guardar cambios'),
+          ),
+        ],
       ),
     );
   }

@@ -70,7 +70,8 @@ class AdminDataTable extends StatelessWidget {
       return FqEmptyState(
         icon: Icons.inbox_outlined,
         title: emptyTitle,
-        message: emptyMessage ??
+        message:
+            emptyMessage ??
             'Aun no hay datos. Se mostraran aqui cuando el backend los provea.',
         action: emptyAction,
       );
@@ -80,8 +81,10 @@ class AdminDataTable extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: rows.length,
-      separatorBuilder: (_, _) => const Divider(height: 1, color: FqColors.border),
-      itemBuilder: (BuildContext context, int i) => _AdminTableRow(row: rows[i]),
+      separatorBuilder: (_, _) =>
+          const Divider(height: 1, color: FqColors.border),
+      itemBuilder: (BuildContext context, int i) =>
+          _AdminTableRow(row: rows[i]),
     );
   }
 }
@@ -102,9 +105,7 @@ class _AdminTableRowState extends State<_AdminTableRow> {
   Widget build(BuildContext context) {
     final AdminRow row = widget.row;
     return MouseRegion(
-      cursor: row.onTap == null
-          ? MouseCursor.defer
-          : SystemMouseCursors.click,
+      cursor: row.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
@@ -113,66 +114,104 @@ class _AdminTableRowState extends State<_AdminTableRow> {
           color: _hover ? FqColors.rowHover : FqColors.white,
           constraints: const BoxConstraints(minHeight: 58),
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: FqColors.listIconBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(row.icon, size: 16, color: FqColors.night),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final mobile = constraints.maxWidth < 340;
+              final details = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    row.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: FqColors.ink,
+                    ),
+                  ),
+                  if (row.subtitle != null)
                     Text(
-                      row.title,
+                      row.subtitle!,
+                      maxLines: mobile ? 3 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: FqColors.ink,
-                      ),
-                    ),
-                    if (row.subtitle != null)
-                      Text(
-                        row.subtitle!,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: FqColors.muted,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (row.trailing != null) ...<Widget>[
-                const SizedBox(width: 8),
-                row.trailing!,
-              ],
-              if (row.onTap != null) ...<Widget>[
-                const SizedBox(width: 10),
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Ver',
-                      style: TextStyle(
                         fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: FqColors.river,
+                        color: FqColors.muted,
                       ),
                     ),
-                    Icon(Icons.chevron_right, size: 14, color: FqColors.river),
+                ],
+              );
+              return Row(
+                children: <Widget>[
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: FqColors.listIconBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(row.icon, size: 16, color: FqColors.night),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: mobile
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              details,
+                              if (row.trailing != null || row.onTap != null)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: <Widget>[
+                                    if (row.trailing != null)
+                                      Flexible(child: row.trailing!),
+                                    if (row.onTap != null)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 8),
+                                        child: Text(
+                                          'Ver',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: FqColors.river,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          )
+                        : details,
+                  ),
+                  if (!mobile && row.trailing != null) ...<Widget>[
+                    const SizedBox(width: 8),
+                    row.trailing!,
                   ],
-                ),
-              ],
-            ],
+                  if (!mobile && row.onTap != null) ...<Widget>[
+                    const SizedBox(width: 10),
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          'Ver',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: FqColors.river,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 14,
+                          color: FqColors.river,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         ),
       ),
