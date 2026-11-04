@@ -135,7 +135,7 @@ void main() {
       expect(find.text('TERMINADO'), findsOneWidget);
     });
 
-    testWidgets('lista las areas y los recorridos que tiene', (
+    testWidgets('lista las areas que tiene', (
       WidgetTester tester,
     ) async {
       await _abrir(tester, _evento(areas: 2, recorridos: 3));
@@ -143,18 +143,16 @@ void main() {
       expect(find.text('Areas'), findsOneWidget);
       expect(find.text('Area 1'), findsOneWidget);
       expect(find.text('Area 2'), findsOneWidget);
-      expect(find.text('Recorridos'), findsOneWidget);
-      expect(find.text('Recorrido 1'), findsOneWidget);
-      expect(find.text('Recorrido 3'), findsOneWidget);
+      expect(find.text('Recorridos'), findsNothing);
     });
 
-    testWidgets('un evento solo de recorridos no muestra la seccion de areas', (
+    testWidgets('un evento solo de recorridos no muestra la seccion de areas ni recorridos', (
       WidgetTester tester,
     ) async {
       await _abrir(tester, _evento(areas: 0, recorridos: 1));
 
       expect(find.text('Areas'), findsNothing);
-      expect(find.text('Recorridos'), findsOneWidget);
+      expect(find.text('Recorridos'), findsNothing);
     });
 
     testWidgets('un evento solo de areas no muestra la seccion de recorridos', (

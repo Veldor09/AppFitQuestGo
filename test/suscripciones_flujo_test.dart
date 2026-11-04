@@ -1,3 +1,5 @@
+import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
+import 'package:fit_quest_go/core/mapa/mapas_offline_servicio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -43,6 +45,31 @@ MiSuscripcion _vigente({
   venceEn: hasta ?? DateTime(2026, 11, 20),
   audiencia: audiencia,
 );
+
+
+class _OfflineDaoFalso extends RutasOfflineDao {
+  _OfflineDaoFalso(this.ids);
+  List<int> ids;
+  final List<int> eliminados = <int>[];
+
+  @override
+  Future<List<int>> listarIdsCronologicos() async => List<int>.of(ids);
+
+  @override
+  Future<Set<int>> idsBloqueadas({bool tieneSuscripcion = false, int limiteGratis = 1}) async {
+    if (tieneSuscripcion || ids.length <= limiteGratis) return <int>{};
+    return ids.sublist(limiteGratis).toSet();
+  }
+
+  @override
+  Future<List<int>> recortarAlLimite(int limite, {MapasOfflineServicio? mapas}) async {
+    if (ids.length <= limite) return <int>[];
+    final List<int> sobrantes = ids.sublist(limite);
+    eliminados.addAll(sobrantes);
+    ids = ids.sublist(0, limite);
+    return sobrantes;
+  }
+}
 
 void main() {
   group('PlanUsuario (cuantas rutas se pueden guardar sin conexion)', () {
@@ -112,6 +139,37 @@ void main() {
       api.respuesta = _vigente(audiencia: AudienciaPlan.empresa);
       expect(await plan.limiteRutasOffline(), kLimiteRutasOfflineGratis);
     });
+
+        test(
+      'si se suspende la suscripcion y el usuario tenia 7 rutas guardadas, no se eliminan pero se bloquean las sobrantes',
+      () async {
+        final _OfflineDaoFalso dao = _OfflineDaoFalso(<int>[101, 102, 103, 104, 105, 106, 107]);
+        final PlanUsuario planConDao = PlanUsuario(
+          api: api,
+          almacen: almacen,
+          offlineDao: dao,
+          ahora: () => hoy,
+        );
+
+        almacen.hasta = DateTime(2026, 11, 20);
+        api.respuesta = const MiSuscripcion(
+          id: 1,
+          estado: EstadoSuscripcion.suspendida,
+          vigente: false,
+          planNombre: 'x',
+        );
+
+        await planConDao.actualizar();
+
+        // No se borran físicamente de la base ni del almacenamiento
+        expect(dao.ids, <int>[101, 102, 103, 104, 105, 106, 107]);
+        expect(dao.eliminados, isEmpty);
+
+        // La primera agregada (101) permanece desbloqueada, las 6 siguientes (102..107) quedan bloqueadas
+        final Set<int> bloqueadas = await planConDao.rutasOfflineBloqueadas();
+        expect(bloqueadas, <int>{102, 103, 104, 105, 106, 107});
+      },
+    );
 
     test('olvidar (al cerrar sesion) borra lo recordado', () async {
       almacen.hasta = DateTime(2026, 11, 20);

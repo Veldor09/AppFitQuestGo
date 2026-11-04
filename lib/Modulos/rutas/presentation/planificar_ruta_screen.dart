@@ -1,3 +1,4 @@
+import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -504,6 +505,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
             ? l10n.rutasPublicadaAviso
             : 'Ruta guardada como privada.';
         notificarExito(msg);
+        RutasScreen.notificarCambio();
       } on ApiException {
         rethrow; // el servidor respondio: no es un problema de red
       } catch (_) {
@@ -519,6 +521,7 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         if (idLocal == null) rethrow;
         if (!mounted) return;
         notificarInfo(l10n.rutasGuardadaOfflineAviso);
+        RutasScreen.notificarCambio();
       }
       unawaited(_tracking.limpiar());
       setState(() {

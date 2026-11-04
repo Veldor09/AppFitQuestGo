@@ -1,3 +1,5 @@
+import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/editar_ruta_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +19,7 @@ import 'package:fit_quest_go/Modulos/calificaciones/presentation/pulgares.dart';
 import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
-import 'package:fit_quest_go/Modulos/patrocinio/presentation/invitar_a_plan.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
@@ -38,6 +40,7 @@ class RutaDetalleScreen extends StatefulWidget {
     this.puedeEnviarARevision = false,
     this.puedeEliminar = false,
     this.onCambio,
+    this.planApi,
     this.alEliminar,
     this.recorridoBuilder,
     this.calificaciones,
@@ -53,6 +56,7 @@ class RutaDetalleScreen extends StatefulWidget {
 
   final VoidCallback? alEliminar;
   final VoidCallback? onCambio;
+  final PlanApi? planApi;
   final Widget Function(BuildContext, Ruta)? recorridoBuilder;
 
   final CalificacionApi? calificaciones;
@@ -130,12 +134,17 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
     if (guardadas.length >= limite) {
       if (!mounted) return;
       if (limite < kLimiteRutasOfflineSuscrito && !esEmpresa) {
-        // Puede guardar mas: se le ofrece pedir la suscripcion.
-        await invitarAPlan(
-          context,
-          mensaje: l10n.planInvitacionOffline(
+        // Al superar el límite gratuito (1 ruta), redirige directamente
+        // al apartado de Mi suscripción (Perfil > Mi suscripción).
+        notificarInfo(
+          l10n.planInvitacionOffline(
             limite,
             kLimiteRutasOfflineSuscrito,
+          ),
+        );
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => PlanPatrocinioScreen(api: widget.planApi),
           ),
         );
       } else {
@@ -210,6 +219,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
       widget.ruta,
     );
     if (!eliminada || !mounted) return;
+    RutasScreen.notificarCambio();
     (widget.alEliminar ?? widget.onCambio)?.call();
     Navigator.of(context).pop();
   }

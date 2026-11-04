@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/mapa/navegacion_destino.dart';
@@ -28,6 +30,7 @@ class _UserShellState extends State<UserShell> {
     // Sube en silencio las rutas guardadas sin conexion en sesiones anteriores.
     SyncRutasService.instancia.sincronizar();
     ActividadesService.instancia.sincronizar();
+    unawaited(PlanUsuario.instancia.actualizar());
     NavegacionApp.instancia.solicitudesMapa.addListener(_irAlMapa);
   }
 
@@ -47,7 +50,7 @@ class _UserShellState extends State<UserShell> {
   Widget build(BuildContext context) {
     final List<Widget> pestanas = <Widget>[
       const HomeUsuarioScreen(),
-      const RutasScreen(),
+      RutasScreen(activa: _tab == 1),
       const PlanificarRutaScreen(),
       const EventosScreen(),
       PerfilScreen(onCerrarSesion: _cerrarSesion),

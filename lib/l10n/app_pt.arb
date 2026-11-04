@@ -623,7 +623,7 @@
   "interesesModalPrompt": "Selecione seus temas de interesse para descobrir rotas, eventos e conteúdos sob medida:",
   "interesesModalExito": "Interesses atualizados com sucesso",
   "interesesModalError": "Não foi possível atualizar os interesses. Verifique sua conexão.",
-  "rutaDetalleLimiteOffline": "Limite de {n} rotas offline atingido. Remova uma para baixar outra.",
+  "rutaDetalleLimiteOffline": "Limite de {n, plural, =1{1 rota} other{{n} rotas}} offline atingido. Remova uma para baixar outra.",
   "rutaDetalleErrorGuardarOffline": "Não foi possível salvar a rota no celular",
   "rutaDetalleOfflineGuardadoExito": "Rota e mapa salvos para uso offline",
   "rutaDetalleOfflineSinMapa": "Rota salva, mas não foi possível baixar o mapa. Tente novamente conectado.",
@@ -1137,7 +1137,7 @@
   "planPagoNoDisponible": "O pagamento para a sua região ainda não está disponível.",
   "planNoAplica": "Este plano não é para o seu tipo de conta.",
   "planInvitacionTitulo": "Você precisa de uma assinatura",
-  "planInvitacionOffline": "Você atingiu o limite de {n} rotas salvas offline. Com uma assinatura você pode salvar até {max}.",
+  "planInvitacionOffline": "Você atingiu o limite de {n, plural, =1{1 rota salva} other{{n} rotas salvas}} offline. Com uma assinatura você pode salvar até {max}.",
   "planInvitacionDestacar": "Para destacar você precisa de um plano de patrocínio ativo. Você pode solicitá-lo agora.",
   "planInvitacionVer": "Ver planos",
   "admTabRechazadas": "Rejeitadas",
@@ -1204,5 +1204,17 @@
   "planRegionTitulo": "Pagar de",
   "planRegionCostaRica": "Costa Rica",
   "planRegionOtro": "Outro país",
-  "planRegionAyuda": "O método de pagamento e os preços dependem do seu país. Altere isto se o seu telefone estiver configurado em outro país."
+  "planRegionAyuda": "O método de pagamento e os preços dependem do seu país. Altere isto se o seu telefone estiver configurado em outro país.",
+  "mapasOfflineBloqueadaBadge": "Bloqueada",
+  "@mapasOfflineBloqueadaBadge": {
+    "description": "Badge for locked offline routes"
+  },
+  "mapasOfflineBloqueadaSubtitulo": "Requer assinatura ativa para usar",
+  "@mapasOfflineBloqueadaSubtitulo": {
+    "description": "Subtitle for locked offline routes"
+  },
+  "mapasOfflineBloqueadaAviso": "Esta rota baixada requer uma assinatura ativa para uso offline.",
+  "@mapasOfflineBloqueadaAviso": {
+    "description": "Notice when tapping a locked offline route"
+  }
 }

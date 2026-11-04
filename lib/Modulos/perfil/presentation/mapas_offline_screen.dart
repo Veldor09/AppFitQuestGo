@@ -1,3 +1,5 @@
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
@@ -23,8 +25,26 @@ class MapasOfflineScreen extends StatefulWidget {
 class _MapasOfflineScreenState extends State<MapasOfflineScreen> {
   late final RutasOfflineDao _dao = widget.dao ?? RutasOfflineDao();
   late Future<List<Ruta>> _futuro = _dao.listar();
+  Set<int> _bloqueadas = <int>{};
 
-  void _recargar() => setState(() => _futuro = _dao.listar());
+  @override
+  void initState() {
+    super.initState();
+    _cargarBloqueadas();
+  }
+
+  Future<void> _cargarBloqueadas() async {
+    try {
+      final Set<int> b = await PlanUsuario.instancia.rutasOfflineBloqueadas();
+      if (!mounted) return;
+      setState(() => _bloqueadas = b);
+    } catch (_) {}
+  }
+
+  void _recargar() {
+    setState(() => _futuro = _dao.listar());
+    _cargarBloqueadas();
+  }
 
   Future<void> _quitar(Ruta ruta) async {
     final AppLocalizations? l10n = AppLocalizations.of(context);
@@ -95,43 +115,87 @@ class _MapasOfflineScreenState extends State<MapasOfflineScreen> {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (BuildContext c, int i) {
                     final Ruta r = rutas[i];
+                    final bool bloqueada = _bloqueadas.contains(r.id);
                     return Material(
                       color: FqColors.white,
                       borderRadius: BorderRadius.circular(12),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => _abrir(r),
+                        onTap: () {
+                          if (bloqueada) {
+                            notificarInfo(l10n.mapasOfflineBloqueadaAviso);
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const PlanPatrocinioScreen(),
+                              ),
+                            ).then((_) => _recargar());
+                            return;
+                          }
+                          _abrir(r);
+                        },
                         child: Container(
-                           padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+                          padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: FqColors.border),
+                            border: Border.all(
+                              color: bloqueada ? const Color(0xFFFCD34D) : FqColors.border,
+                              width: bloqueada ? 1.5 : 1.0,
+                            ),
+                            color: bloqueada ? const Color(0xFFFFFBEB) : null,
                           ),
                           child: Row(
                             children: <Widget>[
-                              const Icon(Icons.download_done_rounded,
-                                  color: Color(0xFF0D9488)),
+                              Icon(
+                                bloqueada ? Icons.lock_rounded : Icons.download_done_rounded,
+                                color: bloqueada ? const Color(0xFFD97706) : const Color(0xFF0D9488),
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
-                                    Text(
-                                      r.nombre,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                    Row(
+                                      children: <Widget>[
+                                        Expanded(
+                                          child: Text(
+                                            r.nombre,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        if (bloqueada)
+                                          Container(
+                                            margin: const EdgeInsets.only(left: 6, right: 6),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFEF3C7),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: const Color(0xFFF59E0B)),
+                                            ),
+                                            child: Text(
+                                              l10n.mapasOfflineBloqueadaBadge,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFFB45309),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${r.distanciaKm.toStringAsFixed(1)} km · '
-                                      '${l10n.mapasOfflinePuntos(r.puntos.length)}',
-                                      style: const TextStyle(
+                                      bloqueada
+                                          ? l10n.mapasOfflineBloqueadaSubtitulo
+                                          : '${r.distanciaKm.toStringAsFixed(1)} km · ${l10n.mapasOfflinePuntos(r.puntos.length)}',
+                                      style: TextStyle(
                                         fontSize: 11,
-                                        color: FqColors.muted,
+                                        color: bloqueada ? const Color(0xFFB45309) : FqColors.muted,
+                                        fontWeight: bloqueada ? FontWeight.w600 : FontWeight.normal,
                                       ),
                                     ),
                                   ],

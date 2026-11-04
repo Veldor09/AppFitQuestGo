@@ -65,6 +65,7 @@ class CapaEventosMapa {
   final Map<String, int> _porLinea = <String, int>{};
   final Map<String, int> _porPin = <String, int>{};
   final List<Cancelable> _escuchas = <Cancelable>[];
+  final List<PointAnnotation> _pinesSeleccion = <PointAnnotation>[];
 
   void _tocar(int? eventoId) {
     if (eventoId != null) alTocarEvento?.call(eventoId);
@@ -107,6 +108,8 @@ class CapaEventosMapa {
     List<ZonaEvento> recorridosSecundarios = const <ZonaEvento>[],
     List<PuntoGeo> pines = const <PuntoGeo>[],
     Set<int> eventosDestacados = const <int>{},
+    bool soloPines = false,
+    bool incluirFinRecorrido = true,
   }) async {
     await poligonos.deleteAll();
     await lineas.deleteAll();
@@ -122,13 +125,15 @@ class CapaEventosMapa {
     final List<ZonaEvento> rSec = List<ZonaEvento>.of(recorridosSecundarios);
     final List<PuntoGeo> p = List<PuntoGeo>.of(pines);
 
-    await _relleno(aSec, colorSecundarioEvento, 0.18);
-    await _trazo(rSec, colorSecundarioEvento, 4);
-    await _relleno(a, colorAreaEvento, 0.28);
-    await _trazo(r, colorRecorridoEvento, 5);
+    if (!soloPines) {
+      await _relleno(aSec, colorSecundarioEvento, 0.18);
+      await _trazo(rSec, colorSecundarioEvento, 4);
+      await _relleno(a, colorAreaEvento, 0.28);
+      await _trazo(r, colorRecorridoEvento, 5);
+    }
 
     final _Pines pinesDe = _Pines();
-    await _pinesDeZonas(pinesDe, aSec, rSec, true, densidad);
+    await _pinesDeZonas(pinesDe, aSec, rSec, true, densidad, null, const <int>{}, incluirFinRecorrido);
     await _pinesDeZonas(
       pinesDe,
       a,
@@ -137,6 +142,7 @@ class CapaEventosMapa {
       densidad,
       etiquetaZonas,
       eventosDestacados,
+      incluirFinRecorrido,
     );
     for (final PuntoGeo punto in p) {
       pinesDe.agregar(
@@ -158,6 +164,56 @@ class CapaEventosMapa {
       final int? evento = pinesDe.eventos[i];
       if (pin != null && evento != null) _porPin[pin.id] = evento;
     }
+  }
+
+
+  /// Dibuja dinámicamente las áreas, recorridos y el pin final de la ruta del evento seleccionado.
+  Future<void> seleccionarEvento(Evento evento, {double densidad = 2.0}) async {
+    await poligonos.deleteAll();
+    await lineas.deleteAll();
+    for (final PointAnnotation p in _pinesSeleccion) {
+      try {
+        await iconos.delete(p);
+      } catch (_) {}
+    }
+    _pinesSeleccion.clear();
+    _porPoligono.clear();
+    _porLinea.clear();
+
+    await _relleno(evento.areasRotuladas, colorAreaEvento, 0.28);
+    await _trazo(evento.recorridosRotulados, colorRecorridoEvento, 5);
+
+    // Agregar el pin del final de la ruta únicamente al seleccionar el evento
+    for (final ZonaEvento z in evento.recorridosRotulados) {
+      if (z.puntos.length >= 2) {
+        final PointAnnotation pinFin = await iconos.create(
+          opcionesDePin(
+            lat: z.puntos.last.lat,
+            lng: z.puntos.last.lng,
+            imagen: await imagenPin(TipoPin.recorridoFin),
+            densidad: densidad,
+          ),
+        );
+        if (pinFin != null) {
+          _pinesSeleccion.add(pinFin);
+          _porPin[pinFin.id] = evento.id;
+        }
+      }
+    }
+  }
+
+  /// Limpia las áreas, recorridos y pin final resaltados, manteniendo el mapa limpio y despejado.
+  Future<void> limpiarSeleccion() async {
+    await poligonos.deleteAll();
+    await lineas.deleteAll();
+    for (final PointAnnotation p in _pinesSeleccion) {
+      try {
+        await iconos.delete(p);
+      } catch (_) {}
+    }
+    _pinesSeleccion.clear();
+    _porPoligono.clear();
+    _porLinea.clear();
   }
 
   Future<void> _relleno(
@@ -224,6 +280,7 @@ class CapaEventosMapa {
     double densidad, [
     String? etiquetaFija,
     Set<int> destacados = const <int>{},
+    bool incluirFinRecorrido = true,
   ]) async {
     for (final ZonaEvento z in areas) {
       if (z.puntos.length < 3) continue;
@@ -262,16 +319,18 @@ class CapaEventosMapa {
         ),
         z.eventoId,
       );
-      // La meta no lleva nombre: ya lo lleva el inicio.
-      destino.agregar(
-        opcionesDePin(
-          lat: z.puntos.last.lat,
-          lng: z.puntos.last.lng,
-          imagen: await imagenPin(TipoPin.recorridoFin, secundario: secundario),
-          densidad: densidad,
-        ),
-        z.eventoId,
-      );
+      if (incluirFinRecorrido) {
+        // La meta no lleva nombre: ya lo lleva el inicio.
+        destino.agregar(
+          opcionesDePin(
+            lat: z.puntos.last.lat,
+            lng: z.puntos.last.lng,
+            imagen: await imagenPin(TipoPin.recorridoFin, secundario: secundario),
+            densidad: densidad,
+          ),
+          z.eventoId,
+        );
+      }
     }
   }
 

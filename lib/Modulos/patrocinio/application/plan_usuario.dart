@@ -1,3 +1,4 @@
+import 'package:fit_quest_go/core/db/daos/rutas_offline_dao.dart';
 import 'dart:async';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -5,7 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
 
 /// Rutas que se pueden guardar para ver sin conexion sin suscripcion.
-const int kLimiteRutasOfflineGratis = 3;
+const int kLimiteRutasOfflineGratis = 1;
 
 /// Con una suscripcion vigente.
 const int kLimiteRutasOfflineSuscrito = 15;
@@ -54,11 +55,15 @@ class PlanUsuario {
   PlanUsuario({
     PlanApi? api,
     AlmacenPlanUsuario? almacen,
+    RutasOfflineDao? offlineDao,
     DateTime Function()? ahora,
     this.espera = const Duration(seconds: 3),
   }) : _apiInyectada = api,
        _almacen = almacen ?? const AlmacenPlanUsuarioSeguro(),
+       _offlineDao = offlineDao ?? RutasOfflineDao(),
        _ahora = ahora ?? DateTime.now;
+
+  final RutasOfflineDao _offlineDao;
 
   /// El de toda la app.
   static PlanUsuario instancia = PlanUsuario();
@@ -84,12 +89,23 @@ class PlanUsuario {
     try {
       return await recordar(await _api.miSuscripcion().timeout(espera));
     } catch (_) {
-      return vigenteRecordado();
+      final bool recordado = await vigenteRecordado();
+
+      return recordado;
     }
   }
 
   /// Recuerda lo que el servidor dijo de la suscripcion (null = no tiene).
   /// Devuelve si hay un plan de usuario vigente.
+  /// Devuelve qué IDs de rutas offline están bloqueadas con candado por requerir suscripción.
+  Future<Set<int>> rutasOfflineBloqueadas() async {
+    final bool suscrito = await actualizar();
+    return _offlineDao.idsBloqueadas(
+      tieneSuscripcion: suscrito,
+      limiteGratis: kLimiteRutasOfflineGratis,
+    );
+  }
+
   Future<bool> recordar(MiSuscripcion? s) async {
     final bool vale =
         s != null &&
@@ -97,6 +113,7 @@ class PlanUsuario {
         s.audiencia != AudienciaPlan.empresa &&
         s.venceEn != null;
     await _almacen.guardarVigenteHasta(vale ? s.venceEn : null);
+
     return vale;
   }
 

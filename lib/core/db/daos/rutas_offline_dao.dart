@@ -1,3 +1,4 @@
+import 'package:fit_quest_go/core/mapa/mapas_offline_servicio.dart';
 import 'dart:convert';
 
 import 'package:sqflite/sqflite.dart';
@@ -87,5 +88,63 @@ class RutasOfflineDao {
         whereArgs: <Object?>[idRemoto],
       );
     } catch (_) {}
+  }
+
+  /// Devuelve los IDs de las rutas guardadas ordenadas desde la primera que se agregó.
+  Future<List<int>> listarIdsCronologicos() async {
+    try {
+      final Database? db = await _db.abrir();
+      if (db == null) return <int>[];
+      final List<Map<String, Object?>> filas = await db.query(
+        'rutas_offline',
+        columns: <String>['id_remoto'],
+        orderBy: 'descargado_en ASC, rowid ASC',
+      );
+      return <int>[
+        for (final Map<String, Object?> f in filas) f['id_remoto'] as int,
+      ];
+    } catch (_) {
+      return <int>[];
+    }
+  }
+
+  /// Ajusta las rutas guardadas al límite permitido (ej. 1 al expirar/cancelar suscripción).
+  /// Conserva la primera ruta que se agregó y elimina el exceso tanto de SQLite como de Mapbox.
+  Future<List<int>> recortarAlLimite(
+    int limite, {
+    MapasOfflineServicio? mapas,
+  }) async {
+    try {
+      final List<int> ids = await listarIdsCronologicos();
+      if (ids.length <= limite) return <int>[];
+
+      final List<int> aEliminar = ids.sublist(limite);
+      final Database? db = await _db.abrir();
+      final MapasOfflineServicio servicioMapas =
+          mapas ?? MapasOfflineServicio.instancia;
+
+      for (final int id in aEliminar) {
+        await db?.delete(
+          'rutas_offline',
+          where: 'id_remoto = ?',
+          whereArgs: <Object?>[id],
+        );
+        try {
+          await servicioMapas.eliminarZonaDeRuta(id);
+        } catch (_) {}
+      }
+      return aEliminar;
+    } catch (_) {
+      return <int>[];
+    }
+  }
+
+  /// Devuelve los IDs de las rutas que deben mostrarse bloqueadas por no tener suscripción
+  /// activa (se permite únicamente la primera ruta agregada; el resto queda con candado).
+  Future<Set<int>> idsBloqueadas({bool tieneSuscripcion = false, int limiteGratis = 1}) async {
+    if (tieneSuscripcion) return <int>{};
+    final List<int> ids = await listarIdsCronologicos();
+    if (ids.length <= limiteGratis) return <int>{};
+    return ids.sublist(limiteGratis).toSet();
   }
 }
