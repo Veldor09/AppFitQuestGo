@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/core/widgets/fq_insignia_icon.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
@@ -138,7 +139,7 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
       return AdminRow(
         icon: Icons.military_tech_outlined,
-        title: '${insignia.emoji} ${insignia.nombre}',
+        title: insignia.nombre,
         values: <String>[
           insignia.codigo,
           insignia.metrica ?? l10n.admInsSinMetrica,
@@ -289,7 +290,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
       text: insignia?.descripcion ?? '',
     );
 
-    _emojiController = TextEditingController(text: insignia?.emoji ?? '');
+    _emojiController = TextEditingController(text: insignia?.emoji ?? 'medal');
 
     _metaController = TextEditingController(
       text: insignia?.meta?.toString() ?? '',
@@ -492,14 +493,34 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _emojiController,
-                  enabled: !_guardando,
-                  decoration: InputDecoration(
-                    labelText: _l10n.admEmoji,
-                    hintText: '🏅',
+                DropdownButtonFormField<String>(
+                  initialValue: FqInsigniaIcon.keyFor(
+                    _emojiController.text,
+                    code: _codigoController.text,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Icono',
                     border: OutlineInputBorder(),
                   ),
+                  items: <DropdownMenuItem<String>>[
+                    for (final entry in FqInsigniaIcon.options.entries)
+                      DropdownMenuItem<String>(
+                        value: entry.key,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(entry.value, size: 20),
+                            const SizedBox(width: 10),
+                            Text(FqInsigniaIcon.labels[entry.key] ?? entry.key),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onChanged: _guardando
+                      ? null
+                      : (value) {
+                          if (value != null) _emojiController.text = value;
+                        },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(

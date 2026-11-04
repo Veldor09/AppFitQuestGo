@@ -37,10 +37,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
   int? _rol;
   bool? _activo;
   bool _ascendente = true;
-  int _pagina = 1;
   bool _filtrosAbiertos = false;
-
-  static const int _porPagina = 10;
 
   @override
   void initState() {
@@ -108,7 +105,6 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
   void _actualizarFiltros(VoidCallback cambio) {
     setState(() {
       cambio();
-      _pagina = 1;
     });
   }
 
@@ -291,12 +287,6 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
 
   Widget _tabla() {
     final usuarios = _filtrados;
-    final totalPaginas = usuarios.isEmpty
-        ? 1
-        : (usuarios.length / _porPagina).ceil();
-    final pagina = _pagina.clamp(1, totalPaginas);
-    final inicio = (pagina - 1) * _porPagina;
-    final visibles = usuarios.skip(inicio).take(_porPagina).toList();
 
     return Container(
       width: double.infinity,
@@ -327,7 +317,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                 AdminTableColumn(_l10n.perfilEstado, width: 120),
               ],
               rows: <AdminRow>[
-                for (final usuario in visibles)
+                for (final usuario in usuarios)
                   AdminRow(
                     icon: Icons.person_outline,
                     title: usuario.nombreUser,
@@ -342,60 +332,6 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                   ),
               ],
             ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Wrap(
-              spacing: 14,
-              runSpacing: 10,
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: <Widget>[
-                Text(_l10n.admDirTotal(usuarios.length)),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    IconButton.outlined(
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                      tooltip: _l10n.admPaginaAnterior,
-                      onPressed: pagina > 1
-                          ? () => setState(() {
-                              _pagina = pagina - 1;
-                            })
-                          : null,
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    Flexible(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Text(
-                          _l10n.admPaginaDe(pagina, totalPaginas),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    IconButton.outlined(
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                      tooltip: _l10n.admPaginaSiguiente,
-                      onPressed: pagina < totalPaginas
-                          ? () => setState(() {
-                              _pagina = pagina + 1;
-                            })
-                          : null,
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

@@ -55,6 +55,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     _l10n.eventoEstadoEnCurso,
     _l10n.admEvtFiltroFinalizados,
     'Pendientes',
+    'Denegados',
   ];
 
   static const List<String> _categorias = [
@@ -208,6 +209,13 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         ),
       );
 
+  bool _tieneDenegados(Map<String, dynamic> evento) =>
+      <String>['areas', 'recorridos'].any(
+        (tipo) => (evento[tipo] as List? ?? const []).any(
+          (zona) => zona is Map && zona['estado'] == 'Denegado',
+        ),
+      );
+
   Future<void> _decidirTrazo(
     Map<String, dynamic> evento,
     String tipo,
@@ -353,6 +361,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (_filtro == 2 && estado != 'En curso') return false;
       if (_filtro == 3 && estado != 'Finalizado') return false;
       if (_filtro == 4 && !_tienePendientes(evento)) return false;
+      if (_filtro == 5 && !_tieneDenegados(evento)) return false;
 
       if (_categoriaFiltro != null &&
           evento['categoria']?.toString() != _categoriaFiltro) {
@@ -841,7 +850,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 indice++
               )
                 if (((evento[tipo] as List)[indice] as Map)['estado'] ==
-                    'Pendiente')
+                    (_filtro == 5 ? 'Denegado' : 'Pendiente'))
                   AdminRow(
                     icon: tipo == 'areas' ? Icons.crop_square : Icons.route,
                     title:
@@ -852,28 +861,31 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                       tipo == 'areas' ? 'Área' : 'Recorrido',
                       _empresa(evento),
                       evento['nombre']?.toString() ?? '—',
-                      'Pendiente de aprobación',
+                      _filtro == 5 ? 'Denegado' : 'Pendiente de aprobación',
                     ],
                     subtitle:
-                        '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)} · Pendiente de aprobación',
-                    trailing: PopupMenuButton<String>(
-                      enabled: !_decidiendo,
-                      tooltip: 'Revisar trazo',
-                      onSelected: (estado) =>
-                          _decidirTrazo(evento, tipo, indice, estado),
-                      itemBuilder: (_) => const <PopupMenuEntry<String>>[
-                        PopupMenuItem(
-                          value: 'Aprobado',
-                          child: Text('Aprobar'),
-                        ),
-                        PopupMenuItem(
-                          value: 'Denegado',
-                          child: Text('Denegar'),
-                        ),
-                      ],
-                    ),
+                        '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)}',
+                    onTap: () => _mostrarDetalle(evento),
+                    trailing: _filtro == 5
+                        ? null
+                        : PopupMenuButton<String>(
+                            enabled: !_decidiendo,
+                            tooltip: 'Revisar trazo',
+                            onSelected: (estado) =>
+                                _decidirTrazo(evento, tipo, indice, estado),
+                            itemBuilder: (_) => const <PopupMenuEntry<String>>[
+                              PopupMenuItem(
+                                value: 'Aprobado',
+                                child: Text('Aprobar'),
+                              ),
+                              PopupMenuItem(
+                                value: 'Denegado',
+                                child: Text('Denegar'),
+                              ),
+                            ],
+                          ),
                   ),
-          if (_filtro != 4)
+          if (_filtro != 4 && _filtro != 5)
             ...eventos.map((evento) {
               final nombre = (evento['nombre'] ?? _l10n.admEvtSinNombre)
                   .toString();

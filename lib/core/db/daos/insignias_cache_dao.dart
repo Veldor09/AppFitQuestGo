@@ -54,7 +54,7 @@ class InsigniasCacheDao {
             codigo: (f['codigo'] as String?) ?? '',
             nombre: (f['nombre'] as String?) ?? '',
             descripcion: (f['descripcion'] as String?) ?? '',
-            emoji: (f['emoji'] as String?) ?? '🏅',
+            emoji: (f['emoji'] as String?) ?? 'medal',
             desbloqueada: (f['desbloqueada'] as num?) == 1,
             fechaObtenida: DateTime.tryParse(
               (f['fecha_obtenida'] ?? '').toString(),

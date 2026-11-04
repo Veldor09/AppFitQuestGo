@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -114,24 +113,14 @@ InsigniaAdminItem _insignia({
   );
 }
 
-Future<void> _abrir(
-  WidgetTester tester,
-  _InsigniasApiFalsa api,
-) async {
-  tester.platformDispatcher.localesTestValue =
-      const <Locale>[Locale('es')];
+Future<void> _abrir(WidgetTester tester, _InsigniasApiFalsa api) async {
+  tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
   tester.platformDispatcher.localeTestValue = const Locale('es');
 
-  addTearDown(
-    tester.platformDispatcher.clearLocalesTestValue,
-  );
-  addTearDown(
-    tester.platformDispatcher.clearLocaleTestValue,
-  );
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  addTearDown(tester.platformDispatcher.clearLocaleTestValue);
 
-  await tester.binding.setSurfaceSize(
-    const Size(1280, 900),
-  );
+  await tester.binding.setSurfaceSize(const Size(1280, 900));
 
   addTearDown(() async {
     await tester.binding.setSurfaceSize(null);
@@ -140,13 +129,9 @@ Future<void> _abrir(
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('es'),
-      localizationsDelegates:
-          AppLocalizations.localizationsDelegates,
-      supportedLocales:
-          AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: InsigniasAdminScreen(api: api),
-      ),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: InsigniasAdminScreen(api: api)),
     ),
   );
 
@@ -161,450 +146,341 @@ Future<void> _abrirEdicion(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets(
-    'muestra las insignias obtenidas desde la API',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-        _insignia(
-          id: 2,
-          codigo: 'KM_10',
-          nombre: 'Caminante',
-          tipo: 'km',
-          metrica: 'km',
-          meta: 10,
-        ),
-      ]);
+  testWidgets('muestra las insignias obtenidas desde la API', (
+    WidgetTester tester,
+  ) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+      _insignia(
+        id: 2,
+        codigo: 'KM_10',
+        nombre: 'Caminante',
+        tipo: 'km',
+        metrica: 'km',
+        meta: 10,
+      ),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      expect(find.text('🏅 Explorador'), findsOneWidget);
-      expect(find.text('🏅 Caminante'), findsOneWidget);
-      expect(api.consultas, 1);
-    },
-  );
+    expect(find.text('Explorador'), findsOneWidget);
+    expect(find.text('Caminante'), findsOneWidget);
+    expect(api.consultas, 1);
+  });
 
-  testWidgets(
-    'muestra el estado activo e inactivo',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-        _insignia(
-          id: 2,
-          codigo: 'RUTAS_10',
-          nombre: 'Aventurero',
-          activa: false,
-        ),
-      ]);
+  testWidgets('muestra el estado activo e inactivo', (
+    WidgetTester tester,
+  ) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+      _insignia(id: 2, codigo: 'RUTAS_10', nombre: 'Aventurero', activa: false),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      expect(find.text('Activa'), findsOneWidget);
-      expect(find.text('Inactiva'), findsOneWidget);
-    },
-  );
+    expect(find.text('Activa'), findsOneWidget);
+    expect(find.text('Inactiva'), findsOneWidget);
+  });
 
-  testWidgets(
-    'filtra las insignias activas',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-        _insignia(
-          id: 2,
-          codigo: 'RUTAS_10',
-          nombre: 'Aventurero',
-          activa: false,
-        ),
-      ]);
+  testWidgets('filtra las insignias activas', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+      _insignia(id: 2, codigo: 'RUTAS_10', nombre: 'Aventurero', activa: false),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.tap(find.text('Activas'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Activas'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('🏅 Explorador'), findsOneWidget);
-      expect(find.text('🏅 Aventurero'), findsNothing);
-    },
-  );
+    expect(find.text('Explorador'), findsOneWidget);
+    expect(find.text('Aventurero'), findsNothing);
+  });
 
-  testWidgets(
-    'filtra las insignias inactivas',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-        _insignia(
-          id: 2,
-          codigo: 'RUTAS_10',
-          nombre: 'Aventurero',
-          activa: false,
-        ),
-      ]);
+  testWidgets('filtra las insignias inactivas', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+      _insignia(id: 2, codigo: 'RUTAS_10', nombre: 'Aventurero', activa: false),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.tap(find.text('Inactivas'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Inactivas'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('🏅 Explorador'), findsNothing);
-      expect(find.text('🏅 Aventurero'), findsOneWidget);
-    },
-  );
+    expect(find.text('Explorador'), findsNothing);
+    expect(find.text('Aventurero'), findsOneWidget);
+  });
 
-  testWidgets(
-    'permite buscar por nombre',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-        _insignia(
-          id: 2,
-          codigo: 'KM_10',
-          nombre: 'Caminante',
-        ),
-      ]);
+  testWidgets('permite buscar por nombre', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+      _insignia(id: 2, codigo: 'KM_10', nombre: 'Caminante'),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.enterText(
-        find.byType(TextField).first,
-        'Explorador',
-      );
-      await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Explorador');
+    await tester.pumpAndSettle();
 
-      expect(find.text('🏅 Explorador'), findsOneWidget);
-      expect(find.text('🏅 Caminante'), findsNothing);
-    },
-  );
+    expect(find.text('Explorador'), findsOneWidget);
+    expect(find.text('Caminante'), findsNothing);
+  });
 
-  testWidgets(
-    'permite buscar por código',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-        _insignia(
-          id: 2,
-          codigo: 'KM_10',
-          nombre: 'Caminante',
-        ),
-      ]);
+  testWidgets('permite buscar por código', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+      _insignia(id: 2, codigo: 'KM_10', nombre: 'Caminante'),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.enterText(
-        find.byType(TextField).first,
-        'KM_10',
-      );
-      await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'KM_10');
+    await tester.pumpAndSettle();
 
-      expect(find.text('🏅 Explorador'), findsNothing);
-      expect(find.text('🏅 Caminante'), findsOneWidget);
-    },
-  );
+    expect(find.text('Explorador'), findsNothing);
+    expect(find.text('Caminante'), findsOneWidget);
+  });
 
-  testWidgets(
-    'abre el formulario de creación',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
+  testWidgets('abre el formulario de creación', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.tap(find.text('Nuevo'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Nuevo'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Nueva insignia'), findsOneWidget);
-      expect(find.text('Código único'), findsOneWidget);
-      expect(find.text('Nombre'), findsOneWidget);
-      expect(find.text('Descripción'), findsOneWidget);
-      expect(find.text('Emoji'), findsOneWidget);
-      expect(find.text('Meta'), findsOneWidget);
-    },
-  );
+    expect(find.text('Nueva insignia'), findsOneWidget);
+    expect(find.text('Código único'), findsOneWidget);
+    expect(find.text('Nombre'), findsOneWidget);
+    expect(find.text('Descripción'), findsOneWidget);
+    expect(find.text('Icono'), findsOneWidget);
+    expect(find.text('Meta'), findsOneWidget);
+  });
 
-  testWidgets(
-    'rechaza la creación con campos vacíos',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
+  testWidgets('rechaza la creación con campos vacíos', (
+    WidgetTester tester,
+  ) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.tap(find.text('Nuevo'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Nuevo'));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Crear insignia'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Crear insignia'));
+    await tester.pumpAndSettle();
 
-      expect(
-        find.text('Completa todos los campos obligatorios.'),
-        findsOneWidget,
-      );
+    expect(
+      find.text('Completa todos los campos obligatorios.'),
+      findsOneWidget,
+    );
 
-      expect(api.creaciones, 0);
-    },
-  );
+    expect(api.creaciones, 0);
+  });
 
-  testWidgets(
-    'crea una insignia y actualiza el listado',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
+  testWidgets('crea una insignia y actualiza el listado', (
+    WidgetTester tester,
+  ) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.tap(find.text('Nuevo'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Nuevo'));
+    await tester.pumpAndSettle();
 
-      final Finder campos = find.byType(TextField);
+    final Finder campos = find.byType(TextField);
 
-      await tester.enterText(campos.at(1), 'RUTAS_20');
-      await tester.enterText(campos.at(2), 'Gran explorador');
-      await tester.enterText(campos.at(3), 'Completa veinte rutas');
-      await tester.enterText(campos.at(4), '🏆');
-      await tester.enterText(campos.at(5), '20');
+    await tester.enterText(campos.at(1), 'RUTAS_20');
+    await tester.enterText(campos.at(2), 'Gran explorador');
+    await tester.enterText(campos.at(3), 'Completa veinte rutas');
+    await tester.enterText(campos.at(4), '20');
 
-      await tester.tap(find.text('Crear insignia'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Crear insignia'));
+    await tester.pumpAndSettle();
 
-      expect(api.creaciones, 1);
-      expect(find.text('🏆 Gran explorador'), findsOneWidget);
-    },
-  );
+    expect(api.creaciones, 1);
+    expect(find.text('Gran explorador'), findsOneWidget);
+  });
 
-  testWidgets(
-    'abre el formulario de edición',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-      ]);
+  testWidgets('abre el formulario de edición', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await _abrirEdicion(tester);
+    await _abrirEdicion(tester);
 
-      expect(find.text('Editar insignia'), findsOneWidget);
-      expect(find.text('Guardar cambios'), findsOneWidget);
-    },
-  );
+    expect(find.text('Editar insignia'), findsOneWidget);
+    expect(find.text('Guardar cambios'), findsOneWidget);
+  });
 
-  testWidgets(
-    'edita el nombre de una insignia',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-      ]);
+  testWidgets('edita el nombre de una insignia', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await _abrirEdicion(tester);
+    await _abrirEdicion(tester);
 
-      final Finder campos = find.byType(TextField);
+    final Finder campos = find.byType(TextField);
 
-      await tester.enterText(
-        campos.at(1),
-        'Explorador avanzado',
-      );
+    await tester.enterText(campos.at(1), 'Explorador avanzado');
 
-      await tester.tap(find.text('Guardar cambios'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
 
-      expect(api.ediciones, 1);
-      expect(
-        find.text('🏅 Explorador avanzado'),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(api.ediciones, 1);
+    expect(find.text('Explorador avanzado'), findsOneWidget);
+  });
 
-  testWidgets(
-    'permite desactivar una insignia',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-        ),
-      ]);
+  testWidgets('permite desactivar una insignia', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador'),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await _abrirEdicion(tester);
+    await _abrirEdicion(tester);
 
-      await tester.tap(find.byType(Switch).last);
-      await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch).last);
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Guardar cambios'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
 
-      expect(api.ediciones, 1);
-      expect(api.insignias.single.activa, false);
-      expect(find.text('Inactiva'), findsOneWidget);
-    },
-  );
+    expect(api.ediciones, 1);
+    expect(api.insignias.single.activa, false);
+    expect(find.text('Inactiva'), findsOneWidget);
+  });
 
-  testWidgets(
-    'permite reactivar una insignia',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 1,
-          codigo: 'RUTAS_5',
-          nombre: 'Explorador',
-          activa: false,
-        ),
-      ]);
+  testWidgets('permite reactivar una insignia', (WidgetTester tester) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(id: 1, codigo: 'RUTAS_5', nombre: 'Explorador', activa: false),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await _abrirEdicion(tester);
+    await _abrirEdicion(tester);
 
-      await tester.tap(find.byType(Switch).last);
-      await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch).last);
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Guardar cambios'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
 
-      expect(api.ediciones, 1);
-      expect(api.insignias.single.activa, true);
-      expect(find.text('Activa'), findsOneWidget);
-    },
-  );
+    expect(api.ediciones, 1);
+    expect(api.insignias.single.activa, true);
+    expect(find.text('Activa'), findsOneWidget);
+  });
 
   // Prueba 14: insignia especial con meta nula.
-  testWidgets(
-    'edita una insignia especial conservando meta nula',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
-        _insignia(
-          id: 14,
-          codigo: 'ESPECIAL_1',
-          nombre: 'Insignia especial',
-          tipo: 'hito',
-          metrica: 'especial',
-          meta: null,
-        ),
-      ]);
+  testWidgets('edita una insignia especial conservando meta nula', (
+    WidgetTester tester,
+  ) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[
+      _insignia(
+        id: 14,
+        codigo: 'ESPECIAL_1',
+        nombre: 'Insignia especial',
+        tipo: 'hito',
+        metrica: 'especial',
+        meta: null,
+      ),
+    ]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      expect(api.insignias.single.meta, isNull);
-      expect(api.insignias.single.metrica, 'especial');
+    expect(api.insignias.single.meta, isNull);
+    expect(api.insignias.single.metrica, 'especial');
 
-      await _abrirEdicion(tester);
+    await _abrirEdicion(tester);
 
-      expect(find.text('Editar insignia'), findsOneWidget);
+    expect(find.text('Editar insignia'), findsOneWidget);
 
-      final Finder campos = find.byType(TextField);
+    final Finder campos = find.byType(TextField);
 
-      await tester.enterText(
-        campos.at(1),
-        'Insignia especial actualizada',
-      );
+    await tester.enterText(campos.at(1), 'Insignia especial actualizada');
 
-      // No se introduce ninguna meta numérica.
-      await tester.tap(find.text('Guardar cambios'));
-      await tester.pumpAndSettle();
+    // No se introduce ninguna meta numérica.
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
 
-      expect(api.ediciones, 1);
-      expect(api.ultimaMetaEditada, isNull);
+    expect(api.ediciones, 1);
+    expect(api.ultimaMetaEditada, isNull);
 
-      expect(
-        api.insignias.single.nombre,
-        'Insignia especial actualizada',
-      );
-      expect(api.insignias.single.tipo, 'hito');
-      expect(api.insignias.single.metrica, 'especial');
-      expect(api.insignias.single.meta, isNull);
+    expect(api.insignias.single.nombre, 'Insignia especial actualizada');
+    expect(api.insignias.single.tipo, 'hito');
+    expect(api.insignias.single.metrica, 'especial');
+    expect(api.insignias.single.meta, isNull);
 
-      expect(
-        find.text('🏅 Insignia especial actualizada'),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(find.text('Insignia especial actualizada'), findsOneWidget);
+  });
 
   // Prueba 15: el tipo km restringe las métricas disponibles.
-  testWidgets(
-    'actualiza y restringe la métrica al cambiar el tipo',
-    (WidgetTester tester) async {
-      final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
+  testWidgets('actualiza y restringe la métrica al cambiar el tipo', (
+    WidgetTester tester,
+  ) async {
+    final api = _InsigniasApiFalsa(<InsigniaAdminItem>[]);
 
-      await _abrir(tester, api);
+    await _abrir(tester, api);
 
-      await tester.tap(find.text('Nuevo'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Nuevo'));
+    await tester.pumpAndSettle();
 
-      Finder selectores = find.byType(DropdownButtonFormField<String>);
-      expect(selectores, findsNWidgets(2));
+    Finder selectores = find.byType(DropdownButtonFormField<String>);
+    expect(selectores, findsNWidgets(3));
 
-      await tester.tap(selectores.first);
-      await tester.pumpAndSettle();
+    await tester.tap(selectores.at(1));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Kilómetros').last);
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Kilómetros').last);
+    await tester.pumpAndSettle();
 
-      selectores = find.byType(DropdownButtonFormField<String>);
+    selectores = find.byType(DropdownButtonFormField<String>);
 
-      final DropdownButtonFormField<String> metricaKm =
-          tester.widget<DropdownButtonFormField<String>>(selectores.last);
+    final DropdownButtonFormField<String> metricaKm = tester
+        .widget<DropdownButtonFormField<String>>(selectores.last);
 
-      expect(metricaKm.initialValue, 'km');
-      expect(
-        tester.widget<DropdownButton<String>>(find.descendant(of: selectores.last, matching: find.byType(DropdownButton<String>))).items!.map((item) => item.value).toList(),
-        <String>['km'],
-      );
+    expect(metricaKm.initialValue, 'km');
+    expect(
+      tester
+          .widget<DropdownButton<String>>(
+            find.descendant(
+              of: selectores.last,
+              matching: find.byType(DropdownButton<String>),
+            ),
+          )
+          .items!
+          .map((item) => item.value)
+          .toList(),
+      <String>['km'],
+    );
 
-      await tester.tap(selectores.first);
-      await tester.pumpAndSettle();
+    await tester.tap(selectores.at(1));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Hito').last);
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Hito').last);
+    await tester.pumpAndSettle();
 
-      selectores = find.byType(DropdownButtonFormField<String>);
+    selectores = find.byType(DropdownButtonFormField<String>);
 
-      final DropdownButtonFormField<String> metricaHito =
-          tester.widget<DropdownButtonFormField<String>>(selectores.last);
+    expect(
+      tester
+          .widget<DropdownButton<String>>(
+            find.descendant(
+              of: selectores.last,
+              matching: find.byType(DropdownButton<String>),
+            ),
+          )
+          .items!
+          .map((item) => item.value)
+          .toList(),
+      containsAll(<String>['km', 'rutas', 'alertas', 'nodos', 'especial']),
+    );
 
-      expect(
-        tester.widget<DropdownButton<String>>(find.descendant(of: selectores.last, matching: find.byType(DropdownButton<String>))).items!.map((item) => item.value).toList(),
-        containsAll(<String>[
-          'km',
-          'rutas',
-          'alertas',
-          'nodos',
-          'especial',
-        ]),
-      );
-
-      expect(api.creaciones, 0);
-    },
-  );}
+    expect(api.creaciones, 0);
+  });
+}
