@@ -346,8 +346,13 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       return AdminRow(
         icon: Icons.flag_outlined,
         title: '${_nombreTipo(tipo)} $nombre - $motivo',
+        values: <String>[
+          _nombreTipo(tipo),
+          nombre,
+          motivo,
+          _nombreEstado(estado),
+        ],
         subtitle: _l10n.admRepTitulo(reporte['id'] as int),
-        trailing: Chip(label: Text(_nombreEstado(estado))),
         onTap: () => _mostrarDetalle(reporte),
       );
     }).toList();
@@ -366,6 +371,13 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       tabIndex: _tab,
       onTab: (indice) => setState(() => _tab = indice),
       child: AdminDataTable(
+        columns: const <AdminTableColumn>[
+          AdminTableColumn('Reporte', width: 220),
+          AdminTableColumn('Tipo', width: 110),
+          AdminTableColumn('Contenido', width: 175),
+          AdminTableColumn('Motivo', width: 160),
+          AdminTableColumn('Estado', width: 110),
+        ],
         rows: filas,
         loading: _cargando,
         error: _error,

@@ -3,13 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 
-/// Una fila de la tabla del panel (`.fq-admin-table > button`).
+@immutable
+class AdminTableColumn {
+  const AdminTableColumn(this.label, {this.width = 160});
+
+  final String label;
+  final double width;
+}
+
 @immutable
 class AdminRow {
   const AdminRow({
     required this.icon,
     required this.title,
     this.subtitle,
+    this.values = const <String>[],
     this.trailing,
     this.onTap,
     this.showViewHint = true,
@@ -19,21 +27,23 @@ class AdminRow {
   final String title;
   final String? subtitle;
 
-  /// Normalmente una [FqTag] con el estado.
+  /// Una celda por cada columna despues de la primera.
+  final List<String> values;
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool showViewHint;
 }
 
-/// Tabla generica del panel de administracion.
-///
-/// Se reutiliza en todas las pantallas de lista (rutas, alertas, nodos, ...).
-/// Gestiona los estados de carga, error y vacio para no repetirlos en cada
-/// pantalla.
+/// Tabla con columnas fijas: en telefono se desplaza horizontalmente.
+/// Cada celda limita su texto, por lo que ninguna fila invade otra columna.
 class AdminDataTable extends StatelessWidget {
   const AdminDataTable({
     super.key,
     required this.rows,
+    this.columns = const <AdminTableColumn>[
+      AdminTableColumn('Nombre', width: 220),
+      AdminTableColumn('Detalle', width: 280),
+    ],
     this.loading = false,
     this.error,
     this.onRetry,
@@ -43,6 +53,9 @@ class AdminDataTable extends StatelessWidget {
   });
 
   final List<AdminRow> rows;
+
+  /// Incluye la columna principal; Acciones se añade siempre al final.
+  final List<AdminTableColumn> columns;
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
@@ -79,193 +92,135 @@ class AdminDataTable extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      primary: false,
-      padding: EdgeInsets.zero,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: rows.length,
-      separatorBuilder: (_, _) =>
-          const Divider(height: 1, color: FqColors.border),
-      itemBuilder: (BuildContext context, int i) =>
-          _AdminTableRow(row: rows[i]),
-    );
-  }
-}
-
-class _AdminTableRow extends StatefulWidget {
-  const _AdminTableRow({required this.row});
-
-  final AdminRow row;
-
-  @override
-  State<_AdminTableRow> createState() => _AdminTableRowState();
-}
-
-class _AdminTableRowState extends State<_AdminTableRow> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final AdminRow row = widget.row;
-    return MouseRegion(
-      cursor: row.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: row.onTap,
-        child: Container(
-          color: _hover ? FqColors.rowHover : FqColors.white,
-          constraints: const BoxConstraints(minHeight: 58),
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final mobile = constraints.maxWidth < 560;
-              final trailing = row.trailing == null
-                  ? null
-                  : ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: mobile
-                            ? constraints.maxWidth - 43
-                            : constraints.maxWidth * 0.36,
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
-                        child: row.trailing!,
-                      ),
-                    );
-              final details = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    row.title,
-                    maxLines: 2,
+    assert(columns.isNotEmpty);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final table = DataTable(
+          showCheckboxColumn: false,
+          headingRowColor: WidgetStateProperty.all(FqColors.rowHover),
+          headingRowHeight: 46,
+          dataRowMinHeight: 54,
+          dataRowMaxHeight: 76,
+          horizontalMargin: 14,
+          columnSpacing: 18,
+          dividerThickness: 1,
+          columns: <DataColumn>[
+            for (final column in columns)
+              DataColumn(
+                label: SizedBox(
+                  width: column.width,
+                  child: Text(
+                    column.label.toUpperCase(),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
-                      color: FqColors.ink,
+                      letterSpacing: 0.5,
+                      color: FqColors.muted,
                     ),
                   ),
-                  if (row.subtitle != null)
-                    Text(
-                      row.subtitle!,
-                      maxLines: mobile ? 3 : 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: FqColors.muted,
+                ),
+              ),
+            const DataColumn(
+              label: SizedBox(width: 110, child: Text('ACCIONES')),
+            ),
+          ],
+          rows: <DataRow>[
+            for (final row in rows)
+              DataRow(
+                onSelectChanged: row.onTap == null ? null : (_) => row.onTap!(),
+                cells: <DataCell>[
+                  DataCell(
+                    SizedBox(
+                      width: columns.first.width,
+                      child: Row(
+                        children: <Widget>[
+                          Icon(row.icon, size: 18, color: FqColors.night),
+                          const SizedBox(width: 8),
+                          Expanded(child: _CellText(row.title, bold: true)),
+                        ],
                       ),
                     ),
-                ],
-              );
-              if (mobile) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: FqColors.listIconBg,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            row.icon,
-                            size: 16,
-                            color: FqColors.night,
-                          ),
+                  ),
+                  for (var i = 1; i < columns.length; i++)
+                    DataCell(
+                      SizedBox(
+                        width: columns[i].width,
+                        child: _CellText(
+                          i - 1 < row.values.length
+                              ? row.values[i - 1]
+                              : i == 1
+                              ? row.subtitle ?? '—'
+                              : '—',
                         ),
-                        const SizedBox(width: 9),
-                        Expanded(child: details),
-                      ],
+                      ),
                     ),
-                    if (trailing != null ||
-                        (row.onTap != null && row.showViewHint)) ...<Widget>[
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 43),
-                        child: Wrap(
-                          spacing: 10,
-                          runSpacing: 6,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: <Widget>[
-                            ?trailing,
-                            if (row.onTap != null && row.showViewHint)
-                              const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    'Ver',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: FqColors.river,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    size: 14,
-                                    color: FqColors.river,
-                                  ),
-                                ],
+                  DataCell(
+                    SizedBox(
+                      width: 110,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          if (row.onTap != null && row.showViewHint)
+                            TextButton(
+                              onPressed: row.onTap,
+                              child: const Text('Ver'),
+                            ),
+                          if (row.trailing != null)
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: row.trailing!,
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
-                    ],
-                  ],
-                );
-              }
-              return Row(
-                children: <Widget>[
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: FqColors.listIconBg,
-                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(row.icon, size: 16, color: FqColors.night),
                   ),
-                  const SizedBox(width: 9),
-                  Expanded(child: details),
-                  if (trailing != null) ...<Widget>[
-                    const SizedBox(width: 8),
-                    trailing,
-                  ],
-                  if (row.onTap != null && row.showViewHint) ...<Widget>[
-                    const SizedBox(width: 10),
-                    const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          'Ver',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: FqColors.river,
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          size: 14,
-                          color: FqColors.river,
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
-              );
-            },
-          ),
-        ),
-      ),
+              ),
+          ],
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (constraints.maxWidth < 700)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(14, 8, 14, 0),
+                child: Text(
+                  'Desliza la tabla para ver más columnas →',
+                  style: TextStyle(fontSize: 10, color: FqColors.muted),
+                ),
+              ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: table,
+            ),
+          ],
+        );
+      },
     );
   }
+}
+
+class _CellText extends StatelessWidget {
+  const _CellText(this.value, {this.bold = false});
+
+  final String value;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    value.isEmpty ? '—' : value,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: TextStyle(
+      fontSize: 12,
+      fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+      color: bold ? FqColors.ink : FqColors.muted,
+    ),
+  );
 }

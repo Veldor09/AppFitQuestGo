@@ -397,39 +397,6 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     }).toList();
   }
 
-  Color _colorEstado(String estado) {
-    switch (estado) {
-      case 'Próximo':
-        return const Color(0xFF2563EB);
-      case 'En curso':
-        return const Color(0xFF15803D);
-      case 'Finalizado':
-        return const Color(0xFF64748B);
-      default:
-        return const Color(0xFF64748B);
-    }
-  }
-
-  Widget _etiquetaEstado(String estado) {
-    final color = _colorEstado(estado);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        _nombreEstado(estado),
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
   Future<void> _mostrarFiltros() async {
     String? categoria = _categoriaFiltro;
     String? organizador = _organizadorFiltro;
@@ -850,6 +817,13 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         ],
       ),
       child: AdminDataTable(
+        columns: const <AdminTableColumn>[
+          AdminTableColumn('Evento / propuesta', width: 210),
+          AdminTableColumn('Categoría / tipo', width: 135),
+          AdminTableColumn('Empresa', width: 180),
+          AdminTableColumn('Fecha / evento', width: 180),
+          AdminTableColumn('Estado', width: 145),
+        ],
         loading: _cargando,
         error: _error,
         onRetry: _cargarEventos,
@@ -874,6 +848,12 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                         ((evento[tipo] as List)[indice] as Map)['nombre']
                             ?.toString() ??
                         'Sin nombre',
+                    values: <String>[
+                      tipo == 'areas' ? 'Área' : 'Recorrido',
+                      _empresa(evento),
+                      evento['nombre']?.toString() ?? '—',
+                      'Pendiente de aprobación',
+                    ],
                     subtitle:
                         '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)} · Pendiente de aprobación',
                     trailing: PopupMenuButton<String>(
@@ -906,10 +886,15 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
               return AdminRow(
                 icon: Icons.event_outlined,
                 title: nombre,
+                values: <String>[
+                  categoria,
+                  empresa,
+                  _formatearFecha(evento['fechaInicio']),
+                  _nombreEstado(estado),
+                ],
                 subtitle:
                     '$categoria · $empresa · '
                     '${_formatearFecha(evento['fechaInicio'])}',
-                trailing: _etiquetaEstado(estado),
                 onTap: _eliminando ? null : () => _mostrarDetalle(evento),
               );
             }),

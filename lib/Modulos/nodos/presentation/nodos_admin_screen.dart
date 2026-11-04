@@ -210,6 +210,12 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
           },
 
           child: AdminDataTable(
+            columns: const <AdminTableColumn>[
+              AdminTableColumn('Nodo', width: 210),
+              AdminTableColumn('Categoría', width: 160),
+              AdminTableColumn('Creado por', width: 150),
+              AdminTableColumn('Estado', width: 110),
+            ],
             loading: cargando,
             error: error,
             onRetry: _recargar,
@@ -227,6 +233,15 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
                 AdminRow(
                   icon: Icons.location_on_outlined,
                   title: nodo.nombre,
+                  values: <String>[
+                    categoriaNodoLabel(
+                      l10n,
+                      nodo.categoria,
+                      otro: nodo.categoriaOtro,
+                    ),
+                    nodo.creadoPorNombre ?? '—',
+                    nodo.estado,
+                  ],
 
                   subtitle:
                       '${nodo.creadoPorNombre == null ? categoriaNodoLabel(l10n, nodo.categoria, otro: nodo.categoriaOtro) : l10n.nodosPropuestoPor(categoriaNodoLabel(l10n, nodo.categoria, otro: nodo.categoriaOtro), nodo.creadoPorNombre!)} | ${nodo.estado}',

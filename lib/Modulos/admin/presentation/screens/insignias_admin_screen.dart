@@ -150,23 +150,18 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       return AdminRow(
         icon: Icons.military_tech_outlined,
         title: '${insignia.emoji} ${insignia.nombre}',
+        values: <String>[
+          insignia.codigo,
+          insignia.metrica ?? l10n.admInsSinMetrica,
+          _formatearMeta(l10n, insignia.meta),
+          insignia.activa ? l10n.admActiva : l10n.admInactiva,
+        ],
         subtitle: descripcion,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Chip(
-              label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva),
-            ),
-            PopupMenuButton<String>(
-              tooltip: l10n.usuariosEditar,
-              onSelected: (_) => _abrirFormulario(insignia: insignia),
-              itemBuilder: (_) => <PopupMenuEntry<String>>[
-                PopupMenuItem(
-                  value: 'editar',
-                  child: Text(l10n.usuariosEditar),
-                ),
-              ],
-            ),
+        trailing: PopupMenuButton<String>(
+          tooltip: l10n.usuariosEditar,
+          onSelected: (_) => _abrirFormulario(insignia: insignia),
+          itemBuilder: (_) => <PopupMenuEntry<String>>[
+            PopupMenuItem(value: 'editar', child: Text(l10n.usuariosEditar)),
           ],
         ),
         onTap: () => mostrarDetalleAdmin(
@@ -219,6 +214,13 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AdminDataTable(
+            columns: const <AdminTableColumn>[
+              AdminTableColumn('Insignia', width: 190),
+              AdminTableColumn('Código', width: 145),
+              AdminTableColumn('Métrica', width: 145),
+              AdminTableColumn('Meta', width: 90),
+              AdminTableColumn('Estado', width: 105),
+            ],
             rows: filas,
             loading: _cargando,
             error: _error,

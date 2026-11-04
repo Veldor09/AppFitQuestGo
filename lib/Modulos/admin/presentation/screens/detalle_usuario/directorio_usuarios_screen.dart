@@ -320,11 +320,22 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
             )
           else
             AdminDataTable(
+              columns: <AdminTableColumn>[
+                AdminTableColumn(_l10n.rolUsuario, width: 190),
+                AdminTableColumn(_l10n.admDirColCorreo, width: 220),
+                AdminTableColumn(_l10n.perfilRol, width: 120),
+                AdminTableColumn(_l10n.perfilEstado, width: 120),
+              ],
               rows: <AdminRow>[
                 for (final usuario in visibles)
                   AdminRow(
                     icon: Icons.person_outline,
                     title: usuario.nombreUser,
+                    values: <String>[
+                      usuario.emailUser,
+                      usuario.etiquetaRol,
+                      usuario.estado,
+                    ],
                     subtitle:
                         '${usuario.emailUser} · ${usuario.etiquetaRol} · ${usuario.estado}',
                     onTap: () => setState(() => _seleccionado = usuario),

@@ -82,6 +82,12 @@ class _AlertasAdminScreenState extends State<AlertasAdminScreen> {
           onSearch: (value) =>
               setState(() => _busqueda = value.trim().toLowerCase()),
           child: AdminDataTable(
+            columns: const <AdminTableColumn>[
+              AdminTableColumn('Tipo', width: 190),
+              AdminTableColumn('Gravedad', width: 110),
+              AdminTableColumn('Reportada por', width: 150),
+              AdminTableColumn('Estado', width: 100),
+            ],
             loading: cargando,
             error: error,
             onRetry: _recargar,
@@ -99,6 +105,11 @@ class _AlertasAdminScreenState extends State<AlertasAdminScreen> {
                       alerta.tipo,
                       otro: alerta.tipoOtro,
                     ),
+                    values: <String>[
+                      gravedadLabel(l10n, alerta.gravedad),
+                      alerta.creadoPorNombre ?? '—',
+                      alerta.estado,
+                    ],
                     subtitle: alerta.creadoPorNombre == null
                         ? l10n.alertasGravedadConValor(
                             gravedadLabel(l10n, alerta.gravedad),

@@ -106,14 +106,6 @@ class _GestionSuscripcionesScreenState
     _ => estado,
   };
 
-  Color _estadoColor(String estado) => switch (estado) {
-    EstadoSuscripcion.activa => FqColors.trail,
-    EstadoSuscripcion.solicitada => FqColors.amber,
-    EstadoSuscripcion.rechazada ||
-    EstadoSuscripcion.suspendida => FqColors.risk,
-    _ => FqColors.muted,
-  };
-
   String _monto(SuscripcionAdmin s) {
     if (s.monto == null) return '—';
     return formatearImporte(
@@ -281,6 +273,13 @@ class _GestionSuscripcionesScreenState
         _cargar();
       },
       child: AdminDataTable(
+        columns: const <AdminTableColumn>[
+          AdminTableColumn('Solicitud', width: 230),
+          AdminTableColumn('Correo', width: 190),
+          AdminTableColumn('Plan', width: 160),
+          AdminTableColumn('Monto', width: 110),
+          AdminTableColumn('Estado', width: 115),
+        ],
         loading: _cargando,
         error: _error,
         onRetry: _cargar,
@@ -296,20 +295,16 @@ class _GestionSuscripcionesScreenState
                 s.numeroSolicitud ?? l10n.admSusSinNumero,
                 s.usuarioNombre,
               ),
+              values: <String>[
+                s.usuarioEmail,
+                s.planNombre,
+                _monto(s),
+                _estadoTexto(s.estado),
+              ],
               subtitle: l10n.admSusFilaSubtitulo(
                 s.planNombre,
                 _monto(s),
                 _cuenta(s),
-              ),
-              trailing: Chip(
-                label: Text(
-                  _estadoTexto(s.estado),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: _estadoColor(s.estado),
-                  ),
-                ),
               ),
               onTap: _actuando ? null : () => _detalle(s),
             ),

@@ -551,11 +551,24 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     }
 
     return AdminDataTable(
+      columns: <AdminTableColumn>[
+        AdminTableColumn(_l10n.admAccion, width: 210),
+        AdminTableColumn(_l10n.admAudAdministrador, width: 160),
+        AdminTableColumn(_l10n.admEntidad, width: 135),
+        AdminTableColumn(_l10n.admAudIdAfectado, width: 110),
+        AdminTableColumn(_l10n.admFecha, width: 170),
+      ],
       rows: <AdminRow>[
         for (final registro in _registros)
           AdminRow(
             icon: Icons.receipt_long_outlined,
             title: _accionLegible(registro['accion']?.toString() ?? '—'),
+            values: <String>[
+              registro['administradorId']?.toString() ?? '—',
+              registro['entidad']?.toString() ?? '—',
+              registro['entidadId']?.toString() ?? '—',
+              _fecha(registro['creadoEn']),
+            ],
             subtitle: <String>[
               _l10n.admAudAdministrador,
               registro['administradorId']?.toString() ?? '—',
