@@ -81,6 +81,8 @@ class AdminDataTable extends StatelessWidget {
 
     return ListView.separated(
       shrinkWrap: true,
+      primary: false,
+      padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: rows.length,
       separatorBuilder: (_, _) =>
@@ -124,7 +126,7 @@ class _AdminTableRowState extends State<_AdminTableRow> {
                   : ConstrainedBox(
                       constraints: BoxConstraints(
                         maxWidth: mobile
-                            ? constraints.maxWidth - 58
+                            ? constraints.maxWidth - 43
                             : constraints.maxWidth * 0.36,
                       ),
                       child: FittedBox(
@@ -159,6 +161,67 @@ class _AdminTableRowState extends State<_AdminTableRow> {
                     ),
                 ],
               );
+              if (mobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: FqColors.listIconBg,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            row.icon,
+                            size: 16,
+                            color: FqColors.night,
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(child: details),
+                      ],
+                    ),
+                    if (trailing != null ||
+                        (row.onTap != null && row.showViewHint)) ...<Widget>[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 43),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: <Widget>[
+                            ?trailing,
+                            if (row.onTap != null && row.showViewHint)
+                              const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text(
+                                    'Ver',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: FqColors.river,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    size: 14,
+                                    color: FqColors.river,
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              }
               return Row(
                 children: <Widget>[
                   Container(
@@ -171,43 +234,12 @@ class _AdminTableRowState extends State<_AdminTableRow> {
                     child: Icon(row.icon, size: 16, color: FqColors.night),
                   ),
                   const SizedBox(width: 9),
-                  Expanded(
-                    child: mobile
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              details,
-                              if (trailing != null ||
-                                  (row.onTap != null && row.showViewHint))
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: <Widget>[
-                                    if (trailing != null)
-                                      Flexible(child: trailing),
-                                    if (row.onTap != null && row.showViewHint)
-                                      const Padding(
-                                        padding: EdgeInsets.only(left: 8),
-                                        child: Text(
-                                          'Ver',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: FqColors.river,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                            ],
-                          )
-                        : details,
-                  ),
-                  if (!mobile && trailing != null) ...<Widget>[
+                  Expanded(child: details),
+                  if (trailing != null) ...<Widget>[
                     const SizedBox(width: 8),
                     trailing,
                   ],
-                  if (!mobile &&
-                      row.onTap != null &&
-                      row.showViewHint) ...<Widget>[
+                  if (row.onTap != null && row.showViewHint) ...<Widget>[
                     const SizedBox(width: 10),
                     const Row(
                       mainAxisSize: MainAxisSize.min,

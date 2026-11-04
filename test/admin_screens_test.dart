@@ -17,6 +17,7 @@ class _RutaApiFake extends RutaApi {
   @override
   Future<List<Ruta>> listarAdmin() async => <Ruta>[];
 }
+
 /// API simulada para probar el Dashboard sin conexiones HTTP reales.
 class _DashboardApiFake extends DashboardApi {
   @override
@@ -52,46 +53,36 @@ void main() {
   };
 
   for (final MapEntry<String, Widget> e in pantallas.entries) {
-    testWidgets(
-      'pinta ${e.key} sin errores (escritorio y angosto)',
-      (WidgetTester tester) async {
-        // Forzar español en el entorno de pruebas.
-        tester.platformDispatcher.localesTestValue = const <Locale>[
-          Locale('es'),
-        ];
-        tester.platformDispatcher.localeTestValue = const Locale('es');
+    testWidgets('pinta ${e.key} sin errores (escritorio y angosto)', (
+      WidgetTester tester,
+    ) async {
+      // Forzar español en el entorno de pruebas.
+      tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
+      tester.platformDispatcher.localeTestValue = const Locale('es');
 
-        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-        addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      addTearDown(tester.platformDispatcher.clearLocaleTestValue);
 
-        for (final Size size in <Size>[
-          const Size(1280, 800),
-          const Size(760, 760),
-        ]) {
-          await tester.pumpWidget(
-            MaterialApp(
-              locale: const Locale('es'),
-              localizationsDelegates:
-                  AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: Scaffold(
-                body: SizedBox.fromSize(
-                  size: size,
-                  child: e.value,
-                ),
-              ),
+      for (final Size size in <Size>[
+        const Size(1280, 800),
+        const Size(760, 760),
+        const Size(360, 760),
+      ]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: const Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: SizedBox.fromSize(size: size, child: e.value),
             ),
-          );
+          ),
+        );
 
-          await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(const Duration(milliseconds: 50));
 
-          expect(
-            tester.takeException(),
-            isNull,
-            reason: '${e.key} @ $size',
-          );
-        }
-      },
-    );
+        expect(tester.takeException(), isNull, reason: '${e.key} @ $size');
+      }
+    });
   }
 }

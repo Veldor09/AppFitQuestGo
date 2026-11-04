@@ -23,8 +23,7 @@ class PaginacionBar extends StatelessWidget {
   final ValueChanged<int> onFilasPorPagina;
   final ValueChanged<int> onPagina;
 
-  int get _totalPaginas =>
-      total == 0 ? 1 : ((total - 1) ~/ filasPorPagina) + 1;
+  int get _totalPaginas => total == 0 ? 1 : ((total - 1) ~/ filasPorPagina) + 1;
 
   int get _desde => total == 0 ? 0 : pagina * filasPorPagina + 1;
 
@@ -43,49 +42,59 @@ class PaginacionBar extends StatelessWidget {
         border: Border(top: BorderSide(color: FqColors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 6,
         children: <Widget>[
-          Text(
-            AppLocalizations.of(context)!.paginacionFilasPorPagina,
-            style: TextStyle(fontSize: 10, color: FqColors.muted),
-          ),
-          const SizedBox(width: 8),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: filasPorPagina,
-              isDense: true,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: FqColors.ink,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                AppLocalizations.of(context)!.paginacionFilasPorPagina,
+                style: const TextStyle(fontSize: 10, color: FqColors.muted),
               ),
-              items: opciones
-                  .map(
-                    (int n) => DropdownMenuItem<int>(
-                      value: n,
-                      child: Text('$n'),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (int? v) {
-                if (v != null) onFilasPorPagina(v);
-              },
-            ),
+              const SizedBox(width: 8),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: filasPorPagina,
+                  isDense: true,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: FqColors.ink,
+                  ),
+                  items: opciones
+                      .map(
+                        (int n) =>
+                            DropdownMenuItem<int>(value: n, child: Text('$n')),
+                      )
+                      .toList(),
+                  onChanged: (int? v) {
+                    if (v != null) onFilasPorPagina(v);
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 22),
-          Text(
-            '$_desde–$_hasta de $total',
-            style: const TextStyle(fontSize: 10, color: FqColors.muted),
-          ),
-          const SizedBox(width: 10),
-          _Flecha(
-            icon: Icons.chevron_left,
-            onTap: hayAnterior ? () => onPagina(pagina - 1) : null,
-          ),
-          _Flecha(
-            icon: Icons.chevron_right,
-            onTap: haySiguiente ? () => onPagina(pagina + 1) : null,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '$_desde–$_hasta de $total',
+                style: const TextStyle(fontSize: 10, color: FqColors.muted),
+              ),
+              const SizedBox(width: 10),
+              _Flecha(
+                icon: Icons.chevron_left,
+                onTap: hayAnterior ? () => onPagina(pagina - 1) : null,
+              ),
+              _Flecha(
+                icon: Icons.chevron_right,
+                onTap: haySiguiente ? () => onPagina(pagina + 1) : null,
+              ),
+            ],
           ),
         ],
       ),

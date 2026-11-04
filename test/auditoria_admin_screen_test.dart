@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -15,7 +14,9 @@ class _AuditoriaApiFake extends AuditoriaApi {
       'entidad': 'USUARIO',
       'entidadId': 101,
       'creadoEn': '2026-10-20T10:00:00Z',
-      'detalle': {'datosRegistrados': {'nombreUser': 'Carlos'}},
+      'detalle': {
+        'datosRegistrados': {'nombreUser': 'Carlos'},
+      },
     },
     {
       'id': 2,
@@ -26,10 +27,7 @@ class _AuditoriaApiFake extends AuditoriaApi {
       'creadoEn': '2026-10-21T10:00:00Z',
       'detalle': {
         'cambios': {
-          'nombreUser': {
-            'anterior': 'Ana',
-            'nuevo': 'Ana María',
-          },
+          'nombreUser': {'anterior': 'Ana', 'nuevo': 'Ana María'},
         },
       },
     },
@@ -72,19 +70,17 @@ class _AuditoriaApiFake extends AuditoriaApi {
 
       if (accion != null &&
           accion.isNotEmpty &&
-          !registro['accion']
-              .toString()
-              .toUpperCase()
-              .contains(accion.toUpperCase())) {
+          !registro['accion'].toString().toUpperCase().contains(
+            accion.toUpperCase(),
+          )) {
         return false;
       }
 
       if (entidad != null &&
           entidad.isNotEmpty &&
-          !registro['entidad']
-              .toString()
-              .toUpperCase()
-              .contains(entidad.toUpperCase())) {
+          !registro['entidad'].toString().toUpperCase().contains(
+            entidad.toUpperCase(),
+          )) {
         return false;
       }
 
@@ -106,18 +102,13 @@ class _AuditoriaApiFake extends AuditoriaApi {
   }
 }
 
-Future<void> _montar(
-  WidgetTester tester,
-  AuditoriaApi api,
-) async {
+Future<void> _montar(WidgetTester tester, AuditoriaApi api) async {
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('es'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: AuditoriaScreen(api: api),
-      ),
+      home: Scaffold(body: AuditoriaScreen(api: api)),
     ),
   );
 
@@ -125,6 +116,16 @@ Future<void> _montar(
 }
 
 void main() {
+  testWidgets('Auditoría cabe en ancho de teléfono', (tester) async {
+    tester.view.physicalSize = const Size(360, 760);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _montar(tester, _AuditoriaApiFake());
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('ADM-13 consulta el historial de auditoría', (tester) async {
@@ -170,10 +171,7 @@ void main() {
       'RUTA_APROBADA',
     );
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Entidad'),
-      'RUTA',
-    );
+    await tester.enterText(find.widgetWithText(TextField, 'Entidad'), 'RUTA');
 
     await tester.tap(find.text('Buscar'));
     await tester.pump();
@@ -185,8 +183,7 @@ void main() {
     expect(find.text('Usuario creado'), findsNothing);
   });
 
-  testWidgets('ADM-13 rechaza ID de administrador inválido',
-      (tester) async {
+  testWidgets('ADM-13 rechaza ID de administrador inválido', (tester) async {
     final api = _AuditoriaApiFake();
 
     await _montar(tester, api);
@@ -200,10 +197,7 @@ void main() {
     await tester.pump();
 
     expect(api.consultas.length, 1);
-    expect(
-      find.text('Ingrese un ID de administrador válido.'),
-      findsOneWidget,
-    );
+    expect(find.text('Ingrese un ID de administrador válido.'), findsOneWidget);
   });
 
   testWidgets('ADM-13 limpia los filtros', (tester) async {
@@ -227,8 +221,9 @@ void main() {
     expect(find.text('Usuario actualizado'), findsOneWidget);
   });
 
-  testWidgets('ADM-13 permite consultar detalles sin eliminarlos',
-      (tester) async {
+  testWidgets('ADM-13 permite consultar detalles sin eliminarlos', (
+    tester,
+  ) async {
     final api = _AuditoriaApiFake();
 
     await _montar(tester, api);
@@ -252,8 +247,7 @@ void main() {
     expect(api.registros.length, 3);
   });
 
-  testWidgets('ADM-13 permite avanzar y retroceder páginas',
-      (tester) async {
+  testWidgets('ADM-13 permite avanzar y retroceder páginas', (tester) async {
     final api = _AuditoriaApiFake();
 
     api.registros.clear();
@@ -293,8 +287,7 @@ void main() {
     expect(find.text('Página 1 de 2'), findsOneWidget);
   });
 
-  testWidgets('ADM-13 actualiza automáticamente el historial',
-      (tester) async {
+  testWidgets('ADM-13 actualiza automáticamente el historial', (tester) async {
     final api = _AuditoriaApiFake();
 
     await _montar(tester, api);
@@ -309,28 +302,33 @@ void main() {
 
   for (final (Locale locale, String titulo, String accion)
       in <(Locale, String, String)>[
-    (const Locale('en'), 'Administrative audit', 'User created'),
-    (const Locale('pt', 'BR'), 'Auditoria administrativa', 'Usuário criado'),
-  ]) {
-    testWidgets('el panel sale en ${locale.languageCode} si la app esta en ese idioma', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(body: AuditoriaScreen(api: _AuditoriaApiFake())),
+        (const Locale('en'), 'Administrative audit', 'User created'),
+        (
+          const Locale('pt', 'BR'),
+          'Auditoria administrativa',
+          'Usuário criado',
         ),
-      );
-      await tester.pump();
-      await tester.pump();
+      ]) {
+    testWidgets(
+      'el panel sale en ${locale.languageCode} si la app esta en ese idioma',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: AuditoriaScreen(api: _AuditoriaApiFake())),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.text(titulo), findsOneWidget);
-      expect(find.text(accion), findsWidgets);
-      // Nada del español quedo pegado.
-      expect(find.text('Auditoría administrativa'), findsNothing);
-      expect(find.text('Usuario creado'), findsNothing);
-    });
+        expect(find.text(titulo), findsOneWidget);
+        expect(find.text(accion), findsWidgets);
+        // Nada del español quedo pegado.
+        expect(find.text('Auditoría administrativa'), findsNothing);
+        expect(find.text('Usuario creado'), findsNothing);
+      },
+    );
   }
 }

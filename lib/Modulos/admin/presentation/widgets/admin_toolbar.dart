@@ -12,9 +12,11 @@ class AdminToolbar extends StatelessWidget {
     this.controller,
     this.onChanged,
     this.onFilters,
+    this.filtersKey,
     this.trailing,
     this.onRefresh,
     this.refreshing = false,
+    this.showSearch = true,
   });
 
   final String searchHint;
@@ -24,10 +26,12 @@ class AdminToolbar extends StatelessWidget {
   /// Accion personalizada del boton Filtros.
   /// Si no se proporciona, conserva el comportamiento anterior.
   final VoidCallback? onFilters;
+  final Key? filtersKey;
 
   final Widget? trailing;
   final VoidCallback? onRefresh;
   final bool refreshing;
+  final bool showSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -39,50 +43,51 @@ class AdminToolbar extends StatelessWidget {
           runSpacing: FqGap.sm,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            SizedBox(
-              width: mobile ? constraints.maxWidth : 360,
-              child: Container(
-                height: 37,
-                decoration: BoxDecoration(
-                  color: FqColors.white,
-                  borderRadius: FqRadius.allMd,
-                  border: Border.all(color: FqColors.searchBorder),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Row(
-                  children: <Widget>[
-                    const Icon(Icons.search, size: 15, color: FqColors.muted),
-                    const SizedBox(width: 7),
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        onChanged: onChanged,
-                        enabled: controller != null || onChanged != null,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: FqColors.ink,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          filled: false,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          hintText: searchHint,
-                          hintStyle: const TextStyle(
+            if (showSearch)
+              SizedBox(
+                width: mobile ? constraints.maxWidth : 360,
+                child: Container(
+                  height: 37,
+                  decoration: BoxDecoration(
+                    color: FqColors.white,
+                    borderRadius: FqRadius.allMd,
+                    border: Border.all(color: FqColors.searchBorder),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(Icons.search, size: 15, color: FqColors.muted),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          onChanged: onChanged,
+                          enabled: controller != null || onChanged != null,
+                          style: const TextStyle(
                             fontSize: 11,
-                            color: FqColors.muted,
+                            color: FqColors.ink,
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            hintText: searchHint,
+                            hintStyle: const TextStyle(
+                              fontSize: 11,
+                              color: FqColors.muted,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            _FiltrosButton(onPressed: onFilters),
+            _FiltrosButton(key: filtersKey, onPressed: onFilters),
             if (onRefresh != null)
               AdminRefreshButton(onPressed: refreshing ? null : onRefresh),
             ?trailing,
@@ -128,7 +133,7 @@ class AdminRefreshButton extends StatelessWidget {
 }
 
 class _FiltrosButton extends StatelessWidget {
-  const _FiltrosButton({this.onPressed});
+  const _FiltrosButton({super.key, this.onPressed});
 
   final VoidCallback? onPressed;
 
@@ -154,6 +159,7 @@ class _FiltrosButton extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: const Row(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Icon(Icons.tune, size: 14, color: FqColors.ink),
               SizedBox(width: 5),

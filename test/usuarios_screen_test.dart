@@ -47,17 +47,13 @@ void main() {
   }
 
   Widget montar(UsuariosApi api) => MaterialApp(
-        locale: const Locale('es'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: SizedBox(
-            width: 1100,
-            height: 720,
-            child: UsuariosScreen(api: api),
-          ),
-        ),
-      );
+    locale: const Locale('es'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(
+      body: SizedBox(width: 1100, height: 720, child: UsuariosScreen(api: api)),
+    ),
+  );
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues(<String, String>{});
@@ -81,17 +77,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('NOMBRE'), findsOneWidget);
-    expect(find.text('CORREO'), findsOneWidget);
-    expect(find.text('ROL'), findsOneWidget);
-    expect(find.text('ESTADO'), findsOneWidget);
-    expect(find.text('ACCIONES'), findsOneWidget);
-
     expect(find.text('Ana Uno'), findsOneWidget);
-    expect(find.text('beto@x.co'), findsOneWidget);
-    // Estado por defecto + accion de baja.
-    expect(find.text('ACTIVADO'), findsWidgets);
-    expect(find.text('Desactivar'), findsWidgets);
+    expect(find.textContaining('beto@x.co'), findsOneWidget);
+    expect(find.textContaining('Activado'), findsWidgets);
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Desactivar'), findsOneWidget);
 
     expect(find.text('Filtros'), findsOneWidget);
     expect(find.text('Nuevo usuario'), findsOneWidget);
@@ -105,7 +96,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    await tester.tap(find.text('Ver').first);
+    await tester.tap(find.text('Ana Uno'));
     await tester.pumpAndSettle();
 
     // "Cerrar" solo existe en el modo "ver" del modal.
@@ -113,5 +104,17 @@ void main() {
     // El ID no aparece en ningun lado.
     expect(find.text('ID'), findsNothing);
     expect(find.textContaining('ID 1'), findsNothing);
+  });
+
+  testWidgets('Usuarios cabe en ancho de teléfono', (tester) async {
+    tester.view.physicalSize = const Size(360, 760);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(montar(fakeApi()));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Ana Uno'), findsOneWidget);
   });
 }

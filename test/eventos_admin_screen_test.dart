@@ -4,6 +4,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_tabs.dart';
 
 class _EventosApiFake extends ApiClient {
   _EventosApiFake({
@@ -116,6 +117,22 @@ Future<void> _montar(WidgetTester tester, _EventosApiFake api) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+    'Eventos organiza filas y filtros en teléfono sin espacio vacío',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 760);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _montar(tester, _EventosApiFake(eventos: _eventosDePrueba()));
+      expect(tester.takeException(), isNull);
+      final tabs = tester.getRect(find.byType(AdminTabs));
+      final title = tester.getRect(find.text('Carrera del futuro'));
+      expect(title.top - tabs.bottom, lessThan(35));
+    },
+  );
 
   testWidgets('ADM-08 carga y muestra todos los eventos', (tester) async {
     final api = _EventosApiFake(eventos: _eventosDePrueba());

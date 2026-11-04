@@ -6,6 +6,7 @@ import 'package:fit_quest_go/core/widgets/fq_tag.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_l10n.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 
 /// Tabla de usuarios: Nombre / Correo / Rol / Estado / Acciones.
 ///
@@ -63,14 +64,54 @@ class UsuariosTabla extends StatelessWidget {
       return FqEmptyState(
         icon: Icons.group_outlined,
         title: l10n.usuariosSinUsuarios,
-        message: mensajeVacio ??
+        message:
+            mensajeVacio ??
             l10n.usuariosCrearPrimero(l10n.usuariosNuevoUsuario),
       );
     }
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints c) {
-        final double width = c.maxWidth < _minWidth ? _minWidth : c.maxWidth;
+        if (c.maxWidth < _minWidth) {
+          return AdminDataTable(
+            rows: <AdminRow>[
+              for (final Usuario u in usuarios)
+                AdminRow(
+                  icon: Icons.person_outline,
+                  title: u.nombreUser,
+                  subtitle:
+                      '${u.emailUser} · ${rolLabel(l10n, u.idrol)} · ${estadoUsuarioLabel(l10n, u.estado)}',
+                  onTap: () => onVer(u),
+                  showViewHint: false,
+                  trailing: PopupMenuButton<String>(
+                    tooltip: l10n.usuariosColAcciones,
+                    onSelected: (accion) {
+                      if (accion == 'ver') onVer(u);
+                      if (accion == 'editar') onEditar(u);
+                      if (accion == 'estado') onCambiarEstado(u);
+                    },
+                    itemBuilder: (_) => <PopupMenuEntry<String>>[
+                      PopupMenuItem(value: 'ver', child: Text(l10n.comunVer)),
+                      PopupMenuItem(
+                        value: 'editar',
+                        child: Text(l10n.usuariosEditar),
+                      ),
+                      if (u.id != miId)
+                        PopupMenuItem(
+                          value: 'estado',
+                          child: Text(
+                            u.activo
+                                ? l10n.usuariosDesactivarBoton
+                                : l10n.usuariosActivarBoton,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        }
+        final double width = c.maxWidth;
         final Widget tabla = SizedBox(
           width: width,
           child: Column(
@@ -88,12 +129,6 @@ class UsuariosTabla extends StatelessWidget {
             ],
           ),
         );
-        if (c.maxWidth < _minWidth) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: tabla,
-          );
-        }
         return tabla;
       },
     );
@@ -144,7 +179,10 @@ class _EncabezadoFila extends StatelessWidget {
             flex: _flexCorreo,
             child: Text(l10n.usuariosColCorreo, style: estilo),
           ),
-          Expanded(flex: _flexRol, child: Text(l10n.usuariosColRol, style: estilo)),
+          Expanded(
+            flex: _flexRol,
+            child: Text(l10n.usuariosColRol, style: estilo),
+          ),
           Expanded(
             flex: _flexEstado,
             child: Text(l10n.usuariosColEstado, style: estilo),

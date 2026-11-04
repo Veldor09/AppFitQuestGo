@@ -37,7 +37,13 @@ void main() {
     expect(tester.takeException(), isNull);
     final row = tester.getRect(find.byType(AdminDataTable));
     final chip = tester.getRect(find.byType(Chip));
+    final title = tester.getRect(
+      find.text('Recorrido con un nombre deliberadamente largo para teléfono'),
+    );
     expect(chip.left, greaterThanOrEqualTo(row.left));
     expect(chip.right, lessThanOrEqualTo(row.right));
+    expect(chip.left, lessThan(row.left + 110));
+    expect(chip.top, greaterThan(title.top));
+    expect(title.top - row.top, lessThan(18));
   });
 }
