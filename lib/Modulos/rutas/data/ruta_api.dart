@@ -71,6 +71,31 @@ class RutaApi {
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
 
+
+  Future<Ruta> actualizar({
+    required int id,
+    String? nombre,
+    List<String>? actividades,
+    String? dificultad,
+    double? distanciaKm,
+    List<PuntoRuta>? puntos,
+    String? visibilidad,
+  }) async {
+    final Map<String, dynamic> body = <String, dynamic>{};
+    if (nombre != null) body['nombre'] = nombre;
+    if (actividades != null) body['actividades'] = actividades;
+    if (dificultad != null) body['dificultad'] = dificultad;
+    if (distanciaKm != null) body['distanciaKm'] = distanciaKm;
+    if (visibilidad != null) body['visibilidad'] = visibilidad;
+    if (puntos != null) {
+      body['puntos'] = <Map<String, double>>[
+        for (final PuntoRuta p in puntos) {'lat': p.lat, 'lng': p.lng},
+      ];
+    }
+    final dynamic data = await _client.patch('/rutas/', body);
+    return Ruta.fromJson(data as Map<String, dynamic>);
+  }
+
   Future<Ruta> solicitarPublicacion(int id) async {
     final dynamic data = await _client.patch('/rutas/$id/publicar', null);
     return Ruta.fromJson(data as Map<String, dynamic>);

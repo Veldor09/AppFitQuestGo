@@ -811,7 +811,12 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
 
   void _evaluarRuta(PosicionGps p) {
     if (!_tieneRuta) return;
-    _progreso = calcularProgreso(p, _puntosRuta);
+    _progreso = calcularProgreso(
+      p,
+      _puntosRuta,
+      indiceReferencia: _indiceSegmentoRuta,
+    );
+    _indiceSegmentoRuta = _progreso!.indiceSegmento;
     final DesviacionRutaDetector? detector = _detector;
     if (detector != null) {
       switch (detector.evaluar(p)) {
@@ -827,10 +832,22 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     final ProgresoEnRuta? pr = _progreso;
     final PuntoGeo fin = widget.evento.recorridos.first.puntos.last;
     final double distAlFin = distanciaMetros(p.lat, p.lng, fin.lat, fin.lng);
-    if (!_haLlegado &&
-        pr != null &&
-        (pr.restanteM <= _radioFinalM || distAlFin <= _radioFinalM) &&
-        pr.progresoM > 0) {
+    final double totalRutaM = (pr?.progresoM ?? 0) + (pr?.restanteM ?? 0);
+    final int totalPuntos = _puntosRuta.length;
+
+    final bool cercaDelFinal = pr != null &&
+        (pr.restanteM <= _radioFinalM || distAlFin <= _radioFinalM);
+    final bool avanceSuficiente;
+    if (totalRutaM <= _radioFinalM) {
+      avanceSuficiente = (pr?.progresoM ?? 0) > 0;
+    } else {
+      final bool enSegmentoFinal = totalPuntos >= 2 &&
+          _indiceSegmentoRuta >= totalPuntos - 2;
+      avanceSuficiente = (pr?.progresoM ?? 0) >= totalRutaM * 0.70 ||
+          (enSegmentoFinal && (pr?.progresoM ?? 0) >= totalRutaM * 0.40);
+    }
+
+    if (!_haLlegado && cercaDelFinal && avanceSuficiente) {
       _haLlegado = true;
       _cronometro.pausar();
       _decir(_t?.eventoRecorridoVozCompletado ?? '¡Has completado el recorrido del evento!');
@@ -899,7 +916,10 @@ class _RecorridoEventoScreenState extends State<RecorridoEventoScreen>
     );
 
     // Si ya estamos a menos de _radioFinalM del final o no quedan puntos por recorrer:
-    if (restantes.length < 2 || distAlFin <= _radioFinalM) {
+    // En circuitos donde inicio == fin, solo se oculta la línea si el usuario ya está
+    // en el segmento final (para no borrar el trazo cuando apenas está arrancando en el inicio).
+    final bool enSegmentoFinal = info.indiceSegmento >= puntosRuta.length - 2;
+    if (restantes.length < 2 || (enSegmentoFinal && distAlFin <= _radioFinalM)) {
       await lineas.deleteAll();
       return;
     }

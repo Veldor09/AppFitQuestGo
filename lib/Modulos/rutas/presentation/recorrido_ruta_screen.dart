@@ -386,7 +386,12 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
   }
 
   void _evaluarRuta(PosicionGps p) {
-    _progreso = calcularProgreso(p, widget.ruta.puntos);
+    _progreso = calcularProgreso(
+      p,
+      widget.ruta.puntos,
+      indiceReferencia: _indiceSegmentoRuta,
+    );
+    _indiceSegmentoRuta = _progreso!.indiceSegmento;
     final AppLocalizations? l10n = mounted
         ? AppLocalizations.of(context)
         : null;
@@ -404,9 +409,26 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
 
     final ProgresoEnRuta pr = _progreso!;
     final double distAlFin = distanciaMetros(p.lat, p.lng, _fin.lat, _fin.lng);
-    if (!_llegoAlFinal &&
-        (pr.restanteM <= _radioFinalM || distAlFin <= _radioFinalM) &&
-        pr.progresoM > 0) {
+    final double totalRutaM = pr.progresoM + pr.restanteM;
+    final int totalPuntos = widget.ruta.puntos.length;
+
+    // Condición para dar por finalizada la ruta:
+    // 1. Debe estar dentro del radio final (_radioFinalM).
+    // 2. Debe haber completado un avance sustancial del recorrido para no disparar fin
+    //    prematuro en circuitos cerrados (donde inicio y fin coinciden) ni al entrar a la ruta:
+    final bool cercaDelFinal =
+        pr.restanteM <= _radioFinalM || distAlFin <= _radioFinalM;
+    final bool avanceSuficiente;
+    if (totalRutaM <= _radioFinalM) {
+      avanceSuficiente = pr.progresoM > 0;
+    } else {
+      final bool enSegmentoFinal =
+          totalPuntos >= 2 && _indiceSegmentoRuta >= totalPuntos - 2;
+      avanceSuficiente = pr.progresoM >= totalRutaM * 0.70 ||
+          (enSegmentoFinal && pr.progresoM >= totalRutaM * 0.40);
+    }
+
+    if (!_llegoAlFinal && cercaDelFinal && avanceSuficiente) {
       _llegoAlFinal = true;
       _decir(l10n?.recorridoVozFinal ?? 'Has llegado al final de la ruta');
       unawaited(_lineasRuta?.deleteAll());
@@ -831,7 +853,10 @@ class _RecorridoRutaScreenState extends State<RecorridoRutaScreen>
     );
 
     // Si ya estamos a menos de _radioFinalM del final o no quedan puntos por recorrer:
-    if (restantes.length < 2 || distAlFin <= _radioFinalM) {
+    // En circuitos donde inicio == fin, solo se oculta la línea si el usuario ya está
+    // en el segmento final (para no borrar el trazo cuando apenas está arrancando en el inicio).
+    final bool enSegmentoFinal = info.indiceSegmento >= puntosRuta.length - 2;
+    if (restantes.length < 2 || (enSegmentoFinal && distAlFin <= _radioFinalM)) {
       await lineas.deleteAll();
       return;
     }

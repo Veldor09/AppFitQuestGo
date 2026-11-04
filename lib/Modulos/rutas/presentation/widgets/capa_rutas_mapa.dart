@@ -5,13 +5,11 @@ import 'package:fit_quest_go/core/mapa/pin_icono.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 
-/// Las rutas publicadas sobre el mapa de Home: cada trazo como una linea verde
-/// y, encima, el pin de salida con el nombre de la ruta (el mismo que ya usa
-/// la pantalla de detalle).
+/// Las rutas publicadas sobre el mapa de Home.
 ///
-/// Tocar una linea o su pin avisa con el id de la ruta ([alTocarRuta]), para
-/// abrir su detalle. No hay que confundirlas con los recorridos de un evento,
-/// que van en azul y con su propio pin.
+/// Para evitar la saturación visual del mapa ("efecto espagueti"), por defecto
+/// dibuja ÚNICAMENTE los pines de salida/inicio de las rutas públicas.
+/// Al seleccionar una ruta específica, [seleccionarRuta] dibuja su trazo en azul.
 class CapaRutasMapa {
   CapaRutasMapa._(this._lineas, this._iconos);
 
@@ -73,8 +71,7 @@ class CapaRutasMapa {
     }
   }
 
-  /// Borra todo y dibuja [rutas]. [densidad] es el `devicePixelRatio` de la
-  /// pantalla. Una ruta con menos de 2 puntos no tiene trazo y se salta.
+  /// Borra todo y dibuja los pines de inicio de [rutas] para mantener el mapa despejado.
   Future<void> dibujar({
     required double densidad,
     required List<Ruta> rutas,
@@ -84,33 +81,14 @@ class CapaRutasMapa {
     _porLinea.clear();
     _porPin.clear();
 
-    // Copia: la lista puede cambiar mientras se espera a Mapbox.
     final List<Ruta> validas = <Ruta>[
       for (final Ruta r in rutas)
         if (r.puntos.length >= 2) r,
     ];
     if (validas.isEmpty) return;
 
-    final List<PolylineAnnotation?> lineas = await _lineas.createMulti(
-      <PolylineAnnotationOptions>[
-        for (final Ruta r in validas)
-          PolylineAnnotationOptions(
-            geometry: LineString(
-              coordinates: <Position>[
-                for (final PuntoRuta p in r.puntos) Position(p.lng, p.lat),
-              ],
-            ),
-            lineColor: FqColors.trail.toARGB32(),
-            lineWidth: 4,
-          ),
-      ],
-    );
-    for (int i = 0; i < lineas.length; i++) {
-      final PolylineAnnotation? linea = lineas[i];
-      if (linea != null) _porLinea[linea.id] = validas[i].id;
-    }
-
-    final List<PointAnnotation?> pines = await _iconos
+    // Solo se dibujan los pines de inicio de las rutas para no saturar el mapa con líneas.
+    final pines = await _iconos
         .createMulti(<PointAnnotationOptions>[
           for (final Ruta r in validas)
             opcionesDePin(
@@ -125,5 +103,31 @@ class CapaRutasMapa {
       final PointAnnotation? pin = pines[i];
       if (pin != null) _porPin[pin.id] = validas[i].id;
     }
+  }
+
+  /// Dibuja dinámicamente en el mapa únicamente el trazado de la ruta seleccionada en azul.
+  Future<void> seleccionarRuta(Ruta ruta) async {
+    await _lineas.deleteAll();
+    _porLinea.clear();
+    if (ruta.puntos.length < 2) return;
+
+    final linea = await _lineas.create(
+      PolylineAnnotationOptions(
+        geometry: LineString(
+          coordinates: <Position>[
+            for (final PuntoRuta p in ruta.puntos) Position(p.lng, p.lat),
+          ],
+        ),
+        lineColor: FqColors.river.toARGB32(),
+        lineWidth: 5,
+      ),
+    );
+    _porLinea[linea.id] = ruta.id;
+  }
+
+  /// Limpia el trazo resaltado, devolviendo el mapa a su estado limpio y despejado.
+  Future<void> limpiarSeleccion() async {
+    await _lineas.deleteAll();
+    _porLinea.clear();
   }
 }

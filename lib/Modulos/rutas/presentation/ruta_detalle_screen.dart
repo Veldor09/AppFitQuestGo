@@ -1,3 +1,4 @@
+import 'package:fit_quest_go/Modulos/rutas/presentation/editar_ruta_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
@@ -66,6 +67,7 @@ class RutaDetalleScreen extends StatefulWidget {
 }
 
 class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
+  late Ruta _ruta = widget.ruta;
   late final RutaApi _api = widget.api ?? RutaApi();
   late final CalificacionApi _calificaciones =
       widget.calificaciones ?? CalificacionApi.predeterminada();
@@ -79,9 +81,9 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   bool _descargando = false;
   double _progresoDescarga = 0;
 
-  bool get _esPrivada => widget.ruta.estado == 'Privada';
+  bool get _esPrivada => _ruta.estado == 'Privada';
   bool get _sePuedeEnviar =>
-      widget.puedeEnviarARevision && widget.ruta.estado == 'Privada';
+      widget.puedeEnviarARevision && _ruta.estado == 'Privada';
 
   @override
   void initState() {
@@ -212,6 +214,24 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
     Navigator.of(context).pop();
   }
 
+
+  Future<void> _editarRuta() async {
+    final dynamic res = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute<dynamic>(
+        builder: (BuildContext _) => EditarRutaScreen(
+          ruta: _ruta,
+          api: _api,
+        ),
+      ),
+    );
+    if (res != null && mounted) {
+      if (res is Ruta) {
+        setState(() => _ruta = res);
+      }
+      (widget.alEliminar ?? widget.onCambio)?.call();
+    }
+  }
+
   Future<void> _iniciarRecorrido() async {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     if (widget.ruta.puntos.length < 2) {
@@ -233,7 +253,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    final Ruta ruta = widget.ruta;
+    final Ruta ruta = _ruta;
     final double top = MediaQuery.of(context).padding.top;
 
     final int tiempoEstimadoMin = (ruta.distanciaKm * 6).round().clamp(5, 360);
@@ -588,7 +608,7 @@ class _RutaDetalleScreenState extends State<RutaDetalleScreen> {
                           ),
                           onPressed: () {
                             if (_esPrivada) {
-                              notificarInfo(l10n.rutaDetalleEditarPronto);
+                              _editarRuta();
                             } else {
                               _toggleFavorita();
                             }

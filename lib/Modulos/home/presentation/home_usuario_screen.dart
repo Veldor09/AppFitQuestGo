@@ -59,7 +59,9 @@ import 'package:fit_quest_go/Modulos/patrocinio/presentation/capa_destacados_map
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta_api.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/ruta_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/recorrido_ruta_screen.dart';
 import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/capa_rutas_mapa.dart';
+import 'package:fit_quest_go/Modulos/rutas/presentation/widgets/ficha_ruta.dart';
 
 /// Cada cuanto se vuelven a pedir las alertas vigentes, los puntos de interes,
 /// los eventos y las notificaciones sin leer: una alerta que reporta otra
@@ -760,14 +762,56 @@ class _HomeUsuarioScreenState extends State<HomeUsuarioScreen> {
     unawaited(mostrarFichaEvento(context, evento));
   }
 
-  /// Tocar el trazo o el pin de una ruta abre su detalle.
-  void _abrirRutaPorId(int rutaId) {
+  /// Tocar el pin de una ruta resalta su trazo en azul y abre su ficha informativa.
+  Future<void> _abrirRutaPorId(int rutaId) async {
+    Ruta? ruta;
     for (final Ruta r in _rutas) {
       if (r.id == rutaId) {
-        _abrirRuta(r);
-        return;
+        ruta = r;
+        break;
       }
     }
+    if (ruta == null || !mounted) return;
+
+    // 1. Resaltar únicamente el trazado de la ruta seleccionada en azul sobre el mapa
+    await _capaRutas?.seleccionarRuta(ruta);
+
+    // 2. Animar cámara suavemente hacia el inicio de la ruta
+    final MapboxMap? mapa = _mapa;
+    if (mapa != null && ruta.puntos.isNotEmpty) {
+      final PuntoRuta p = ruta.puntos.first;
+      unawaited(
+        mapa.setCamera(
+          CameraOptions(
+            center: Point(coordinates: Position(p.lng, p.lat)),
+            zoom: 14.5,
+          ),
+        ),
+      );
+    }
+
+    // 3. Mostrar la ficha flotante con información de la ruta
+    if (!mounted) return;
+    await mostrarFichaRuta(
+      context,
+      ruta,
+      alIniciar: () => _iniciarRecorridoRuta(ruta!),
+      alVerDetalle: () => _abrirRuta(ruta!),
+    );
+
+    // 4. Al cerrar la ficha, limpiar el trazo para mantener el mapa libre de saturación
+    await _capaRutas?.limpiarSeleccion();
+  }
+
+  void _iniciarRecorridoRuta(Ruta ruta) {
+    if (!mounted) return;
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (BuildContext _) => RecorridoRutaScreen(ruta: ruta),
+        ),
+      ),
+    );
   }
 
   void _abrirRuta(Ruta ruta) {

@@ -1,3 +1,4 @@
+import 'package:fit_quest_go/Modulos/rutas/presentation/editar_ruta_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -574,6 +575,17 @@ class _TarjetaRuta extends StatelessWidget {
               const SizedBox(width: 8),
               EtiquetaEstadoRuta(ruta.estado),
               IconButton(
+                key: ValueKey<String>('editar-ruta-${ruta.id}'),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: FqColors.ink,
+                  size: 20,
+                ),
+                tooltip: l10n.perfilEditar,
+                splashRadius: 18,
+                onPressed: () => _abrirEdicion(context),
+              ),
+              IconButton(
                 key: ValueKey<String>('eliminar-ruta-${ruta.id}'),
                 icon: const Icon(
                   Icons.delete_outline_rounded,
@@ -600,6 +612,21 @@ class _TarjetaRuta extends StatelessWidget {
 
   /// Detalle a pantalla completa (mapa con el trazo + datos). Solo en "Mis
   /// rutas" se ofrece enviar a revision, y solo si la ruta sigue Privada.
+
+  Future<void> _abrirEdicion(BuildContext context) async {
+    final dynamic res = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute<dynamic>(
+        builder: (BuildContext _) => EditarRutaScreen(
+          ruta: ruta,
+          api: api,
+        ),
+      ),
+    );
+    if (res != null) {
+      onCambio();
+    }
+  }
+
   void _abrirDetalle(BuildContext context) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
