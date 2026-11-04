@@ -202,3 +202,7 @@ class _DetalleLinea extends StatelessWidget {
     );
   }
 }
+
+
+
+
