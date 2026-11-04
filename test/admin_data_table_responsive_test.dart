@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
+import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 void main() {
   testWidgets(
@@ -13,6 +14,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Padding(
               padding: const EdgeInsets.all(15),
@@ -37,10 +41,11 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(DataTable), findsOneWidget);
+      expect(find.byType(DataTable), findsNothing);
       expect(find.text('NOMBRE'), findsOneWidget);
       expect(find.text('DETALLE'), findsOneWidget);
       expect(find.text('ACCIONES'), findsOneWidget);
+      expect(find.text('Filas por página'), findsOneWidget);
       final row = tester.getRect(find.byType(AdminDataTable));
       final title = tester.getRect(
         find.text(

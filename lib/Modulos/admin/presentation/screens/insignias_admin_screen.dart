@@ -29,8 +29,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
   String _busqueda = '';
   int _filtroEstado = 0;
-  static const int _insigniasPorPagina = 8;
-  int _paginaActual = 0;
   int _versionCarga = 0;
 
   bool _cargando = false;
@@ -131,16 +129,7 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
     final List<InsigniaAdminItem> filtradas = _insigniasFiltradas;
-    final int totalPaginas = (filtradas.length / _insigniasPorPagina).ceil();
-    final int paginaVisible = totalPaginas == 0
-        ? 0
-        : _paginaActual.clamp(0, totalPaginas - 1);
-    final int inicio = paginaVisible * _insigniasPorPagina;
-    final int fin = (inicio + _insigniasPorPagina).clamp(0, filtradas.length);
-
-    final List<AdminRow> filas = filtradas.sublist(inicio, fin).map((
-      InsigniaAdminItem insignia,
-    ) {
+    final List<AdminRow> filas = filtradas.map((InsigniaAdminItem insignia) {
       final String descripcion = l10n.admInsResumen(
         insignia.codigo,
         insignia.metrica ?? l10n.admInsSinMetrica,
@@ -188,7 +177,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       onSearch: (String valor) {
         setState(() {
           _busqueda = valor;
-          _paginaActual = 0;
         });
       },
       tabs: <String>[
@@ -200,7 +188,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       onTab: (int indice) {
         setState(() {
           _filtroEstado = indice;
-          _paginaActual = 0;
         });
       },
       toolbarTrailing: FqButton.primary(
@@ -228,33 +215,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
             emptyTitle: l10n.admInsigniasVacioTitulo,
             emptyMessage: l10n.admInsigniasVacioMensaje,
           ),
-          if (!_cargando && _error == null && totalPaginas > 1) ...<Widget>[
-            const SizedBox(height: 16),
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 8,
-              children: <Widget>[
-                OutlinedButton.icon(
-                  onPressed: paginaVisible > 0
-                      ? () => setState(() => _paginaActual = paginaVisible - 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_left),
-                  label: Text(l10n.admAnterior),
-                ),
-                Text(l10n.admPaginaDe(paginaVisible + 1, totalPaginas)),
-                OutlinedButton.icon(
-                  onPressed: paginaVisible < totalPaginas - 1
-                      ? () => setState(() => _paginaActual = paginaVisible + 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_right),
-                  label: Text(l10n.admSiguiente),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
         ],
       ),
     );
