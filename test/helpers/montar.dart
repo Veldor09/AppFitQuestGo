@@ -15,13 +15,15 @@ import 'package:fit_quest_go/Modulos/auth/data/sesion.dart';
 
 /// Monta [home] en una app de pruebas en español, con el host de notificaciones
 /// (los avisos de exito / error se leen con `find.text`) y, si se da, la sesion.
+/// [regionTelefono] es la region del telefono (por defecto, una sin pais).
 Future<void> montarApp(
   WidgetTester tester,
   Widget home, {
   AuthRepositorio? auth,
+  Locale regionTelefono = const Locale('es'),
 }) async {
-  tester.platformDispatcher.localesTestValue = const <Locale>[Locale('es')];
-  tester.platformDispatcher.localeTestValue = const Locale('es');
+  tester.platformDispatcher.localesTestValue = <Locale>[regionTelefono];
+  tester.platformDispatcher.localeTestValue = regionTelefono;
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   addTearDown(tester.platformDispatcher.clearLocaleTestValue);
 
