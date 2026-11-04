@@ -250,7 +250,9 @@ void main() {
 
     await abrirPantalla(tester, api);
 
-    await tester.tap(find.text('Bache'));
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Editar').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Editar elemento'), findsOneWidget);
@@ -274,7 +276,9 @@ void main() {
 
     await abrirPantalla(tester, api);
 
-    await tester.tap(find.text('Bache'));
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Editar').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(SwitchListTile));
@@ -284,6 +288,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(api.datos['alertas']!.first.activo, isFalse);
+    await tester.tap(find.text('Bache'));
+    await tester.pumpAndSettle();
     expect(find.text('Inactivo'), findsWidgets);
   });
 

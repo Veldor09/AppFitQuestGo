@@ -133,7 +133,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Solicitud #482913'), findsOneWidget);
     expect(find.text('ana@correo.com'), findsOneWidget);
-    expect(find.text('Monto a recibir'), findsOneWidget);
+    expect(find.text('MONTO A RECIBIR'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey<String>('accion-aprobar')));
     await tester.pumpAndSettle();

@@ -6,7 +6,6 @@ import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/theme/fq_tokens.dart';
 import 'package:fit_quest_go/core/widgets/fq_brand_mark.dart';
-import 'package:fit_quest_go/core/widgets/fq_button.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/auth/data/auth_repositorio.dart';
@@ -100,71 +99,137 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
               subtitle: l10n.bienvenidaSubtitulo,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 28),
           const Spacer(),
-
-          if (_tieneBiometria) ...<Widget>[
-            FqButton.primary(
-              label: _nombreBio != null
-                  ? l10n.bioIngresarComo(_nombreBio!)
-                  : l10n.bioIngresar,
-              icon: Icons.fingerprint_rounded,
-              loading: _cargandoBiometria,
-              onPressed: _iniciarConHuella,
+          FilledButton(
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
             ),
-            const SizedBox(height: FqGap.md),
-            FqButton.secondary(
-              label: l10n.comunIniciarSesion,
-              onPressed: () => Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+            style: FilledButton.styleFrom(
+              backgroundColor: FqColors.volt,
+              foregroundColor: FqColors.primaryInk,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(13),
               ),
             ),
-            const SizedBox(height: FqGap.md),
-            FqButton(
-              variant: FqButtonVariant.ghost,
-              label: l10n.comunCrearCuenta,
-              onPressed: () => Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => const RegistroFlujoScreen(),
-                ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(l10n.comunIniciarSesion),
+                const Icon(Icons.arrow_forward_rounded, size: 19),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(
+                builder: (_) => const RegistroFlujoScreen(),
               ),
             ),
-          ] else ...<Widget>[
-            FqButton.primary(
-              label: l10n.comunCrearCuenta,
-              onPressed: () => Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => const RegistroFlujoScreen(),
-                ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: FqColors.ink,
+              backgroundColor: FqColors.white,
+              minimumSize: const Size.fromHeight(48),
+              side: const BorderSide(color: FqColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(13),
               ),
             ),
-            const SizedBox(height: FqGap.md),
-            FqButton.secondary(
-              label: l10n.comunIniciarSesion,
-              onPressed: () => Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(l10n.comunCrearCuenta),
+                const Icon(Icons.add_rounded, size: 20),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Text(
+              'OTRAS OPCIONES',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+                color: FqColors.muted,
               ),
             ),
-          ],
-
-          const SizedBox(height: FqGap.xs),
-          TextButton(
+          ),
+          OutlinedButton(
             key: const ValueKey<String>('soy-comercio'),
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute<void>(
                 builder: (_) => const RegistroEmpresaScreen(),
               ),
             ),
-            child: Text(
-              l10n.bienvenidaSoyComercio,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: FqColors.river,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: FqColors.ink,
+              backgroundColor: FqColors.white,
+              minimumSize: const Size.fromHeight(48),
+              side: const BorderSide(color: FqColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(13),
               ),
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(l10n.bienvenidaSoyComercio),
+                const Icon(Icons.north_east_rounded, size: 18),
+              ],
+            ),
           ),
-          const SizedBox(height: FqGap.xs),
+          if (_tieneBiometria) ...<Widget>[
+            const SizedBox(height: 12),
+            Center(
+              child: Tooltip(
+                message: _nombreBio == null
+                    ? l10n.bioIngresar
+                    : l10n.bioIngresarComo(_nombreBio!),
+                child: InkWell(
+                  key: const ValueKey<String>('inicio-huella'),
+                  onTap: _cargandoBiometria ? null : _iniciarConHuella,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 26,
+                      vertical: 5,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        if (_cargandoBiometria)
+                          const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: CircularProgressIndicator(strokeWidth: 3),
+                          )
+                        else
+                          const Icon(
+                            Icons.fingerprint_rounded,
+                            size: 68,
+                            color: FqColors.ink,
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n.comunIniciarSesion,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: FqColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: FqGap.sm),
           Center(
             child: Text(
               l10n.bienvenidaAvisoLegal,

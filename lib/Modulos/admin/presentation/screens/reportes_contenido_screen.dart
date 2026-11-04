@@ -5,6 +5,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/reporte_contenido_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/eventos/data/evento_api.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
 import 'package:fit_quest_go/Modulos/reportes/presentation/hoja_reportar.dart';
@@ -35,12 +36,6 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   static const Color _fondo = Color(0xFFEAEADF);
   static const Color _verde = Color(0xFFB4F52B);
   static const Color _texto = Color(0xFF26302D);
-  static const Color _secundario = Color(0xFF68716B);
-  static const Color _borde = Color(0xFFCACDC1);
-
-  // Estilo exclusivo del botón Cerrar.
-  static const Color _rojoFondo = Color(0xFFFCE4E4);
-  static const Color _rojoTexto = Color(0xFFB42332);
 
   static const List<String> _estados = ['pendiente', 'resuelta', 'archivada'];
 
@@ -138,31 +133,6 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
   ShapeBorder get _formaDialogo =>
       RoundedRectangleBorder(borderRadius: BorderRadius.circular(30));
 
-  Widget _etiqueta(String texto) {
-    return Text(
-      texto,
-      style: const TextStyle(
-        color: _secundario,
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
-  Widget _valor(String texto) {
-    return Text(
-      texto,
-      style: const TextStyle(color: _texto, fontSize: 15, height: 1.45),
-    );
-  }
-
-  Widget _campoDetalle({required String etiqueta, required String valor}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [_etiqueta(etiqueta), const SizedBox(height: 5), _valor(valor)],
-    );
-  }
-
   Widget _botonPrincipal({
     required String texto,
     required VoidCallback onPressed,
@@ -191,24 +161,6 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       ),
       child: Text(texto),
-    );
-  }
-
-  // Botón rojo únicamente para cerrar el detalle.
-  Widget _botonCerrar({required VoidCallback onPressed}) {
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: _rojoFondo,
-        foregroundColor: _rojoTexto,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-        shape: const StadiumBorder(),
-      ),
-      child: Text(
-        _l10n.comunCerrar,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
     );
   }
 
@@ -344,127 +296,37 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         ? _vistaPreviaFoto(tipo, contenidoId, nombre)
         : null;
 
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        key: const ValueKey<String>('detalle-reporte'),
-        backgroundColor: _fondo,
-        surfaceTintColor: Colors.transparent,
-        shape: _formaDialogo,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        titlePadding: const EdgeInsets.fromLTRB(26, 26, 26, 6),
-        contentPadding: const EdgeInsets.fromLTRB(26, 12, 26, 18),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        title: Text(
-          _l10n.admRepTitulo(id),
-          style: const TextStyle(
-            color: _texto,
-            fontSize: 24,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _l10n.admRepInfo,
-                  style: const TextStyle(
-                    color: _secundario,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Wrap(
-                  spacing: 32,
-                  runSpacing: 18,
-                  children: [
-                    _campoDetalle(
-                      etiqueta: _l10n.admRepTipoContenido,
-                      valor: _nombreTipo(tipo),
-                    ),
-                    _campoDetalle(
-                      etiqueta: _l10n.perfilEstado,
-                      valor: _nombreEstado(estado),
-                    ),
-                    if (esFoto)
-                      _campoDetalle(
-                        etiqueta: _l10n.admRepEsFoto,
-                        valor: motivo,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                const Divider(color: _borde),
-                const SizedBox(height: 18),
-                _etiqueta(_l10n.admRepContenido),
-                const SizedBox(height: 8),
-                if (contenido == null)
-                  _valor(_l10n.admRepContenidoNoExiste)
-                else
-                  Wrap(
-                    spacing: 32,
-                    runSpacing: 14,
-                    children: [
-                      _campoDetalle(etiqueta: _l10n.comunNombre, valor: nombre),
-                      if (contenido['creadoPorNombre'] != null)
-                        _campoDetalle(
-                          etiqueta: _l10n.admRepDueno,
-                          valor: '${contenido['creadoPorNombre']}',
-                        ),
-                      _campoDetalle(
-                        etiqueta: _l10n.admRepEstadoContenido,
-                        valor: contenido['desactivado'] == true
-                            ? _l10n.admRepContenidoDesactivado
-                            : _l10n.admRepContenidoActivo,
-                      ),
-                    ],
-                  ),
-                if (foto != null) ...[const SizedBox(height: 14), foto],
-                const SizedBox(height: 18),
-                _campoDetalle(etiqueta: _l10n.admMotivo, valor: motivo),
-                const SizedBox(height: 18),
-                _campoDetalle(
-                  etiqueta: _l10n.admDescripcion,
-                  valor: descripcion,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          _botonCerrar(onPressed: () => Navigator.pop(dialogContext)),
-          if (estado == 'pendiente') ...[
-            _botonSecundario(
-              texto: _l10n.admRepConservar,
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _decidir(id, 'conservar');
-              },
-            ),
-            _botonPrincipal(
-              texto: _l10n.admRepDesactivar,
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _decidir(id, 'desactivar');
-              },
-            ),
-          ],
-          if (desactivo && contenido != null)
-            _botonPrincipal(
-              texto: _l10n.admRepReactivar,
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _decidir(id, 'reactivar');
-              },
-            ),
-        ],
-      ),
+    final String? accion = await mostrarDetalleAdmin(
+      context,
+      dialogKey: const ValueKey<String>('detalle-reporte'),
+      titulo: _l10n.admRepTitulo(id),
+      icono: Icons.flag_outlined,
+      estado: _nombreEstado(estado),
+      campos: <String, String>{
+        _l10n.admRepTipoContenido: _nombreTipo(tipo),
+        if (esFoto) _l10n.admRepEsFoto: motivo,
+        _l10n.admRepContenido: contenido == null
+            ? _l10n.admRepContenidoNoExiste
+            : nombre,
+        if (contenido?['creadoPorNombre'] != null)
+          _l10n.admRepDueno: contenido!['creadoPorNombre'].toString(),
+        if (contenido != null)
+          _l10n.admRepEstadoContenido: contenido['desactivado'] == true
+              ? _l10n.admRepContenidoDesactivado
+              : _l10n.admRepContenidoActivo,
+        _l10n.admMotivo: motivo,
+        _l10n.admDescripcion: descripcion,
+      },
+      extra: foto,
+      acciones: <String, String>{
+        if (estado == 'pendiente') ...<String, String>{
+          'conservar': _l10n.admRepConservar,
+          'desactivar': _l10n.admRepDesactivar,
+        },
+        if (desactivo && contenido != null) 'reactivar': _l10n.admRepReactivar,
+      },
     );
+    if (accion != null && mounted) await _decidir(id, accion);
   }
 
   @override
@@ -491,6 +353,8 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     }).toList();
 
     return AdminListScaffold(
+      onRefresh: _cargarReportes,
+      refreshing: _cargando,
       searchHint: _l10n.admRepBuscar,
       searchController: _busquedaController,
       onSearch: (texto) => setState(() => _busqueda = texto),

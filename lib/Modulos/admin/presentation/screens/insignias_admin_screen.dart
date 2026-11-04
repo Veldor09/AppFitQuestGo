@@ -7,6 +7,7 @@ import 'package:fit_quest_go/Modulos/admin/data/insignia_admin_item.dart';
 import 'package:fit_quest_go/Modulos/admin/data/insignias_admin_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 /// ADM-10 · Gestión administrativa de insignias.
 class InsigniasAdminScreen extends StatefulWidget {
@@ -150,24 +151,43 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
         icon: Icons.military_tech_outlined,
         title: '${insignia.emoji} ${insignia.nombre}',
         subtitle: descripcion,
-        trailing: Chip(
-          label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva),
-          backgroundColor: insignia.activa
-              ? Colors.green.shade50
-              : Colors.grey.shade200,
-          labelStyle: TextStyle(
-            color: insignia.activa
-                ? Colors.green.shade800
-                : Colors.grey.shade800,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Chip(
+              label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva),
+            ),
+            PopupMenuButton<String>(
+              tooltip: l10n.usuariosEditar,
+              onSelected: (_) => _abrirFormulario(insignia: insignia),
+              itemBuilder: (_) => <PopupMenuEntry<String>>[
+                PopupMenuItem(
+                  value: 'editar',
+                  child: Text(l10n.usuariosEditar),
+                ),
+              ],
+            ),
+          ],
         ),
-        onTap: () => _abrirFormulario(insignia: insignia),
+        onTap: () => mostrarDetalleAdmin(
+          context,
+          titulo: insignia.nombre,
+          icono: Icons.military_tech_outlined,
+          estado: insignia.activa ? l10n.admActiva : l10n.admInactiva,
+          campos: <String, String>{
+            l10n.comunNombre: insignia.nombre,
+            l10n.admDescripcion: insignia.descripcion,
+            l10n.perfilEstado: insignia.activa
+                ? l10n.admActiva
+                : l10n.admInactiva,
+          },
+        ),
       );
     }).toList();
 
     return AdminListScaffold(
+      onRefresh: _cargarInsignias,
+      refreshing: _cargando,
       searchHint: l10n.admInsigniasSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {
@@ -477,17 +497,18 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _codigoController,
-                  enabled: _creando && !_guardando,
-                  maxLength: 50,
-                  decoration: InputDecoration(
-                    labelText: _l10n.admInsCodigo,
-                    hintText: 'RUTAS_10',
-                    helperText: _l10n.admInsCodigoAyuda,
-                    border: const OutlineInputBorder(),
+                if (_creando)
+                  TextField(
+                    controller: _codigoController,
+                    enabled: _creando && !_guardando,
+                    maxLength: 50,
+                    decoration: InputDecoration(
+                      labelText: _l10n.admInsCodigo,
+                      hintText: 'RUTAS_10',
+                      helperText: _l10n.admInsCodigoAyuda,
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
-                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _nombreController,

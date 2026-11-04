@@ -1,10 +1,10 @@
-﻿
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/eventos_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_tabs.dart';
 
 class _EventosApiFake extends ApiClient {
   _EventosApiFake({
@@ -67,10 +67,7 @@ Map<String, dynamic> _evento({
     'fechaFin': fin.toUtc().toIso8601String(),
     'areas': <dynamic>[],
     'recorridos': <dynamic>[],
-    'creadoPor': <String, dynamic>{
-      'id': id + 100,
-      'nombreEmpresa': empresa,
-    },
+    'creadoPor': <String, dynamic>{'id': id + 100, 'nombreEmpresa': empresa},
   };
 }
 
@@ -105,18 +102,13 @@ List<Map<String, dynamic>> _eventosDePrueba() {
   ];
 }
 
-Future<void> _montar(
-  WidgetTester tester,
-  _EventosApiFake api,
-) async {
+Future<void> _montar(WidgetTester tester, _EventosApiFake api) async {
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('es'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: EventosAdminScreen(api: api),
-      ),
+      home: Scaffold(body: EventosAdminScreen(api: api)),
     ),
   );
 
@@ -125,6 +117,22 @@ Future<void> _montar(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+    'Eventos organiza filas y filtros en teléfono sin espacio vacío',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 760);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _montar(tester, _EventosApiFake(eventos: _eventosDePrueba()));
+      expect(tester.takeException(), isNull);
+      final tabs = tester.getRect(find.byType(AdminTabs));
+      final title = tester.getRect(find.text('Carrera del futuro'));
+      expect(title.top - tabs.bottom, lessThan(35));
+    },
+  );
 
   testWidgets('ADM-08 carga y muestra todos los eventos', (tester) async {
     final api = _EventosApiFake(eventos: _eventosDePrueba());
@@ -142,10 +150,7 @@ void main() {
 
     await _montar(tester, api);
 
-    await tester.enterText(
-      find.byType(TextField).first,
-      'Carrera del futuro',
-    );
+    await tester.enterText(find.byType(TextField).first, 'Carrera del futuro');
     await tester.pumpAndSettle();
 
     expect(find.text('Carrera del futuro'), findsNWidgets(2));
@@ -158,10 +163,7 @@ void main() {
 
     await _montar(tester, api);
 
-    await tester.enterText(
-      find.byType(TextField).first,
-      'CULTURAL',
-    );
+    await tester.enterText(find.byType(TextField).first, 'CULTURAL');
     await tester.pumpAndSettle();
 
     expect(find.text('Festival activo'), findsOneWidget);
@@ -173,10 +175,7 @@ void main() {
 
     await _montar(tester, api);
 
-    await tester.enterText(
-      find.byType(TextField).first,
-      'Organización Sur',
-    );
+    await tester.enterText(find.byType(TextField).first, 'Organización Sur');
     await tester.pumpAndSettle();
 
     expect(find.text('Caminata anterior'), findsOneWidget);
@@ -230,7 +229,7 @@ void main() {
     await tester.tap(find.text('Carrera del futuro'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Descripción'), findsOneWidget);
+    expect(find.text('DESCRIPCIÓN'), findsOneWidget);
     expect(
       find.text('Descripción del evento Carrera del futuro'),
       findsOneWidget,
@@ -266,9 +265,7 @@ void main() {
     );
   });
 
-  testWidgets('ADM-08 cancelar eliminación conserva el evento', (
-    tester,
-  ) async {
+  testWidgets('ADM-08 cancelar eliminación conserva el evento', (tester) async {
     final api = _EventosApiFake(eventos: _eventosDePrueba());
 
     await _montar(tester, api);
@@ -310,15 +307,10 @@ void main() {
     expect(find.text('Festival activo'), findsOneWidget);
   });
 
-  testWidgets('ADM-08 muestra error si falla la eliminación', (
-    tester,
-  ) async {
+  testWidgets('ADM-08 muestra error si falla la eliminación', (tester) async {
     final api = _EventosApiFake(
       eventos: _eventosDePrueba(),
-      errorEliminacion: ApiException(
-        500,
-        'No fue posible eliminar el evento',
-      ),
+      errorEliminacion: ApiException(500, 'No fue posible eliminar el evento'),
     );
 
     await _montar(tester, api);
@@ -332,12 +324,7 @@ void main() {
     await tester.tap(find.text('Eliminar definitivamente'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('No fue posible eliminar el evento'),
-      findsOneWidget,
-    );
-  expect(find.text('Carrera del futuro'), findsOneWidget);
+    expect(find.text('No fue posible eliminar el evento'), findsOneWidget);
+    expect(find.text('Carrera del futuro'), findsOneWidget);
   });
 }
-
-

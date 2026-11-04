@@ -7,6 +7,7 @@ import 'package:fit_quest_go/Modulos/admin/data/catalogo_item.dart';
 import 'package:fit_quest_go/Modulos/admin/data/catalogos_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 /// ADM-11 · Gestión administrativa de catálogos.
 class CatalogosScreen extends StatefulWidget {
@@ -160,22 +161,29 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         icon: _iconoCatalogo(),
         title: item.nombre,
         subtitle: item.clave,
-        trailing: Chip(
-          label: Text(item.activo ? _l10n.admActivo : _l10n.admInactivo),
-          backgroundColor: item.activo
-              ? Colors.green.shade50
-              : Colors.grey.shade200,
-          labelStyle: TextStyle(
-            color: item.activo ? Colors.green.shade800 : Colors.grey.shade800,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
+        trailing: PopupMenuButton<String>(
+          tooltip: l10n.usuariosEditar,
+          onSelected: (_) => _abrirFormulario(item: item),
+          itemBuilder: (_) => <PopupMenuEntry<String>>[
+            PopupMenuItem(value: 'editar', child: Text(l10n.usuariosEditar)),
+          ],
         ),
-        onTap: () => _abrirFormulario(item: item),
+        onTap: () => mostrarDetalleAdmin(
+          context,
+          titulo: item.nombre,
+          icono: _iconoCatalogo(),
+          estado: item.activo ? l10n.admActivo : l10n.admInactivo,
+          campos: <String, String>{
+            l10n.comunNombre: item.nombre,
+            l10n.perfilEstado: item.activo ? l10n.admActivo : l10n.admInactivo,
+          },
+        ),
       );
     }).toList();
 
     return AdminListScaffold(
+      onRefresh: _cargarItems,
+      refreshing: _cargando,
       searchHint: l10n.admCatalogosSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {
@@ -356,16 +364,17 @@ class _FormularioCatalogoState extends State<_FormularioCatalogo> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _claveController,
-                enabled: _creando && !_guardando,
-                decoration: InputDecoration(
-                  labelText: _l10n.admCatClave,
-                  hintText: 'ejemplo_nuevo',
-                  helperText: _l10n.admCatClaveAyuda,
-                  border: const OutlineInputBorder(),
+              if (_creando)
+                TextField(
+                  controller: _claveController,
+                  enabled: _creando && !_guardando,
+                  decoration: InputDecoration(
+                    labelText: _l10n.admCatClave,
+                    hintText: 'ejemplo_nuevo',
+                    helperText: _l10n.admCatClaveAyuda,
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _nombreController,

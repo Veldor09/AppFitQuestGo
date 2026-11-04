@@ -8,6 +8,17 @@ class RutaApi {
 
   final ApiClient _client;
 
+  Future<List<Ruta>> listarAdmin() async =>
+      _lista(await _client.get('/rutas/admin/todas'));
+
+  Future<Ruta> cambiarEstado(int id, String estado) async {
+    final dynamic data = await _client.patch(
+      '/rutas/$id/estado',
+      <String, String>{'estado': estado},
+    );
+    return Ruta.fromJson(data as Map<String, dynamic>);
+  }
+
   Future<List<Ruta>> explorar() async {
     final dynamic data = await _client.get('/rutas/explorar');
     return _lista(data);
@@ -70,7 +81,6 @@ class RutaApi {
     });
     return Ruta.fromJson(data as Map<String, dynamic>);
   }
-
 
   Future<Ruta> actualizar({
     required int id,

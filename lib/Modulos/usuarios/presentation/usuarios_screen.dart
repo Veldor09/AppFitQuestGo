@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
@@ -27,7 +28,6 @@ class UsuariosScreen extends StatefulWidget {
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final UsuariosApi? api;
-
 
   @override
   State<UsuariosScreen> createState() => _UsuariosScreenState();
@@ -375,75 +375,28 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   }
 
   Widget _barraAcciones(AppLocalizations l10n) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: <Widget>[
-        FqButton.primary(
-          key: _filtrosKey,
-          label: _rolFiltro == 0
-              ? l10n.usuariosFiltros
-              : l10n.usuariosFiltrosConValor(_etiquetasRol(l10n)[_rolFiltro]),
-          icon: Icons.tune,
-          expand: false,
-          dense: true,
-          onPressed: _abrirMenuFiltros,
-        ),
-        FqButton.primary(
-          label: l10n.usuariosNuevoUsuario,
-          icon: Icons.add,
-          expand: false,
-          dense: true,
-          onPressed: () => _abrirModal(ModoUsuarioModal.crear),
-        ),
-        SizedBox(width: 260, child: _campoBusqueda(l10n)),
-      ],
-    );
-  }
-
-  Widget _campoBusqueda(AppLocalizations l10n) {
-    return Container(
-      height: 38,
-      decoration: BoxDecoration(
-        color: FqColors.white,
-        borderRadius: FqRadius.allMd,
-        border: Border.all(color: FqColors.searchBorder),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(
-        children: <Widget>[
-          const Icon(Icons.search, size: 15, color: FqColors.muted),
-          const SizedBox(width: 7),
-          Expanded(
-            child: TextField(
-              controller: _busqueda,
-              onChanged: (String v) {
-                _debounceBusqueda?.cancel();
-
-                _debounceBusqueda = Timer(
-                  const Duration(milliseconds: 250),
-                  () {
-                    if (!mounted) return;
-
-                    setState(() {
-                      _filtroTexto = v;
-                      _pagina = 0;
-                    });
-                  },
-                );
-              },
-              style: const TextStyle(fontSize: 11, color: FqColors.ink),
-              decoration: InputDecoration(
-                isDense: true,
-                filled: false,
-                border: InputBorder.none,
-                hintText: l10n.usuariosBuscarHint,
-                hintStyle: const TextStyle(fontSize: 11, color: FqColors.muted),
-              ),
-            ),
-          ),
-        ],
+    return AdminToolbar(
+      searchHint: l10n.usuariosBuscarHint,
+      controller: _busqueda,
+      filtersKey: _filtrosKey,
+      onFilters: _abrirMenuFiltros,
+      onRefresh: _recargar,
+      onChanged: (String valor) {
+        _debounceBusqueda?.cancel();
+        _debounceBusqueda = Timer(const Duration(milliseconds: 250), () {
+          if (!mounted) return;
+          setState(() {
+            _filtroTexto = valor;
+            _pagina = 0;
+          });
+        });
+      },
+      trailing: FqButton.primary(
+        label: l10n.usuariosNuevoUsuario,
+        icon: Icons.add,
+        expand: false,
+        dense: true,
+        onPressed: () => _abrirModal(ModoUsuarioModal.crear),
       ),
     );
   }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/detalle_ruta_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
@@ -25,6 +26,7 @@ class RutasAdminScreen extends StatefulWidget {
 class _RutasAdminScreenState extends State<RutasAdminScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   late Future<List<Ruta>> _futuro;
+  final Set<int> _procesando = <int>{};
   final TextEditingController _busquedaController = TextEditingController();
   String _busqueda = '';
   String? _filtroActividad;
@@ -33,7 +35,7 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
   @override
   void initState() {
     super.initState();
-    _futuro = _api.explorar();
+    _futuro = _api.listarAdmin();
   }
 
   @override
@@ -46,7 +48,7 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
     // Bloque, no expresion: `=> _futuro = x` devuelve el Future asignado,
     // y setState no acepta un callback que devuelva un Future.
     setState(() {
-      _futuro = _api.explorar();
+      _futuro = _api.listarAdmin();
     });
   }
 
@@ -119,11 +121,32 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
   }
 
   Future<void> _abrirDetalle(Ruta ruta) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => DetalleRutaAdminScreen(ruta: ruta),
-      ),
+    final l10n = AppLocalizations.of(context)!;
+    await mostrarDetalleAdmin(
+      context,
+      titulo: ruta.nombre,
+      icono: Icons.route_outlined,
+      estado: ruta.estado,
+      campos: <String, String>{
+        l10n.rutasActividad: actividadesLabel(l10n, ruta.actividades),
+        l10n.rutasDificultadLabel: dificultadLabel(l10n, ruta.dificultad),
+        'Distancia': '${ruta.distanciaKm.toStringAsFixed(1)} km',
+        'Puntos': '${ruta.puntos.length}',
+        if (ruta.creadoPorNombre != null) 'Creada por': ruta.creadoPorNombre!,
+      },
     );
+  }
+
+  Future<void> _desactivar(Ruta ruta) async {
+    setState(() => _procesando.add(ruta.id));
+    try {
+      await _api.cambiarEstado(ruta.id, 'Rechazada');
+      if (mounted) _recargar();
+    } catch (_) {
+      if (mounted) notificarError('No se pudo desactivar la ruta');
+    } finally {
+      if (mounted) setState(() => _procesando.remove(ruta.id));
+    }
   }
 
   @override
@@ -153,6 +176,8 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
         }).toList();
 
         return AdminListScaffold(
+          onRefresh: _recargar,
+          refreshing: cargando,
           searchHint: l10n.rutasAdminSearchHint,
           onFilters: _abrirFiltros,
           searchController: _busquedaController,
@@ -176,6 +201,32 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
                           ruta.creadoPorNombre!,
                         ),
                   onTap: () => _abrirDetalle(ruta),
+                  showViewHint: false,
+                  trailing: _procesando.contains(ruta.id)
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : PopupMenuButton<String>(
+                          tooltip: 'Acciones',
+                          onSelected: (accion) {
+                            if (accion == 'ver') _abrirDetalle(ruta);
+                            if (accion == 'desactivar') _desactivar(ruta);
+                          },
+                          itemBuilder: (_) => <PopupMenuEntry<String>>[
+                            const PopupMenuItem(
+                              value: 'ver',
+                              child: Text('Ver'),
+                            ),
+                            if (ruta.estado == 'Publicada' ||
+                                ruta.estado == 'Pendiente')
+                              const PopupMenuItem(
+                                value: 'desactivar',
+                                child: Text('Desactivar'),
+                              ),
+                          ],
+                        ),
                 ),
             ],
           ),

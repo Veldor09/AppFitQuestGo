@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/dashboard_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_kpi.dart';
@@ -104,6 +105,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          Align(
+            alignment: Alignment.centerRight,
+            child: AdminRefreshButton(
+              onPressed: _cargando ? null : _cargarResumen,
+            ),
+          ),
+          const SizedBox(height: FqGap.sm),
           if (_cargando) ...<Widget>[
             const LinearProgressIndicator(),
             const SizedBox(height: FqGap.md),

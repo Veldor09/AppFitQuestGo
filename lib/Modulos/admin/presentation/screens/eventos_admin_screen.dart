@@ -5,11 +5,11 @@ import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 /// ADM-08: gestión administrativa de eventos.
 ///
-/// Los eventos no requieren aprobación previa.
-/// El administrador puede consultar todos los eventos y eliminarlos.
+/// El administrador revisa áreas y recorridos antes de su publicación.
 class EventosAdminScreen extends StatefulWidget {
   const EventosAdminScreen({super.key, this.api});
 
@@ -31,6 +31,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   List<Map<String, dynamic>> _eventos = [];
   bool _cargando = true;
   bool _eliminando = false;
+  bool _decidiendo = false;
   String? _error;
   String _busqueda = '';
   int _filtro = 0;
@@ -53,6 +54,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     _l10n.admEvtFiltroProximos,
     _l10n.eventoEstadoEnCurso,
     _l10n.admEvtFiltroFinalizados,
+    'Pendientes',
   ];
 
   static const List<String> _categorias = [
@@ -199,6 +201,47 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     return 'En curso';
   }
 
+  bool _tienePendientes(Map<String, dynamic> evento) =>
+      <String>['areas', 'recorridos'].any(
+        (tipo) => (evento[tipo] as List? ?? const []).any(
+          (zona) => zona is Map && zona['estado'] == 'Pendiente',
+        ),
+      );
+
+  Future<void> _decidirTrazo(
+    Map<String, dynamic> evento,
+    String tipo,
+    int indice,
+    String estado,
+  ) async {
+    final id = evento['id'];
+    if (id is! int || _decidiendo) return;
+    setState(() => _decidiendo = true);
+    try {
+      await _api.patch(
+        '/eventos/admin/$id/$tipo/$indice/estado',
+        <String, String>{'estado': estado},
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            estado == 'Aprobado' ? 'Trazo aprobado.' : 'Trazo denegado.',
+          ),
+        ),
+      );
+      await _cargarEventos();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_mensajeError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _decidiendo = false);
+    }
+  }
+
   String _empresa(Map<String, dynamic> evento) {
     final creador = evento['creadoPor'];
 
@@ -206,6 +249,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       final datos = Map<String, dynamic>.from(creador);
 
       for (final campo in [
+        'nombreUser',
         'nombreEmpresa',
         'nombreComercial',
         'nombre',
@@ -308,6 +352,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (_filtro == 1 && estado != 'Próximo') return false;
       if (_filtro == 2 && estado != 'En curso') return false;
       if (_filtro == 3 && estado != 'Finalizado') return false;
+      if (_filtro == 4 && !_tienePendientes(evento)) return false;
 
       if (_categoriaFiltro != null &&
           evento['categoria']?.toString() != _categoriaFiltro) {
@@ -381,23 +426,6 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
-      ),
-    );
-  }
-
-  Widget _detalle(String titulo, String valor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 3),
-          Text(valor),
-        ],
       ),
     );
   }
@@ -702,81 +730,27 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   }
 
   Future<void> _mostrarDetalle(Map<String, dynamic> evento) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: _colorCrema,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: Text(
-            (evento['nombre'] ?? _l10n.admEvtEvento).toString(),
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-          content: SizedBox(
-            width: 480,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _detalle(_l10n.perfilEstado, _nombreEstado(_estado(evento))),
-                  _detalle(
-                    _l10n.admEvtCategoria,
-                    evento['categoria'] == null
-                        ? '-'
-                        : categoriaEventoLabel(
-                            _l10n,
-                            evento['categoria'].toString(),
-                          ),
-                  ),
-                  _detalle(_l10n.rolEmpresa, _empresa(evento)),
-                  _detalle(
-                    _l10n.admEvtInicio,
-                    _formatearFecha(evento['fechaInicio']),
-                  ),
-                  _detalle(
-                    _l10n.admEvtFin,
-                    _formatearFecha(evento['fechaFin']),
-                  ),
-                  _detalle(
-                    _l10n.admDescripcion,
-                    evento['descripcion']?.toString() ??
-                        _l10n.admRepSinDescripcion,
-                  ),
-                  _detalle(
-                    _l10n.admEvtAreas,
-                    '${(evento['areas'] as List?)?.length ?? 0}',
-                  ),
-                  _detalle(
-                    _l10n.admEvtRecorridos,
-                    '${(evento['recorridos'] as List?)?.length ?? 0}',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(_l10n.comunCerrar),
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.delete_outline),
-              label: Text(_l10n.admEvtEliminar),
-              style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
-              onPressed: _eliminando
-                  ? null
-                  : () {
-                      Navigator.of(dialogContext).pop();
-                      _confirmarEliminacion(evento);
-                    },
-            ),
-          ],
-        );
+    final accion = await mostrarDetalleAdmin(
+      context,
+      titulo: (evento['nombre'] ?? _l10n.admEvtEvento).toString(),
+      icono: Icons.event_outlined,
+      estado: _nombreEstado(_estado(evento)),
+      campos: <String, String>{
+        _l10n.admEvtCategoria: evento['categoria'] == null
+            ? '-'
+            : categoriaEventoLabel(_l10n, evento['categoria'].toString()),
+        _l10n.rolEmpresa: _empresa(evento),
+        _l10n.admEvtInicio: _formatearFecha(evento['fechaInicio']),
+        _l10n.admEvtFin: _formatearFecha(evento['fechaFin']),
+        _l10n.admDescripcion:
+            evento['descripcion']?.toString() ?? _l10n.admRepSinDescripcion,
+        _l10n.admEvtAreas: '${(evento['areas'] as List?)?.length ?? 0}',
+        _l10n.admEvtRecorridos:
+            '${(evento['recorridos'] as List?)?.length ?? 0}',
       },
+      acciones: _eliminando ? const {} : {'eliminar': _l10n.admEvtEliminar},
     );
+    if (accion == 'eliminar' && mounted) await _confirmarEliminacion(evento);
   }
 
   Future<void> _confirmarEliminacion(Map<String, dynamic> evento) async {
@@ -845,6 +819,8 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     final eventos = _eventosFiltrados;
 
     return AdminListScaffold(
+      onRefresh: _cargarEventos,
+      refreshing: _cargando || _eliminando,
       searchHint: _l10n.admEvtBuscar,
       searchController: _busquedaController,
       onSearch: (texto) {
@@ -871,11 +847,6 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 deleteIcon: const Icon(Icons.close, size: 16),
               ),
             ),
-          IconButton(
-            tooltip: _l10n.admEvtActualizar,
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargando || _eliminando ? null : _cargarEventos,
-          ),
         ],
       ),
       child: AdminDataTable(
@@ -887,24 +858,62 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
             _busqueda.isNotEmpty || _filtro != 0 || _cantidadFiltrosActivos > 0
             ? _l10n.admEvtSinCoincidencias
             : _l10n.admEvtSinRegistrados,
-        rows: eventos.map((evento) {
-          final nombre = (evento['nombre'] ?? _l10n.admEvtSinNombre).toString();
-          final categoria = evento['categoria'] == null
-              ? '-'
-              : categoriaEventoLabel(_l10n, evento['categoria'].toString());
-          final empresa = _empresa(evento);
-          final estado = _estado(evento);
+        rows: <AdminRow>[
+          for (final evento in eventos)
+            for (final tipo in <String>['areas', 'recorridos'])
+              for (
+                var indice = 0;
+                indice < (evento[tipo] as List? ?? const []).length;
+                indice++
+              )
+                if (((evento[tipo] as List)[indice] as Map)['estado'] ==
+                    'Pendiente')
+                  AdminRow(
+                    icon: tipo == 'areas' ? Icons.crop_square : Icons.route,
+                    title:
+                        ((evento[tipo] as List)[indice] as Map)['nombre']
+                            ?.toString() ??
+                        'Sin nombre',
+                    subtitle:
+                        '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)} · Pendiente de aprobación',
+                    trailing: PopupMenuButton<String>(
+                      enabled: !_decidiendo,
+                      tooltip: 'Revisar trazo',
+                      onSelected: (estado) =>
+                          _decidirTrazo(evento, tipo, indice, estado),
+                      itemBuilder: (_) => const <PopupMenuEntry<String>>[
+                        PopupMenuItem(
+                          value: 'Aprobado',
+                          child: Text('Aprobar'),
+                        ),
+                        PopupMenuItem(
+                          value: 'Denegado',
+                          child: Text('Denegar'),
+                        ),
+                      ],
+                    ),
+                  ),
+          if (_filtro != 4)
+            ...eventos.map((evento) {
+              final nombre = (evento['nombre'] ?? _l10n.admEvtSinNombre)
+                  .toString();
+              final categoria = evento['categoria'] == null
+                  ? '-'
+                  : categoriaEventoLabel(_l10n, evento['categoria'].toString());
+              final empresa = _empresa(evento);
+              final estado = _estado(evento);
 
-          return AdminRow(
-            icon: Icons.event_outlined,
-            title: nombre,
-            subtitle:
-                '$categoria · $empresa · '
-                '${_formatearFecha(evento['fechaInicio'])}',
-            trailing: _etiquetaEstado(estado),
-            onTap: _eliminando ? null : () => _mostrarDetalle(evento),
-          );
-        }).toList(),
+              return AdminRow(
+                icon: Icons.event_outlined,
+                title: nombre,
+                subtitle:
+                    '$categoria · $empresa · '
+                    '${_formatearFecha(evento['fechaInicio'])}',
+                trailing: _etiquetaEstado(estado),
+                onTap: _eliminando ? null : () => _mostrarDetalle(evento),
+              );
+            }),
+        ],
       ),
     );
   }

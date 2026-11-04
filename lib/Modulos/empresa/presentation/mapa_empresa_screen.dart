@@ -151,9 +151,15 @@ class _MapaEmpresaScreenState extends State<MapaEmpresaScreen> {
   }
 
   void _recalcular() {
-    _areas = <ZonaEvento>[for (final Evento e in _propios) ...e.areasRotuladas];
+    _areas = <ZonaEvento>[
+      for (final Evento e in _propios)
+        for (final ZonaEvento zona in e.areasRotuladas)
+          if (zona.estado == null || zona.estado == 'Aprobado') zona,
+    ];
     _recorridos = <ZonaEvento>[
-      for (final Evento e in _propios) ...e.recorridosRotulados,
+      for (final Evento e in _propios)
+        for (final ZonaEvento zona in e.recorridosRotulados)
+          if (zona.estado == null || zona.estado == 'Aprobado') zona,
     ];
     _areasOtras = _verOtras
         ? <ZonaEvento>[for (final Evento e in _otros) ...e.areasRotuladas]

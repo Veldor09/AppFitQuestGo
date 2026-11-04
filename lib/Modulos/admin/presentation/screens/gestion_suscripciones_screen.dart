@@ -10,6 +10,7 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/data/suscripciones_admin_api.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
 
 /// Gestion de suscripciones (admin): las solicitudes de plan de empresas y
@@ -216,61 +217,36 @@ class _GestionSuscripcionesScreenState
 
   Future<void> _detalle(SuscripcionAdmin s) async {
     final AppLocalizations l10n = _l10n;
-    final String? accion = await showDialog<String>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        key: const ValueKey<String>('detalle-suscripcion'),
-        title: Text(
-          l10n.admSusDetalleTitulo(s.numeroSolicitud ?? l10n.admSusSinNumero),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _Dato(l10n.admSusCampoUsuario, s.usuarioNombre),
-              _Dato(l10n.comunCorreo, s.usuarioEmail),
-              _Dato(l10n.admSusCampoCuenta, _cuenta(s)),
-              _Dato(l10n.admSusCampoPlan, s.planNombre),
-              _Dato(l10n.admSusCampoMonto, _monto(s)),
-              _Dato(l10n.admSusCampoPais, s.pais),
-              _Dato(l10n.perfilEstado, _estadoTexto(s.estado)),
-              _Dato(l10n.admSusCampoSolicitada, _fecha(s.creadoEn)),
-              if (s.iniciaEn != null && s.venceEn != null)
-                _Dato(
-                  l10n.admSusCampoVigencia,
-                  l10n.admSusVigencia(_fecha(s.iniciaEn), _fecha(s.venceEn)),
-                ),
-            ],
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.comunCerrar),
-          ),
-          if (s.estado == EstadoSuscripcion.solicitada) ...<Widget>[
-            TextButton(
-              key: const ValueKey<String>('accion-rechazar'),
-              style: TextButton.styleFrom(foregroundColor: FqColors.risk),
-              onPressed: () => Navigator.of(ctx).pop('rechazar'),
-              child: Text(l10n.comunRechazar),
-            ),
-            FilledButton(
-              key: const ValueKey<String>('accion-aprobar'),
-              onPressed: () => Navigator.of(ctx).pop('aprobar'),
-              child: Text(l10n.comunAprobar),
-            ),
-          ],
-          if (s.estado == EstadoSuscripcion.activa)
-            TextButton(
-              key: const ValueKey<String>('accion-suspender'),
-              style: TextButton.styleFrom(foregroundColor: FqColors.risk),
-              onPressed: () => Navigator.of(ctx).pop('suspender'),
-              child: Text(l10n.admSusSuspender),
-            ),
-        ],
+    final String? accion = await mostrarDetalleAdmin(
+      context,
+      dialogKey: const ValueKey<String>('detalle-suscripcion'),
+      titulo: l10n.admSusDetalleTitulo(
+        s.numeroSolicitud ?? l10n.admSusSinNumero,
       ),
+      icono: Icons.workspace_premium_outlined,
+      estado: _estadoTexto(s.estado),
+      campos: <String, String>{
+        l10n.admSusCampoUsuario: s.usuarioNombre,
+        l10n.comunCorreo: s.usuarioEmail,
+        l10n.admSusCampoCuenta: _cuenta(s),
+        l10n.admSusCampoPlan: s.planNombre,
+        l10n.admSusCampoMonto: _monto(s),
+        l10n.admSusCampoPais: s.pais,
+        l10n.admSusCampoSolicitada: _fecha(s.creadoEn),
+        if (s.iniciaEn != null && s.venceEn != null)
+          l10n.admSusCampoVigencia: l10n.admSusVigencia(
+            _fecha(s.iniciaEn),
+            _fecha(s.venceEn),
+          ),
+      },
+      acciones: <String, String>{
+        if (s.estado == EstadoSuscripcion.solicitada) ...<String, String>{
+          'rechazar': l10n.comunRechazar,
+          'aprobar': l10n.comunAprobar,
+        },
+        if (s.estado == EstadoSuscripcion.activa)
+          'suspender': l10n.admSusSuspender,
+      },
     );
     if (!mounted) return;
     switch (accion) {
@@ -287,6 +263,8 @@ class _GestionSuscripcionesScreenState
   Widget build(BuildContext context) {
     final AppLocalizations l10n = _l10n;
     return AdminListScaffold(
+      onRefresh: _cargar,
+      refreshing: _cargando || _actuando,
       searchHint: l10n.admSusBuscar,
       searchController: _busqueda,
       onSearch: _alBuscar,
@@ -335,33 +313,6 @@ class _GestionSuscripcionesScreenState
               ),
               onTap: _actuando ? null : () => _detalle(s),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Dato extends StatelessWidget {
-  const _Dato(this.titulo, this.valor);
-
-  final String titulo;
-  final String valor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            titulo,
-            style: const TextStyle(fontSize: 11, color: FqColors.muted),
-          ),
-          Text(
-            valor,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
         ],
       ),
     );

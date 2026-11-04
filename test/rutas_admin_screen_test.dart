@@ -17,6 +17,9 @@ class _RutaApiFake extends RutaApi {
     consultas++;
     return rutas;
   }
+
+  @override
+  Future<List<Ruta>> listarAdmin() => explorar();
 }
 
 List<Ruta> _rutasDePrueba() => <Ruta>[
@@ -55,9 +58,7 @@ Future<void> _montar(WidgetTester tester, _RutaApiFake api) async {
       locale: const Locale('es'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: RutasAdminScreen(api: api),
-      ),
+      home: Scaffold(body: RutasAdminScreen(api: api)),
     ),
   );
 
@@ -67,6 +68,14 @@ Future<void> _montar(WidgetTester tester, _RutaApiFake api) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('ADM-04 agrupa Ver y Desactivar en tres puntos', (tester) async {
+    await _montar(tester, _RutaApiFake(_rutasDePrueba()));
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Ver'), findsOneWidget);
+    expect(find.text('Desactivar'), findsOneWidget);
+  });
+
   testWidgets('ADM-04 abre detalle de ruta en solo lectura', (tester) async {
     final api = _RutaApiFake(_rutasDePrueba());
 
@@ -75,10 +84,10 @@ void main() {
     await tester.tap(find.text('Ruta de montaña'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Estado: Publicada'), findsOneWidget);
-    expect(find.text('Distancia: 12.0 km'), findsOneWidget);
-    expect(find.text('Dificultad: Dificil'), findsOneWidget);
-    expect(find.text('Puntos GPS: 0'), findsOneWidget);
+    expect(find.text('PUBLICADA'), findsOneWidget);
+    expect(find.text('12.0 km'), findsOneWidget);
+    expect(find.text('DIFICULTAD'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
 
     expect(find.text('Aprobar'), findsNothing);
     expect(find.text('Rechazar'), findsNothing);
@@ -122,7 +131,9 @@ void main() {
     expect(find.text('Sendero del río'), findsNothing);
     expect(api.consultas, 1);
   });
-  testWidgets('ADM-04 limpiar filtros restaura todas las rutas', (tester) async {
+  testWidgets('ADM-04 limpiar filtros restaura todas las rutas', (
+    tester,
+  ) async {
     final api = _RutaApiFake(_rutasDePrueba());
 
     await _montar(tester, api);
@@ -154,7 +165,9 @@ void main() {
     expect(find.text('Sendero del río'), findsOneWidget);
     expect(api.consultas, 1);
   });
-  testWidgets('ADM-04 combina actividad MTB y dificultad dificil', (tester) async {
+  testWidgets('ADM-04 combina actividad MTB y dificultad dificil', (
+    tester,
+  ) async {
     final api = _RutaApiFake(_rutasDePrueba());
 
     await _montar(tester, api);
@@ -233,13 +246,18 @@ void main() {
 
     await _montar(tester, api);
 
-    await tester.enterText(
-      find.byType(TextField).first,
-      'Ruta del bosque',
-    );
+    await tester.enterText(find.byType(TextField).first, 'Ruta del bosque');
     await tester.pumpAndSettle();
 
-    expect(find.text('Ruta del bosque').hitTestable().evaluate().where((element) => element.widget is Text).length, 1);
+    expect(
+      find
+          .text('Ruta del bosque')
+          .hitTestable()
+          .evaluate()
+          .where((element) => element.widget is Text)
+          .length,
+      1,
+    );
     expect(find.text('Ruta de montaña'), findsNothing);
     expect(find.text('Sendero del río'), findsNothing);
     expect(api.consultas, 1);

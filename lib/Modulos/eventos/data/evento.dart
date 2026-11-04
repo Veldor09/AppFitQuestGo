@@ -25,11 +25,17 @@ class PuntoGeo {
 /// Un trazo con nombre dibujado por la empresa: un area (poligono, el ultimo
 /// punto se une al primero sin repetirlo) o un recorrido (linea).
 class ZonaEvento {
-  const ZonaEvento({required this.nombre, required this.puntos, this.eventoId});
+  const ZonaEvento({
+    required this.nombre,
+    required this.puntos,
+    this.eventoId,
+    this.estado,
+  });
 
   factory ZonaEvento.fromJson(Map<String, dynamic> json) {
     return ZonaEvento(
       nombre: json['nombre'] as String,
+      estado: json['estado'] as String?,
       puntos: (json['puntos'] as List<dynamic>)
           .map((dynamic p) => PuntoGeo.fromJson(p as Map<String, dynamic>))
           .toList(),
@@ -37,6 +43,7 @@ class ZonaEvento {
   }
 
   final String nombre;
+  final String? estado;
   final List<PuntoGeo> puntos;
 
   /// El evento al que pertenece este trazo. No viaja al servidor (el trazo
@@ -134,7 +141,7 @@ class Evento {
 
   List<ZonaEvento> _conNombreDelEvento(List<ZonaEvento> zonas) => <ZonaEvento>[
     for (final ZonaEvento z in zonas)
-      ZonaEvento(nombre: nombre, puntos: z.puntos, eventoId: id),
+      ZonaEvento(nombre: nombre, puntos: z.puntos, eventoId: id, estado: z.estado),
   ];
 
   /// Todos los puntos de todos los trazos (para encuadrar la camara).

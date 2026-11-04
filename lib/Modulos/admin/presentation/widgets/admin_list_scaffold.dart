@@ -19,6 +19,8 @@ class AdminListScaffold extends StatelessWidget {
     this.searchController,
     this.onSearch,
     this.onFilters,
+    this.onRefresh,
+    this.refreshing = false,
   });
 
   final String searchHint;
@@ -32,6 +34,8 @@ class AdminListScaffold extends StatelessWidget {
 
   /// Accion opcional del boton Filtros de la barra de herramientas.
   final VoidCallback? onFilters;
+  final VoidCallback? onRefresh;
+  final bool refreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +49,8 @@ class AdminListScaffold extends StatelessWidget {
             controller: searchController,
             onChanged: onSearch,
             onFilters: onFilters,
+            onRefresh: onRefresh,
+            refreshing: refreshing,
             trailing: toolbarTrailing,
           ),
           const SizedBox(height: FqGap.md),

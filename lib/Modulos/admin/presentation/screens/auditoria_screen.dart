@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/auditoria_api.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -43,6 +46,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
   bool _cargando = false;
   bool _consultando = false;
+  bool _filtrosAbiertos = true;
   String? _error;
 
   int _pagina = 1;
@@ -297,12 +301,16 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             Icon(icono, size: 15, color: color),
             const SizedBox(width: 6),
           ],
-          Text(
-            texto,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              texto,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -450,71 +458,75 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   }
 
   Widget _filtros() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: _tarjetaDecoracion(),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 14,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          _campoFiltro(
-            _l10n.admAudIdAdmin,
-            _administradorController,
-            icono: Icons.person_outline,
-            teclado: TextInputType.number,
-            ejemplo: _l10n.admAudEjemploId,
-          ),
-          _campoFiltro(
-            _l10n.admAccion,
-            _accionController,
-            icono: Icons.list_alt_outlined,
-            ejemplo: 'USUARIO_ACTUALIZADO',
-          ),
-          _campoFiltro(
-            _l10n.admEntidad,
-            _entidadController,
-            icono: Icons.inventory_2_outlined,
-            ejemplo: 'USUARIO',
-          ),
-          FilledButton.icon(
-            onPressed: _consultando ? null : _aplicarFiltros,
-            style: FilledButton.styleFrom(
-              backgroundColor: _verde,
-              foregroundColor: _texto,
-              padding: const EdgeInsets.symmetric(horizontal: 23, vertical: 19),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        AdminToolbar(
+          searchHint: _l10n.admBuscar,
+          showSearch: false,
+          onFilters: () => setState(() => _filtrosAbiertos = !_filtrosAbiertos),
+          onRefresh: _consultando ? null : () => _cargarRegistros(),
+        ),
+        if (_filtrosAbiertos) ...<Widget>[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: _tarjetaDecoracion(),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 14,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _campoFiltro(
+                  _l10n.admAudIdAdmin,
+                  _administradorController,
+                  icono: Icons.person_outline,
+                  teclado: TextInputType.number,
+                  ejemplo: _l10n.admAudEjemploId,
+                ),
+                _campoFiltro(
+                  _l10n.admAccion,
+                  _accionController,
+                  icono: Icons.list_alt_outlined,
+                  ejemplo: 'USUARIO_ACTUALIZADO',
+                ),
+                _campoFiltro(
+                  _l10n.admEntidad,
+                  _entidadController,
+                  icono: Icons.inventory_2_outlined,
+                  ejemplo: 'USUARIO',
+                ),
+                FilledButton.icon(
+                  onPressed: _consultando ? null : _aplicarFiltros,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _verde,
+                    foregroundColor: _texto,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 23,
+                      vertical: 19,
+                    ),
+                  ),
+                  icon: const Icon(Icons.search),
+                  label: Text(_l10n.admBuscar),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _consultando ? null : _limpiarFiltros,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _texto,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 19,
+                    ),
+                  ),
+                  icon: const Icon(Icons.close),
+                  label: Text(_l10n.planificarLimpiar),
+                ),
+              ],
             ),
-            icon: const Icon(Icons.search),
-            label: Text(_l10n.admBuscar),
-          ),
-          OutlinedButton.icon(
-            onPressed: _consultando ? null : _limpiarFiltros,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _texto,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 19),
-            ),
-            icon: const Icon(Icons.close),
-            label: Text(_l10n.planificarLimpiar),
-          ),
-          IconButton.outlined(
-            tooltip: _l10n.admAudActualizar,
-            onPressed: _consultando ? null : () => _cargarRegistros(),
-            icon: const Icon(Icons.refresh),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _celda(String texto, {bool destacado = false}) {
-    return Text(
-      texto,
-      style: TextStyle(
-        color: _texto,
-        fontWeight: destacado ? FontWeight.w600 : FontWeight.w400,
-        fontSize: 13,
-      ),
+      ],
     );
   }
 
@@ -538,89 +550,21 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double anchoTabla = constraints.maxWidth > 1350
-            ? constraints.maxWidth
-            : 1350;
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: anchoTabla,
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-              dataRowMinHeight: 65,
-              dataRowMaxHeight: 76,
-              columnSpacing: 18,
-              horizontalMargin: 18,
-              columns: [
-                const DataColumn(label: Text('ID')),
-                DataColumn(label: Text(_l10n.admAudAdministrador)),
-                DataColumn(label: Text(_l10n.admAccion)),
-                DataColumn(label: Text(_l10n.admEntidad)),
-                DataColumn(label: Text(_l10n.admAudIdAfectado)),
-                DataColumn(label: Text(_l10n.admFecha)),
-                DataColumn(label: Text(_l10n.admDetalle)),
-              ],
-              rows: _registros.map((registro) {
-                final accion = '${registro['accion'] ?? '—'}';
-
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      _celda('${registro['id'] ?? '—'}', destacado: true),
-                    ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Color(0xFFE6F6E7),
-                            child: Icon(
-                              Icons.person_outline,
-                              color: _verdeOscuro,
-                              size: 17,
-                            ),
-                          ),
-                          const SizedBox(width: 9),
-                          _celda(
-                            'Administrador ${registro['administradorId'] ?? '—'}',
-                            destacado: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                    DataCell(
-                      _etiqueta(
-                        _accionLegible(accion),
-                        icono: Icons.edit_outlined,
-                      ),
-                    ),
-                    DataCell(
-                      _etiqueta(
-                        '${registro['entidad'] ?? '—'}',
-                        fondo: const Color(0xFFF1EBFF),
-                        color: const Color(0xFF6941C6),
-                      ),
-                    ),
-                    DataCell(_celda('${registro['entidadId'] ?? '—'}')),
-                    DataCell(_celda(_fecha(registro['creadoEn']))),
-                    DataCell(
-                      OutlinedButton.icon(
-                        onPressed: () => _mostrarDetalle(registro),
-                        icon: const Icon(Icons.visibility_outlined, size: 17),
-                        label: Text(_l10n.comunVer),
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
+    return AdminDataTable(
+      rows: <AdminRow>[
+        for (final registro in _registros)
+          AdminRow(
+            icon: Icons.receipt_long_outlined,
+            title: _accionLegible(registro['accion']?.toString() ?? '—'),
+            subtitle: <String>[
+              _l10n.admAudAdministrador,
+              registro['administradorId']?.toString() ?? '—',
+              registro['entidad']?.toString() ?? '—',
+              _fecha(registro['creadoEn']),
+            ].join(' · '),
+            onTap: () => _mostrarDetalle(registro),
           ),
-        );
-      },
+      ],
     );
   }
 
@@ -641,22 +585,28 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton.outlined(
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 tooltip: _l10n.admPaginaAnterior,
                 onPressed: _pagina > 1 && !_consultando
                     ? () => _cambiarPagina(_pagina - 1)
                     : null,
                 icon: const Icon(Icons.chevron_left),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  _l10n.admPaginaDe(
-                    _pagina,
-                    _totalPaginas == 0 ? 1 : _totalPaginas,
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    _l10n.admPaginaDe(
+                      _pagina,
+                      _totalPaginas == 0 ? 1 : _totalPaginas,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
               IconButton.outlined(
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 tooltip: _l10n.admPaginaSiguiente,
                 onPressed: _pagina < _totalPaginas && !_consultando
                     ? () => _cambiarPagina(_pagina + 1)
@@ -752,46 +702,55 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   }
 
   Widget _cambiosDetalle(Map<String, dynamic> cambios) {
-    if (cambios.isEmpty) {
-      return Text(_l10n.admAudSinCambios);
-    }
+    if (cambios.isEmpty) return Text(_l10n.admAudSinCambios);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        headingRowColor: WidgetStateProperty.all(const Color(0xFFEAF8E8)),
-        columnSpacing: 18,
-        dataRowMinHeight: 55,
-        dataRowMaxHeight: 100,
-        columns: [
-          DataColumn(label: Text(_l10n.admAudCampoModificado)),
-          DataColumn(label: Text(_l10n.admAudValorAnterior)),
-          DataColumn(label: Text(_l10n.admAudValorNuevo)),
-        ],
-        rows: cambios.entries.map((entrada) {
-          final valores = _mapa(entrada.value);
-
-          return DataRow(
-            cells: [
-              DataCell(Text(_campoLegible(entrada.key))),
-              DataCell(
-                _etiqueta(
-                  _valor(valores?['anterior']),
-                  fondo: const Color(0xFFFFEEEE),
-                  color: const Color(0xFFB42318),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (final entrada in cambios.entries)
+          Builder(
+            builder: (context) {
+              final valores = _mapa(entrada.value);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  border: Border.all(color: _borde),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              DataCell(
-                _etiqueta(
-                  _valor(valores?['nuevo']),
-                  fondo: const Color(0xFFEAF8EA),
-                  color: const Color(0xFF167337),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      _campoLegible(entrada.key),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: _texto,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(_l10n.admAudValorAnterior),
+                    const SizedBox(height: 4),
+                    _etiqueta(
+                      _valor(valores?['anterior']),
+                      fondo: const Color(0xFFFFEEEE),
+                      color: const Color(0xFFB42318),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(_l10n.admAudValorNuevo),
+                    const SizedBox(height: 4),
+                    _etiqueta(
+                      _valor(valores?['nuevo']),
+                      fondo: const Color(0xFFEAF8EA),
+                      color: const Color(0xFF167337),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
+              );
+            },
+          ),
+      ],
     );
   }
 
@@ -887,126 +846,14 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _panelDetalle(Map<String, dynamic> registro, {required bool movil}) {
-    return Material(
-      color: Colors.white,
-      borderRadius: movil
-          ? const BorderRadius.vertical(top: Radius.circular(24))
-          : const BorderRadius.horizontal(left: Radius.circular(24)),
-      clipBehavior: Clip.antiAlias,
-      child: SafeArea(
-        top: !movil,
-        child: Column(
-          children: [
-            if (movil)
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 6),
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 18, 18),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F7E8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.receipt_long, color: _verdeOscuro),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Auditoría #${registro['id'] ?? '—'}',
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        color: _texto,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: _l10n.comunCerrar,
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: _detalleContenido(registro),
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(_l10n.comunCerrar),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _mostrarDetalle(Map<String, dynamic> registro) {
-    final ancho = MediaQuery.sizeOf(context).width;
-
-    if (ancho < 700) {
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        useSafeArea: true,
-        showDragHandle: false,
-        builder: (context) {
-          return FractionallySizedBox(
-            heightFactor: 0.88,
-            child: _panelDetalle(registro, movil: true),
-          );
-        },
-      );
-      return;
-    }
-
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: _l10n.admAudCerrarDetalle,
-      barrierColor: Colors.black.withValues(alpha: 0.42),
-      transitionDuration: const Duration(milliseconds: 280),
-      pageBuilder: (dialogContext, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(
-            width: ancho < 1050 ? ancho * 0.70 : 600,
-            height: double.infinity,
-            child: _panelDetalle(registro, movil: false),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final desplazamiento =
-            Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-            );
-
-        return SlideTransition(position: desplazamiento, child: child);
-      },
+    mostrarDetalleAdmin(
+      context,
+      titulo: 'Auditoría #${registro['id'] ?? '—'}',
+      icono: Icons.receipt_long_outlined,
+      estado: _accionLegible(registro['accion']?.toString() ?? '—'),
+      campos: const <String, String>{},
+      extra: _detalleContenido(registro),
     );
   }
 
