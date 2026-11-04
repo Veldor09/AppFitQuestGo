@@ -56,7 +56,15 @@ class PlanificarRutaScreen extends StatefulWidget {
     this.accessToken,
     this.permitirFallbackActividades = true,
     this.selectorFoto,
+    this.puntosIniciales,
+    this.modoSeleccionarTrazo = false,
   });
+
+  /// Puntos precargados para visualización o edición de trazo existente.
+  final List<PuntoRuta>? puntosIniciales;
+
+  /// Si es true, retorna la lista de puntos modificados al pulsar 'Aplicar trazo'.
+  final bool modoSeleccionarTrazo;
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final RutaApi? api;
@@ -118,9 +126,15 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _revisarSesionInterrumpida(),
-    );
+    if (widget.puntosIniciales != null && widget.puntosIniciales!.isNotEmpty) {
+      _puntos.addAll(widget.puntosIniciales!);
+      _trazos.add(widget.puntosIniciales!.length);
+    }
+    if (!widget.modoSeleccionarTrazo) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _revisarSesionInterrumpida(),
+      );
+    }
   }
 
   /// Si la app se cerro en medio de una grabacion, ofrece reanudarla, guardar
@@ -187,10 +201,17 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
     await ocultarAdornos(controller);
     _pines = await controller.annotations.createCircleAnnotationManager();
     _lineas = await controller.annotations.createPolylineAnnotationManager();
-    // Mismo criterio que FqLiveMapView: el mapa debe arrancar centrado en la
-    // ubicacion real del dispositivo, no en una coordenada fija, sin importar
-    // el modo (Dibujar o Grabar GPS) en el que este el usuario.
-    await centrarEnUbicacionActual(controller);
+    if (_puntos.isNotEmpty) {
+      await _redibujar();
+      await controller.setCamera(
+        CameraOptions(
+          center: Point(coordinates: Position(_puntos.first.lng, _puntos.first.lat)),
+          zoom: 14,
+        ),
+      );
+    } else {
+      await centrarEnUbicacionActual(controller);
+    }
   }
 
   Future<void> _alTrazoMano(List<PuntoGeo> trazo) async {
@@ -756,6 +777,42 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
         SafeArea(
           child: Column(
             children: <Widget>[
+              if (widget.modoSeleccionarTrazo)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
+                  child: Row(
+                    children: <Widget>[
+                      IconButton.filled(
+                        style: IconButton.styleFrom(
+                          backgroundColor: FqColors.white,
+                          foregroundColor: FqColors.night,
+                        ),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: FqColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: FqColors.softShadow,
+                        ),
+                        child: const Text(
+                          'Modificando trazo de la ruta',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: FqColors.night,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                 child: _SelectorModo(
@@ -879,14 +936,20 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: FqButton.primary(
-                                    label: _guardando
-                                        ? l10n.comunGuardando
-                                        : l10n.comunGuardar,
+                                    label: widget.modoSeleccionarTrazo
+                                        ? 'Aplicar trazo'
+                                        : (_guardando
+                                            ? l10n.comunGuardando
+                                            : l10n.comunGuardar),
                                     dense: true,
                                     onPressed:
                                         (_puntos.length < 2 || _guardando)
                                         ? null
-                                        : _guardar,
+                                        : (widget.modoSeleccionarTrazo
+                                            ? () => Navigator.of(context).pop(
+                                                  List<PuntoRuta>.of(_puntos),
+                                                )
+                                            : _guardar),
                                   ),
                                 ),
                               ],
