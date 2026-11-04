@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_tag.dart';
 
-Future<void> mostrarDetalleAdmin(
 /// Presentacion comun de los detalles de solo lectura del panel administrativo.
 Future<String?> mostrarDetalleAdmin(
   BuildContext context, {
