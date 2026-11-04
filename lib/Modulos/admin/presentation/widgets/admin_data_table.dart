@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
-import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Una fila de la tabla del panel (`.fq-admin-table > button`).
 @immutable
@@ -36,7 +35,7 @@ class AdminDataTable extends StatelessWidget {
     this.loading = false,
     this.error,
     this.onRetry,
-    this.emptyTitle,
+    this.emptyTitle = 'Sin registros',
     this.emptyMessage,
     this.emptyAction,
   });
@@ -45,9 +44,7 @@ class AdminDataTable extends StatelessWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
-
-  /// Sin dato: "Sin registros" en el idioma de la app.
-  final String? emptyTitle;
+  final String emptyTitle;
   final String? emptyMessage;
   final Widget? emptyAction;
 
@@ -62,21 +59,20 @@ class AdminDataTable extends StatelessWidget {
     if (error != null) {
       return FqEmptyState(
         icon: Icons.wifi_off_rounded,
-        title: AppLocalizations.of(context)!.rutasNoSePudoCargar,
+        title: 'No se pudo cargar',
         message: error,
         action: onRetry == null
             ? null
-            : TextButton(
-                onPressed: onRetry,
-                child: Text(AppLocalizations.of(context)!.comunReintentar),
-              ),
+            : TextButton(onPressed: onRetry, child: const Text('Reintentar')),
       );
     }
     if (rows.isEmpty) {
       return FqEmptyState(
         icon: Icons.inbox_outlined,
-        title: emptyTitle ?? AppLocalizations.of(context)!.admSinRegistros,
-        message: emptyMessage ?? AppLocalizations.of(context)!.admSinDatosMsg,
+        title: emptyTitle,
+        message:
+            emptyMessage ??
+            'Aun no hay datos. Se mostraran aqui cuando el backend los provea.',
         action: emptyAction,
       );
     }
@@ -118,66 +114,104 @@ class _AdminTableRowState extends State<_AdminTableRow> {
           color: _hover ? FqColors.rowHover : FqColors.white,
           constraints: const BoxConstraints(minHeight: 58),
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: FqColors.listIconBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(row.icon, size: 16, color: FqColors.night),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final mobile = constraints.maxWidth < 340;
+              final details = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    row.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: FqColors.ink,
+                    ),
+                  ),
+                  if (row.subtitle != null)
                     Text(
-                      row.title,
+                      row.subtitle!,
+                      maxLines: mobile ? 3 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: FqColors.ink,
-                      ),
-                    ),
-                    if (row.subtitle != null)
-                      Text(
-                        row.subtitle!,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: FqColors.muted,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (row.trailing != null) ...<Widget>[
-                const SizedBox(width: 8),
-                row.trailing!,
-              ],
-              if (row.onTap != null) ...<Widget>[
-                const SizedBox(width: 10),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      AppLocalizations.of(context)!.comunVer,
-                      style: const TextStyle(
                         fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: FqColors.river,
+                        color: FqColors.muted,
                       ),
                     ),
-                    Icon(Icons.chevron_right, size: 14, color: FqColors.river),
+                ],
+              );
+              return Row(
+                children: <Widget>[
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: FqColors.listIconBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(row.icon, size: 16, color: FqColors.night),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: mobile
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              details,
+                              if (row.trailing != null || row.onTap != null)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: <Widget>[
+                                    if (row.trailing != null)
+                                      Flexible(child: row.trailing!),
+                                    if (row.onTap != null)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 8),
+                                        child: Text(
+                                          'Ver',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: FqColors.river,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          )
+                        : details,
+                  ),
+                  if (!mobile && row.trailing != null) ...<Widget>[
+                    const SizedBox(width: 8),
+                    row.trailing!,
                   ],
-                ),
-              ],
-            ],
+                  if (!mobile && row.onTap != null) ...<Widget>[
+                    const SizedBox(width: 10),
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          'Ver',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: FqColors.river,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 14,
+                          color: FqColors.river,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         ),
       ),

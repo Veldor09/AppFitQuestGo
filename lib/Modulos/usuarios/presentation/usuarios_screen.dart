@@ -397,7 +397,12 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           dense: true,
           onPressed: () => _abrirModal(ModoUsuarioModal.crear),
         ),
-        SizedBox(width: 260, child: _campoBusqueda(l10n)),
+        SizedBox(
+          width: MediaQuery.sizeOf(context).width < 600
+              ? MediaQuery.sizeOf(context).width - 60
+              : 260,
+          child: _campoBusqueda(l10n),
+        ),
       ],
     );
   }
@@ -438,6 +443,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                 isDense: true,
                 filled: false,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
                 hintText: l10n.usuariosBuscarHint,
                 hintStyle: const TextStyle(fontSize: 11, color: FqColors.muted),
               ),

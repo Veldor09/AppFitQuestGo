@@ -119,9 +119,10 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                     0 => _historial(datos.historial),
                     1 => _aportes(datos.aportes),
                     2 => _reportes(datos.reportes),
-                    _ => datos.errorInsignias != null
-                        ? _estadoError(datos.errorInsignias)
-                        : _insignias(datos.insignias),
+                    _ =>
+                      datos.errorInsignias != null
+                          ? _estadoError(datos.errorInsignias)
+                          : _insignias(datos.insignias),
                   },
                 ],
               );
@@ -182,8 +183,9 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
         return estadoA.compareTo(estadoB);
       });
 
-    final obtenidas =
-        insignias.where((item) => item['desbloqueada'] == true).length;
+    final obtenidas = insignias
+        .where((item) => item['desbloqueada'] == true)
+        .length;
 
     return _panel(
       child: Column(
@@ -191,10 +193,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
         children: [
           Text(
             _l10n.admUsrInsigniasObtenidas(obtenidas, insignias.length),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
           ...ordenadas.map((insignia) {
@@ -227,9 +226,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              (insignia['descripcion'] ?? '').toString(),
-                            ),
+                            Text((insignia['descripcion'] ?? '').toString()),
                             const SizedBox(height: 8),
                             Text(
                               desbloqueada
@@ -308,6 +305,8 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                   children: [
                     Text(
                       usuario.nombreUser,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -317,7 +316,12 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                     const SizedBox(height: 4),
                     Text(
                       usuario.emailUser,
-                      style: const TextStyle(color: FqColors.muted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: FqColors.muted,
+                      ),
                     ),
                     const SizedBox(height: 5),
                     Text(
@@ -350,57 +354,72 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
     final aportes = _mapa(datos.aportes['resumen']);
     final reportes = _mapa(datos.reportes['resumen']);
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        _indicador(
-          _l10n.admUsrIndInteracciones,
-          historial['totalInteracciones'],
-          Icons.history,
-        ),
-        _indicador(
-          _l10n.admUsrIndRutas,
-          aportes['totalRutas'],
-          Icons.route,
-        ),
-        _indicador(
-          _l10n.admUsrIndNodos,
-          aportes['totalNodos'],
-          Icons.place_outlined,
-        ),
-        _indicador(
-          _l10n.admUsrIndReportes,
-          reportes['totalReportes'],
-          Icons.report_outlined,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columnas = constraints.maxWidth >= 760 ? 4 : 2;
+        final ancho = (constraints.maxWidth - 12 * (columnas - 1)) / columnas;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                _l10n.admUsrIndInteracciones,
+                historial['totalInteracciones'],
+                Icons.history,
+              ),
+            ),
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                _l10n.admUsrIndRutas,
+                aportes['totalRutas'],
+                Icons.route,
+              ),
+            ),
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                _l10n.admUsrIndNodos,
+                aportes['totalNodos'],
+                Icons.place_outlined,
+              ),
+            ),
+            SizedBox(
+              width: ancho,
+              child: _indicador(
+                _l10n.admUsrIndReportes,
+                reportes['totalReportes'],
+                Icons.report_outlined,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _indicador(String titulo, dynamic valor, IconData icono) {
-    return SizedBox(
-      width: 190,
-      child: _panel(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icono, color: FqColors.muted),
-            const SizedBox(height: 10),
-            Text(
-              '${valor ?? 0}',
-              style: const TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.w800,
-                color: FqColors.ink,
-              ),
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, color: FqColors.muted),
+          const SizedBox(height: 10),
+          Text(
+            '${valor ?? 0}',
+            style: const TextStyle(
+              fontSize: 27,
+              fontWeight: FontWeight.w800,
+              color: FqColors.ink,
             ),
-            Text(
-              titulo,
-              style: const TextStyle(fontSize: 12, color: FqColors.muted),
-            ),
-          ],
-        ),
+          ),
+          Text(
+            titulo,
+            style: const TextStyle(fontSize: 12, color: FqColors.muted),
+          ),
+        ],
       ),
     );
   }
@@ -418,10 +437,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
         children: [
           _datoResumen(_l10n.admUsrFavoritos, resumen['totalFavoritos']),
           _datoResumen(_l10n.admUsrVotosNodos, resumen['totalVotosNodos']),
-          _datoResumen(
-            _l10n.admUsrVotosAlertas,
-            resumen['totalVotosAlertas'],
-          ),
+          _datoResumen(_l10n.admUsrVotosAlertas, resumen['totalVotosAlertas']),
         ],
       ),
       elementos: actividades,

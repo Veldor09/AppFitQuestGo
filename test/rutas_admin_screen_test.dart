@@ -17,6 +17,9 @@ class _RutaApiFake extends RutaApi {
     consultas++;
     return rutas;
   }
+
+  @override
+  Future<List<Ruta>> listarAdmin() => explorar();
 }
 
 List<Ruta> _rutasDePrueba() => <Ruta>[
@@ -55,9 +58,7 @@ Future<void> _montar(WidgetTester tester, _RutaApiFake api) async {
       locale: const Locale('es'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: RutasAdminScreen(api: api),
-      ),
+      home: Scaffold(body: RutasAdminScreen(api: api)),
     ),
   );
 
@@ -122,7 +123,9 @@ void main() {
     expect(find.text('Sendero del río'), findsNothing);
     expect(api.consultas, 1);
   });
-  testWidgets('ADM-04 limpiar filtros restaura todas las rutas', (tester) async {
+  testWidgets('ADM-04 limpiar filtros restaura todas las rutas', (
+    tester,
+  ) async {
     final api = _RutaApiFake(_rutasDePrueba());
 
     await _montar(tester, api);
@@ -154,7 +157,9 @@ void main() {
     expect(find.text('Sendero del río'), findsOneWidget);
     expect(api.consultas, 1);
   });
-  testWidgets('ADM-04 combina actividad MTB y dificultad dificil', (tester) async {
+  testWidgets('ADM-04 combina actividad MTB y dificultad dificil', (
+    tester,
+  ) async {
     final api = _RutaApiFake(_rutasDePrueba());
 
     await _montar(tester, api);
@@ -233,13 +238,18 @@ void main() {
 
     await _montar(tester, api);
 
-    await tester.enterText(
-      find.byType(TextField).first,
-      'Ruta del bosque',
-    );
+    await tester.enterText(find.byType(TextField).first, 'Ruta del bosque');
     await tester.pumpAndSettle();
 
-    expect(find.text('Ruta del bosque').hitTestable().evaluate().where((element) => element.widget is Text).length, 1);
+    expect(
+      find
+          .text('Ruta del bosque')
+          .hitTestable()
+          .evaluate()
+          .where((element) => element.widget is Text)
+          .length,
+      1,
+    );
     expect(find.text('Ruta de montaña'), findsNothing);
     expect(find.text('Sendero del río'), findsNothing);
     expect(api.consultas, 1);

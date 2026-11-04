@@ -24,6 +24,9 @@ class _NodoApiFalsa extends NodoApi {
   Future<List<Nodo>> listarPendientes() async => pendientes;
 
   @override
+  Future<List<Nodo>> listarTodosAdmin() async => pendientes;
+
+  @override
   Future<Uint8List> foto(int id) async {
     fotosPedidas.add(id);
     return _png;
@@ -42,7 +45,11 @@ Future<void> _abrir(WidgetTester tester, NodoApi api) async {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: SizedBox(width: 1000, height: 800, child: NodosAdminScreen(api: api)),
+        body: SizedBox(
+          width: 1000,
+          height: 800,
+          child: NodosAdminScreen(api: api),
+        ),
       ),
     ),
   );
@@ -66,27 +73,38 @@ Nodo _nodo(int id, String categoria, {String? otro, bool conFoto = false}) {
 void main() {
   usarCalificacionesFalsas();
 
-  testWidgets('muestra la categoria traducida (no la clave) de cada propuesta', (
+  testWidgets(
+    'muestra la categoria traducida (no la clave) de cada propuesta',
+    (WidgetTester tester) async {
+      final _NodoApiFalsa api = _NodoApiFalsa(<Nodo>[
+        _nodo(1, 'primeros_auxilios'),
+        _nodo(2, 'otro', otro: 'Zona de picnic'),
+      ]);
+      await _abrir(tester, api);
+
+      expect(
+        find.textContaining('Primeros auxilios · propuesto por Ana'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Zona de picnic · propuesto por Ana'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('primeros_auxilios'), findsNothing);
+    },
+  );
+
+  testWidgets('la foto se abre desde las acciones del nodo', (
     WidgetTester tester,
   ) async {
     final _NodoApiFalsa api = _NodoApiFalsa(<Nodo>[
-      _nodo(1, 'primeros_auxilios'),
-      _nodo(2, 'otro', otro: 'Zona de picnic'),
+      _nodo(1, 'agua', conFoto: true),
     ]);
     await _abrir(tester, api);
 
-    expect(find.text('Primeros auxilios · propuesto por Ana'), findsOneWidget);
-    expect(find.text('Zona de picnic · propuesto por Ana'), findsOneWidget);
-    expect(find.textContaining('primeros_auxilios'), findsNothing);
-  });
-
-  testWidgets('tocar una fila abre la ficha con la foto para poder decidir', (
-    WidgetTester tester,
-  ) async {
-    final _NodoApiFalsa api = _NodoApiFalsa(<Nodo>[_nodo(1, 'agua', conFoto: true)]);
-    await _abrir(tester, api);
-
-    await tester.tap(find.text('Punto 1'));
+    await tester.tap(find.byTooltip('Acciones').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ver foto'));
     await tester.pumpAndSettle();
 
     expect(api.fotosPedidas, <int>[1]);

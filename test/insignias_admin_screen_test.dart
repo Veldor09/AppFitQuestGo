@@ -153,6 +153,13 @@ Future<void> _abrir(
   await tester.pumpAndSettle();
 }
 
+Future<void> _abrirEdicion(WidgetTester tester) async {
+  await tester.tap(find.byTooltip('Editar').first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Editar').last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets(
     'muestra las insignias obtenidas desde la API',
@@ -397,8 +404,7 @@ void main() {
 
       await _abrir(tester, api);
 
-      await tester.tap(find.text('🏅 Explorador'));
-      await tester.pumpAndSettle();
+      await _abrirEdicion(tester);
 
       expect(find.text('Editar insignia'), findsOneWidget);
       expect(find.text('Guardar cambios'), findsOneWidget);
@@ -418,13 +424,12 @@ void main() {
 
       await _abrir(tester, api);
 
-      await tester.tap(find.text('🏅 Explorador'));
-      await tester.pumpAndSettle();
+      await _abrirEdicion(tester);
 
       final Finder campos = find.byType(TextField);
 
       await tester.enterText(
-        campos.at(2),
+        campos.at(1),
         'Explorador avanzado',
       );
 
@@ -452,8 +457,7 @@ void main() {
 
       await _abrir(tester, api);
 
-      await tester.tap(find.text('🏅 Explorador'));
-      await tester.pumpAndSettle();
+      await _abrirEdicion(tester);
 
       await tester.tap(find.byType(Switch).last);
       await tester.pumpAndSettle();
@@ -481,8 +485,7 @@ void main() {
 
       await _abrir(tester, api);
 
-      await tester.tap(find.text('🏅 Explorador'));
-      await tester.pumpAndSettle();
+      await _abrirEdicion(tester);
 
       await tester.tap(find.byType(Switch).last);
       await tester.pumpAndSettle();
@@ -516,15 +519,14 @@ void main() {
       expect(api.insignias.single.meta, isNull);
       expect(api.insignias.single.metrica, 'especial');
 
-      await tester.tap(find.text('🏅 Insignia especial'));
-      await tester.pumpAndSettle();
+      await _abrirEdicion(tester);
 
       expect(find.text('Editar insignia'), findsOneWidget);
 
       final Finder campos = find.byType(TextField);
 
       await tester.enterText(
-        campos.at(2),
+        campos.at(1),
         'Insignia especial actualizada',
       );
 

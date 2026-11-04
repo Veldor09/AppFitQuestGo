@@ -13,6 +13,9 @@ import 'package:fit_quest_go/Modulos/rutas/presentation/rutas_admin_screen.dart'
 class _RutaApiFake extends RutaApi {
   @override
   Future<List<Ruta>> explorar() async => <Ruta>[];
+
+  @override
+  Future<List<Ruta>> listarAdmin() async => <Ruta>[];
 }
 /// API simulada para probar el Dashboard sin conexiones HTTP reales.
 class _DashboardApiFake extends DashboardApi {

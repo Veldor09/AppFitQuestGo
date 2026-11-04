@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/screens/detalle_ruta_admin_screen.dart';
@@ -25,6 +26,7 @@ class RutasAdminScreen extends StatefulWidget {
 class _RutasAdminScreenState extends State<RutasAdminScreen> {
   late final RutaApi _api = widget.api ?? RutaApi();
   late Future<List<Ruta>> _futuro;
+  final Set<int> _procesando = <int>{};
   final TextEditingController _busquedaController = TextEditingController();
   String _busqueda = '';
   String? _filtroActividad;
@@ -33,7 +35,7 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
   @override
   void initState() {
     super.initState();
-    _futuro = _api.explorar();
+    _futuro = _api.listarAdmin();
   }
 
   @override
@@ -46,7 +48,7 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
     // Bloque, no expresion: `=> _futuro = x` devuelve el Future asignado,
     // y setState no acepta un callback que devuelva un Future.
     setState(() {
-      _futuro = _api.explorar();
+      _futuro = _api.listarAdmin();
     });
   }
 
@@ -126,6 +128,18 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
     );
   }
 
+  Future<void> _desactivar(Ruta ruta) async {
+    setState(() => _procesando.add(ruta.id));
+    try {
+      await _api.cambiarEstado(ruta.id, 'Rechazada');
+      if (mounted) _recargar();
+    } catch (_) {
+      if (mounted) notificarError('No se pudo desactivar la ruta');
+    } finally {
+      if (mounted) setState(() => _procesando.remove(ruta.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
@@ -176,6 +190,26 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
                           ruta.creadoPorNombre!,
                         ),
                   onTap: () => _abrirDetalle(ruta),
+                  trailing: _procesando.contains(ruta.id)
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : PopupMenuButton<String>(
+                          tooltip: 'Acciones',
+                          onSelected: (accion) {
+                            if (accion == 'desactivar') _desactivar(ruta);
+                          },
+                          itemBuilder: (_) => <PopupMenuEntry<String>>[
+                            if (ruta.estado == 'Publicada' ||
+                                ruta.estado == 'Pendiente')
+                              const PopupMenuItem(
+                                value: 'desactivar',
+                                child: Text('Desactivar'),
+                              ),
+                          ],
+                        ),
                 ),
             ],
           ),

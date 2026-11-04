@@ -249,7 +249,11 @@ class _EditorEventoScreenState extends State<EditorEventoScreen> {
         }
       }
       if (!mounted) return;
-      notificarExito(l10n.eventoGuardado);
+      notificarExito(
+        widget.evento == null
+            ? 'Áreas o recorridos esperando aprobación'
+            : l10n.eventoGuardado,
+      );
       Navigator.of(context).pop(resultado);
     } on ApiException catch (e) {
       _fallar(e.message);
