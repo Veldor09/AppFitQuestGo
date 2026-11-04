@@ -135,7 +135,7 @@ CREATE TABLE insignias_cache (
   codigo TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
   descripcion TEXT NOT NULL,
-  emoji TEXT NOT NULL DEFAULT '🏅',
+  emoji TEXT NOT NULL DEFAULT 'medal',
   desbloqueada INTEGER NOT NULL DEFAULT 0,
   fecha_obtenida TEXT,
   progreso REAL,

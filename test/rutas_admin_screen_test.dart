@@ -70,6 +70,7 @@ void main() {
 
   testWidgets('ADM-04 agrupa Ver y Desactivar en tres puntos', (tester) async {
     await _montar(tester, _RutaApiFake(_rutasDePrueba()));
+    await tester.ensureVisible(find.byType(PopupMenuButton<String>).first);
     await tester.tap(find.byType(PopupMenuButton<String>).first);
     await tester.pumpAndSettle();
     expect(find.text('Ver'), findsOneWidget);
@@ -85,8 +86,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PUBLICADA'), findsOneWidget);
-    expect(find.text('12.0 km'), findsOneWidget);
-    expect(find.text('DIFICULTAD'), findsOneWidget);
+    expect(find.text('12.0 km'), findsWidgets);
+    expect(find.text('DIFICULTAD'), findsWidgets);
     expect(find.text('0'), findsOneWidget);
 
     expect(find.text('Aprobar'), findsNothing);

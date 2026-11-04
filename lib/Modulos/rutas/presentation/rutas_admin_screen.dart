@@ -183,6 +183,14 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
           searchController: _busquedaController,
           onSearch: (valor) => setState(() => _busqueda = valor),
           child: AdminDataTable(
+            columns: const <AdminTableColumn>[
+              AdminTableColumn('Ruta', width: 220),
+              AdminTableColumn('Actividad', width: 150),
+              AdminTableColumn('Distancia', width: 90),
+              AdminTableColumn('Dificultad', width: 115),
+              AdminTableColumn('Estado', width: 105),
+              AdminTableColumn('Creada por', width: 150),
+            ],
             loading: cargando,
             error: error,
             onRetry: _recargar,
@@ -193,6 +201,13 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
                 AdminRow(
                   icon: Icons.route_outlined,
                   title: ruta.nombre,
+                  values: <String>[
+                    actividadesLabel(l10n, ruta.actividades),
+                    '${ruta.distanciaKm.toStringAsFixed(1)} km',
+                    dificultadLabel(l10n, ruta.dificultad),
+                    ruta.estado,
+                    ruta.creadoPorNombre ?? '—',
+                  ],
                   subtitle: ruta.creadoPorNombre == null
                       ? '${actividadesLabel(l10n, ruta.actividades)} · ${ruta.distanciaKm.toStringAsFixed(1)} km'
                       : l10n.rutasAdminSubtituloPropuesta(

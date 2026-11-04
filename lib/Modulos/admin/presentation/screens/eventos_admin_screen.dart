@@ -55,6 +55,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     _l10n.eventoEstadoEnCurso,
     _l10n.admEvtFiltroFinalizados,
     'Pendientes',
+    'Denegados',
   ];
 
   static const List<String> _categorias = [
@@ -208,6 +209,13 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         ),
       );
 
+  bool _tieneDenegados(Map<String, dynamic> evento) =>
+      <String>['areas', 'recorridos'].any(
+        (tipo) => (evento[tipo] as List? ?? const []).any(
+          (zona) => zona is Map && zona['estado'] == 'Denegado',
+        ),
+      );
+
   Future<void> _decidirTrazo(
     Map<String, dynamic> evento,
     String tipo,
@@ -353,6 +361,7 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
       if (_filtro == 2 && estado != 'En curso') return false;
       if (_filtro == 3 && estado != 'Finalizado') return false;
       if (_filtro == 4 && !_tienePendientes(evento)) return false;
+      if (_filtro == 5 && !_tieneDenegados(evento)) return false;
 
       if (_categoriaFiltro != null &&
           evento['categoria']?.toString() != _categoriaFiltro) {
@@ -395,39 +404,6 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
           categoriaVisible.contains(texto) ||
           empresa.contains(texto);
     }).toList();
-  }
-
-  Color _colorEstado(String estado) {
-    switch (estado) {
-      case 'Próximo':
-        return const Color(0xFF2563EB);
-      case 'En curso':
-        return const Color(0xFF15803D);
-      case 'Finalizado':
-        return const Color(0xFF64748B);
-      default:
-        return const Color(0xFF64748B);
-    }
-  }
-
-  Widget _etiquetaEstado(String estado) {
-    final color = _colorEstado(estado);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        _nombreEstado(estado),
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 
   Future<void> _mostrarFiltros() async {
@@ -850,6 +826,13 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
         ],
       ),
       child: AdminDataTable(
+        columns: const <AdminTableColumn>[
+          AdminTableColumn('Evento / propuesta', width: 210),
+          AdminTableColumn('Categoría / tipo', width: 135),
+          AdminTableColumn('Empresa', width: 180),
+          AdminTableColumn('Fecha / evento', width: 180),
+          AdminTableColumn('Estado', width: 145),
+        ],
         loading: _cargando,
         error: _error,
         onRetry: _cargarEventos,
@@ -867,33 +850,42 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 indice++
               )
                 if (((evento[tipo] as List)[indice] as Map)['estado'] ==
-                    'Pendiente')
+                    (_filtro == 5 ? 'Denegado' : 'Pendiente'))
                   AdminRow(
                     icon: tipo == 'areas' ? Icons.crop_square : Icons.route,
                     title:
                         ((evento[tipo] as List)[indice] as Map)['nombre']
                             ?.toString() ??
                         'Sin nombre',
+                    values: <String>[
+                      tipo == 'areas' ? 'Área' : 'Recorrido',
+                      _empresa(evento),
+                      evento['nombre']?.toString() ?? '—',
+                      _filtro == 5 ? 'Denegado' : 'Pendiente de aprobación',
+                    ],
                     subtitle:
-                        '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)} · Pendiente de aprobación',
-                    trailing: PopupMenuButton<String>(
-                      enabled: !_decidiendo,
-                      tooltip: 'Revisar trazo',
-                      onSelected: (estado) =>
-                          _decidirTrazo(evento, tipo, indice, estado),
-                      itemBuilder: (_) => const <PopupMenuEntry<String>>[
-                        PopupMenuItem(
-                          value: 'Aprobado',
-                          child: Text('Aprobar'),
-                        ),
-                        PopupMenuItem(
-                          value: 'Denegado',
-                          child: Text('Denegar'),
-                        ),
-                      ],
-                    ),
+                        '${tipo == 'areas' ? 'Área' : 'Recorrido'} · ${evento['nombre']} · ${_empresa(evento)}',
+                    onTap: () => _mostrarDetalle(evento),
+                    trailing: _filtro == 5
+                        ? null
+                        : PopupMenuButton<String>(
+                            enabled: !_decidiendo,
+                            tooltip: 'Revisar trazo',
+                            onSelected: (estado) =>
+                                _decidirTrazo(evento, tipo, indice, estado),
+                            itemBuilder: (_) => const <PopupMenuEntry<String>>[
+                              PopupMenuItem(
+                                value: 'Aprobado',
+                                child: Text('Aprobar'),
+                              ),
+                              PopupMenuItem(
+                                value: 'Denegado',
+                                child: Text('Denegar'),
+                              ),
+                            ],
+                          ),
                   ),
-          if (_filtro != 4)
+          if (_filtro != 4 && _filtro != 5)
             ...eventos.map((evento) {
               final nombre = (evento['nombre'] ?? _l10n.admEvtSinNombre)
                   .toString();
@@ -906,10 +898,15 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
               return AdminRow(
                 icon: Icons.event_outlined,
                 title: nombre,
+                values: <String>[
+                  categoria,
+                  empresa,
+                  _formatearFecha(evento['fechaInicio']),
+                  _nombreEstado(estado),
+                ],
                 subtitle:
                     '$categoria · $empresa · '
                     '${_formatearFecha(evento['fechaInicio'])}',
-                trailing: _etiquetaEstado(estado),
                 onTap: _eliminando ? null : () => _mostrarDetalle(evento),
               );
             }),

@@ -82,14 +82,9 @@ void main() {
       ]);
       await _abrir(tester, api);
 
-      expect(
-        find.textContaining('Primeros auxilios · propuesto por Ana'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('Zona de picnic · propuesto por Ana'),
-        findsOneWidget,
-      );
+      expect(find.text('Primeros auxilios'), findsOneWidget);
+      expect(find.text('Zona de picnic'), findsOneWidget);
+      expect(find.text('Ana'), findsNWidgets(2));
       expect(find.textContaining('primeros_auxilios'), findsNothing);
     },
   );
@@ -102,6 +97,7 @@ void main() {
     ]);
     await _abrir(tester, api);
 
+    await tester.ensureVisible(find.byTooltip('Acciones').first);
     await tester.tap(find.byTooltip('Acciones').first);
     await tester.pumpAndSettle();
     expect(find.text('Ver'), findsOneWidget);

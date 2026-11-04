@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/core/widgets/fq_insignia_icon.dart';
 
 import 'package:fit_quest_go/core/db/daos/insignias_cache_dao.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -98,7 +99,10 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
             child: Row(
               children: <Widget>[
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: FqColors.white),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: FqColors.white,
+                  ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Expanded(
@@ -106,9 +110,13 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                     propio
                         ? l10n.insigniasTitulo
                         : (widget.nombre != null
-                            ? l10n.insigniasDeUsuario(widget.nombre!)
-                            : l10n.perfilInsignias),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: FqColors.white),
+                              ? l10n.insigniasDeUsuario(widget.nombre!)
+                              : l10n.perfilInsignias),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: FqColors.white,
+                    ),
                   ),
                 ),
               ],
@@ -149,7 +157,9 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
               future: _futuro,
               builder: (BuildContext ctx, AsyncSnapshot<List<Insignia>> snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                  return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
                 }
                 if (snap.hasError) {
                   return FqEmptyState(
@@ -158,14 +168,19 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                     message: _esOffline
                         ? l10n.insigniasSinConexionMensaje
                         : l10n.insigniasErrorCargaMsg,
-                    action: TextButton(onPressed: _recargar, child: Text(l10n.comunReintentar)),
+                    action: TextButton(
+                      onPressed: _recargar,
+                      child: Text(l10n.comunReintentar),
+                    ),
                   );
                 }
                 final List<Insignia> todas = snap.data!;
-                final List<Insignia> ganadas =
-                    todas.where((Insignia i) => i.desbloqueada).toList();
-                final List<Insignia> pendientes =
-                    todas.where((Insignia i) => !i.desbloqueada).toList();
+                final List<Insignia> ganadas = todas
+                    .where((Insignia i) => i.desbloqueada)
+                    .toList();
+                final List<Insignia> pendientes = todas
+                    .where((Insignia i) => !i.desbloqueada)
+                    .toList();
 
                 if (todas.isEmpty) {
                   return FqEmptyState(
@@ -181,7 +196,10 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     children: <Widget>[
-                      _ResumenInsignias(ganadas: ganadas.length, total: todas.length),
+                      _ResumenInsignias(
+                        ganadas: ganadas.length,
+                        total: todas.length,
+                      ),
                       const SizedBox(height: 16),
                       if (ganadas.isNotEmpty) ...<Widget>[
                         _SeccionTitulo(titulo: l10n.insigniasGanadas),
@@ -193,7 +211,10 @@ class _InsigniasScreenState extends State<InsigniasScreen> {
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Text(
                             l10n.insigniasSinGanadas,
-                            style: const TextStyle(fontSize: 12, color: FqColors.muted),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: FqColors.muted,
+                            ),
                           ),
                         ),
                       if (pendientes.isNotEmpty) ...<Widget>[
@@ -241,18 +262,23 @@ class _ResumenInsignias extends StatelessWidget {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: FqColors.night, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: FqColors.night,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         children: <Widget>[
           _Stat(valor: '$ganadas', etiqueta: l10n.insigniasDesbloqueadasStat),
           Container(width: 1, height: 40, color: const Color(0xFF2A4060)),
-          _Stat(valor: '${total - ganadas}', etiqueta: l10n.insigniasPorDesbloquearStat),
+          _Stat(
+            valor: '${total - ganadas}',
+            etiqueta: l10n.insigniasPorDesbloquearStat,
+          ),
         ],
       ),
     );
   }
 }
-
 
 class _Stat extends StatelessWidget {
   const _Stat({required this.valor, required this.etiqueta});
@@ -264,8 +290,23 @@ class _Stat extends StatelessWidget {
     return Expanded(
       child: Column(
         children: <Widget>[
-          Text(valor, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: FqColors.volt)),
-          Text(etiqueta, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: FqColors.stone, letterSpacing: 0.5)),
+          Text(
+            valor,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: FqColors.volt,
+            ),
+          ),
+          Text(
+            etiqueta,
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: FqColors.stone,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );
@@ -278,7 +319,15 @@ class _SeccionTitulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(titulo, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: FqColors.muted, letterSpacing: 0.3));
+    return Text(
+      titulo,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        color: FqColors.muted,
+        letterSpacing: 0.3,
+      ),
+    );
   }
 }
 
@@ -297,18 +346,44 @@ class _InsigniaCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: pendiente ? FqColors.cloud : FqColors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: pendiente ? FqColors.border : FqColors.volt.withOpacity(0.6)),
+        border: Border.all(
+          color: pendiente
+              ? FqColors.border
+              : FqColors.volt.withValues(alpha: 0.6),
+        ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Opacity(
             opacity: pendiente ? 0.3 : 1.0,
-            child: Text(data.emoji, style: const TextStyle(fontSize: 28)),
+            child: Icon(
+              FqInsigniaIcon.forValue(data.emoji, code: data.codigo),
+              size: 28,
+              color: FqColors.ink,
+            ),
           ),
           const SizedBox(height: 4),
-          Text(data.nombre, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: pendiente ? FqColors.stone : FqColors.ink)),
-          Text(data.descripcion, textAlign: TextAlign.center, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 8, color: FqColors.muted, height: 1.3)),
+          Text(
+            data.nombre,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: pendiente ? FqColors.stone : FqColors.ink,
+            ),
+          ),
+          Text(
+            data.descripcion,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 8,
+              color: FqColors.muted,
+              height: 1.3,
+            ),
+          ),
           if (conProgreso) ...<Widget>[
             const SizedBox(height: 4),
             ClipRRect(

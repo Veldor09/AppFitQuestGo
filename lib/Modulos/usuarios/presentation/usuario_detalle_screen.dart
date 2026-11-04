@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/core/widgets/fq_insignia_icon.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
@@ -211,9 +212,12 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        (insignia['emoji'] ?? '??').toString(),
-                        style: const TextStyle(fontSize: 28),
+                      Icon(
+                        FqInsigniaIcon.forValue(
+                          (insignia['emoji'] ?? '').toString(),
+                          code: (insignia['codigo'] ?? '').toString(),
+                        ),
+                        size: 28,
                       ),
                       const SizedBox(width: 12),
                       Expanded(

@@ -37,6 +37,18 @@ class ReporteContenidoApi {
     return Map<String, dynamic>.from(respuesta as Map);
   }
 
+  Future<Map<String, dynamic>> obtenerContenido(String tipo, int id) async {
+    final segmento = switch (tipo) {
+      'evento' => 'eventos',
+      'nodo' => 'nodos',
+      'ruta' => 'rutas',
+      'alerta' => 'alertas',
+      _ => throw ArgumentError.value(tipo, 'tipo'),
+    };
+    final dynamic respuesta = await _client.get('/$segmento/$id');
+    return Map<String, dynamic>.from(respuesta as Map);
+  }
+
   Future<Map<String, dynamic>> resolver(int id, String accion) async {
     final dynamic respuesta = await _client.patch(
       '/reportes-contenido/$id/resolver',

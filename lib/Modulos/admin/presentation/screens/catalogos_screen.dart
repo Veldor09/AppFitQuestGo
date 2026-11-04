@@ -160,6 +160,10 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
       return AdminRow(
         icon: _iconoCatalogo(),
         title: item.nombre,
+        values: <String>[
+          item.clave,
+          item.activo ? l10n.admActivo : l10n.admInactivo,
+        ],
         subtitle: item.clave,
         trailing: PopupMenuButton<String>(
           tooltip: l10n.usuariosEditar,
@@ -225,6 +229,11 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
         ],
       ),
       child: AdminDataTable(
+        columns: const <AdminTableColumn>[
+          AdminTableColumn('Nombre', width: 200),
+          AdminTableColumn('Clave', width: 180),
+          AdminTableColumn('Estado', width: 110),
+        ],
         rows: filas,
         loading: _cargando,
         error: _error,

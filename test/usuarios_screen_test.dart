@@ -79,10 +79,12 @@ void main() {
 
     expect(find.text('Ana Uno'), findsOneWidget);
     expect(find.textContaining('beto@x.co'), findsOneWidget);
-    expect(find.textContaining('Activado'), findsWidgets);
-    await tester.tap(find.byType(PopupMenuButton<String>).first);
-    await tester.pumpAndSettle();
-    expect(find.text('Desactivar'), findsOneWidget);
+    expect(find.textContaining('ACTIVADO'), findsWidgets);
+    expect(find.text('NOMBRE'), findsOneWidget);
+    expect(find.text('CORREO'), findsOneWidget);
+    expect(find.text('ROL'), findsOneWidget);
+    expect(find.text('ESTADO'), findsOneWidget);
+    expect(find.text('ACCIONES'), findsOneWidget);
 
     expect(find.text('Filtros'), findsOneWidget);
     expect(find.text('Nuevo usuario'), findsOneWidget);
@@ -96,7 +98,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    await tester.tap(find.text('Ana Uno'));
+    await tester.ensureVisible(find.text('Ver').first);
+    await tester.tap(find.text('Ver').first);
     await tester.pumpAndSettle();
 
     // "Cerrar" solo existe en el modo "ver" del modal.

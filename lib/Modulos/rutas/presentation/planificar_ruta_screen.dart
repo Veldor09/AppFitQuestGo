@@ -206,7 +206,9 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
       await _redibujar();
       await controller.setCamera(
         CameraOptions(
-          center: Point(coordinates: Position(_puntos.first.lng, _puntos.first.lat)),
+          center: Point(
+            coordinates: Position(_puntos.first.lng, _puntos.first.lat),
+          ),
           zoom: 14,
         ),
       );
@@ -675,11 +677,25 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                         items: <DropdownMenuItem<String>>[
                           DropdownMenuItem<String>(
                             value: 'privada',
-                            child: Text(l10n.rutasVisibilidadPrivada),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Icon(Icons.lock_outline, size: 18),
+                                const SizedBox(width: 8),
+                                Text(l10n.rutasVisibilidadPrivada),
+                              ],
+                            ),
                           ),
                           DropdownMenuItem<String>(
                             value: 'publica',
-                            child: Text(l10n.rutasVisibilidadPublica),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Icon(Icons.public, size: 18),
+                                const SizedBox(width: 8),
+                                Text(l10n.rutasVisibilidadPublica),
+                              ],
+                            ),
                           ),
                         ],
                         onChanged: (String? v) =>
@@ -942,17 +958,17 @@ class _PlanificarRutaScreenState extends State<PlanificarRutaScreen> {
                                     label: widget.modoSeleccionarTrazo
                                         ? 'Aplicar trazo'
                                         : (_guardando
-                                            ? l10n.comunGuardando
-                                            : l10n.comunGuardar),
+                                              ? l10n.comunGuardando
+                                              : l10n.comunGuardar),
                                     dense: true,
                                     onPressed:
                                         (_puntos.length < 2 || _guardando)
                                         ? null
                                         : (widget.modoSeleccionarTrazo
-                                            ? () => Navigator.of(context).pop(
+                                              ? () => Navigator.of(context).pop(
                                                   List<PuntoRuta>.of(_puntos),
                                                 )
-                                            : _guardar),
+                                              : _guardar),
                                   ),
                                 ),
                               ],

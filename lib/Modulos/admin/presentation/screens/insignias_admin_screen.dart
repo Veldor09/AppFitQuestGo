@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/core/widgets/fq_insignia_icon.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/fq_button.dart';
@@ -29,8 +30,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
   String _busqueda = '';
   int _filtroEstado = 0;
-  static const int _insigniasPorPagina = 8;
-  int _paginaActual = 0;
   int _versionCarga = 0;
 
   bool _cargando = false;
@@ -131,16 +130,7 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
     final List<InsigniaAdminItem> filtradas = _insigniasFiltradas;
-    final int totalPaginas = (filtradas.length / _insigniasPorPagina).ceil();
-    final int paginaVisible = totalPaginas == 0
-        ? 0
-        : _paginaActual.clamp(0, totalPaginas - 1);
-    final int inicio = paginaVisible * _insigniasPorPagina;
-    final int fin = (inicio + _insigniasPorPagina).clamp(0, filtradas.length);
-
-    final List<AdminRow> filas = filtradas.sublist(inicio, fin).map((
-      InsigniaAdminItem insignia,
-    ) {
+    final List<AdminRow> filas = filtradas.map((InsigniaAdminItem insignia) {
       final String descripcion = l10n.admInsResumen(
         insignia.codigo,
         insignia.metrica ?? l10n.admInsSinMetrica,
@@ -149,24 +139,19 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
 
       return AdminRow(
         icon: Icons.military_tech_outlined,
-        title: '${insignia.emoji} ${insignia.nombre}',
+        title: insignia.nombre,
+        values: <String>[
+          insignia.codigo,
+          insignia.metrica ?? l10n.admInsSinMetrica,
+          _formatearMeta(l10n, insignia.meta),
+          insignia.activa ? l10n.admActiva : l10n.admInactiva,
+        ],
         subtitle: descripcion,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Chip(
-              label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva),
-            ),
-            PopupMenuButton<String>(
-              tooltip: l10n.usuariosEditar,
-              onSelected: (_) => _abrirFormulario(insignia: insignia),
-              itemBuilder: (_) => <PopupMenuEntry<String>>[
-                PopupMenuItem(
-                  value: 'editar',
-                  child: Text(l10n.usuariosEditar),
-                ),
-              ],
-            ),
+        trailing: PopupMenuButton<String>(
+          tooltip: l10n.usuariosEditar,
+          onSelected: (_) => _abrirFormulario(insignia: insignia),
+          itemBuilder: (_) => <PopupMenuEntry<String>>[
+            PopupMenuItem(value: 'editar', child: Text(l10n.usuariosEditar)),
           ],
         ),
         onTap: () => mostrarDetalleAdmin(
@@ -193,7 +178,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       onSearch: (String valor) {
         setState(() {
           _busqueda = valor;
-          _paginaActual = 0;
         });
       },
       tabs: <String>[
@@ -205,7 +189,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
       onTab: (int indice) {
         setState(() {
           _filtroEstado = indice;
-          _paginaActual = 0;
         });
       },
       toolbarTrailing: FqButton.primary(
@@ -219,6 +202,13 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AdminDataTable(
+            columns: const <AdminTableColumn>[
+              AdminTableColumn('Insignia', width: 190),
+              AdminTableColumn('Código', width: 145),
+              AdminTableColumn('Métrica', width: 145),
+              AdminTableColumn('Meta', width: 90),
+              AdminTableColumn('Estado', width: 105),
+            ],
             rows: filas,
             loading: _cargando,
             error: _error,
@@ -226,33 +216,6 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
             emptyTitle: l10n.admInsigniasVacioTitulo,
             emptyMessage: l10n.admInsigniasVacioMensaje,
           ),
-          if (!_cargando && _error == null && totalPaginas > 1) ...<Widget>[
-            const SizedBox(height: 16),
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 8,
-              children: <Widget>[
-                OutlinedButton.icon(
-                  onPressed: paginaVisible > 0
-                      ? () => setState(() => _paginaActual = paginaVisible - 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_left),
-                  label: Text(l10n.admAnterior),
-                ),
-                Text(l10n.admPaginaDe(paginaVisible + 1, totalPaginas)),
-                OutlinedButton.icon(
-                  onPressed: paginaVisible < totalPaginas - 1
-                      ? () => setState(() => _paginaActual = paginaVisible + 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_right),
-                  label: Text(l10n.admSiguiente),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
         ],
       ),
     );
@@ -327,7 +290,7 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
       text: insignia?.descripcion ?? '',
     );
 
-    _emojiController = TextEditingController(text: insignia?.emoji ?? '');
+    _emojiController = TextEditingController(text: insignia?.emoji ?? 'medal');
 
     _metaController = TextEditingController(
       text: insignia?.meta?.toString() ?? '',
@@ -530,14 +493,34 @@ class _FormularioInsigniaState extends State<_FormularioInsignia> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _emojiController,
-                  enabled: !_guardando,
-                  decoration: InputDecoration(
-                    labelText: _l10n.admEmoji,
-                    hintText: '🏅',
+                DropdownButtonFormField<String>(
+                  initialValue: FqInsigniaIcon.keyFor(
+                    _emojiController.text,
+                    code: _codigoController.text,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Icono',
                     border: OutlineInputBorder(),
                   ),
+                  items: <DropdownMenuItem<String>>[
+                    for (final entry in FqInsigniaIcon.options.entries)
+                      DropdownMenuItem<String>(
+                        value: entry.key,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(entry.value, size: 20),
+                            const SizedBox(width: 10),
+                            Text(FqInsigniaIcon.labels[entry.key] ?? entry.key),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onChanged: _guardando
+                      ? null
+                      : (value) {
+                          if (value != null) _emojiController.text = value;
+                        },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(

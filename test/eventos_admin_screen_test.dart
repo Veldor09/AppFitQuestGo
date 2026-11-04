@@ -129,8 +129,10 @@ void main() {
       await _montar(tester, _EventosApiFake(eventos: _eventosDePrueba()));
       expect(tester.takeException(), isNull);
       final tabs = tester.getRect(find.byType(AdminTabs));
+      final heading = tester.getRect(find.text('EVENTO / PROPUESTA'));
       final title = tester.getRect(find.text('Carrera del futuro'));
-      expect(title.top - tabs.bottom, lessThan(35));
+      expect(heading.top - tabs.bottom, lessThan(65));
+      expect(title.top, greaterThan(heading.bottom));
     },
   );
 

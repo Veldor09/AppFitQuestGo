@@ -86,7 +86,8 @@ void main() {
 
       expect(api.consultas.first.estado, 'Solicitada');
       expect(find.text('#482913 · Ana Mora'), findsOneWidget);
-      expect(find.text('Plan Explorador · ₡2.500 · Usuario'), findsOneWidget);
+      expect(find.text('Plan Explorador'), findsOneWidget);
+      expect(find.text('₡2.500'), findsOneWidget);
       expect(find.text('Pendiente'), findsWidgets);
     },
   );
@@ -132,7 +133,7 @@ void main() {
     await tester.tap(find.text('#482913 · Ana Mora'));
     await tester.pumpAndSettle();
     expect(find.text('Solicitud #482913'), findsOneWidget);
-    expect(find.text('ana@correo.com'), findsOneWidget);
+    expect(find.text('ana@correo.com'), findsWidgets);
     expect(find.text('MONTO A RECIBIR'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey<String>('accion-aprobar')));
@@ -273,7 +274,8 @@ void main() {
     await abrir(tester, locale: const Locale('en'));
 
     expect(find.text('Pending'), findsWidgets);
-    expect(find.text('Plan Empresa · ₡15,000 · Business'), findsOneWidget);
+    expect(find.text('Plan Empresa'), findsOneWidget);
+    expect(find.text('₡15,000'), findsOneWidget);
     expect(find.text('Pendientes'), findsNothing);
   });
 

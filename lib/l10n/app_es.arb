@@ -2753,15 +2753,15 @@
   "@rutasVisibilidadHelper": {
     "description": "Helper of the route visibility selector."
   },
-  "rutasVisibilidadPrivada": "🔒 Privada (Solo tú)",
+  "rutasVisibilidadPrivada": "Privada (Solo tú)",
   "@rutasVisibilidadPrivada": {
     "description": "Private route visibility dropdown option"
   },
-  "rutasVisibilidadAmigos": "👥 Solo amigos",
+  "rutasVisibilidadAmigos": "Solo amigos",
   "@rutasVisibilidadAmigos": {
     "description": "Friends-only route visibility dropdown option"
   },
-  "rutasVisibilidadPublica": "🌍 Pública (Comunidad)",
+  "rutasVisibilidadPublica": "Pública (Comunidad)",
   "@rutasVisibilidadPublica": {
     "description": "Public route visibility dropdown option"
   },

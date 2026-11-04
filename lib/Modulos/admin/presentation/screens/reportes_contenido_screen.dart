@@ -275,6 +275,71 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
     return null;
   }
 
+  Future<void> _mostrarContenido(Map<String, dynamic> reporte) async {
+    final tipo = reporte['tipoContenido']?.toString() ?? '';
+    final id = reporte['contenidoId'];
+    if (id is! int) return;
+    Map<String, dynamic> contenido;
+    try {
+      contenido = await _api.obtenerContenido(tipo, id);
+    } catch (_) {
+      // El resumen del reporte sigue disponible si el contenido se desactivó.
+      if (reporte['contenido'] is! Map) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('El contenido reportado ya no está disponible.'),
+            ),
+          );
+        }
+        return;
+      }
+      contenido = Map<String, dynamic>.from(reporte['contenido'] as Map);
+    }
+    if (!mounted) return;
+    final nombre =
+        contenido['nombre']?.toString() ??
+        contenido['tipo']?.toString() ??
+        '#$id';
+    final campos = <String, String>{
+      'ID': '$id',
+      'Tipo': _nombreTipo(tipo),
+      if (contenido['descripcion'] != null)
+        'Descripción': contenido['descripcion'].toString(),
+      if (contenido['categoria'] != null)
+        'Categoría': contenido['categoria'].toString(),
+      if (contenido['tipo'] != null) 'Clase': contenido['tipo'].toString(),
+      if (contenido['gravedad'] != null)
+        'Gravedad': contenido['gravedad'].toString(),
+      if (contenido['estado'] != null) 'Estado': contenido['estado'].toString(),
+      if (contenido['fechaInicio'] != null)
+        'Inicio': contenido['fechaInicio'].toString(),
+      if (contenido['fechaFin'] != null)
+        'Fin': contenido['fechaFin'].toString(),
+      if (contenido['lat'] != null && contenido['lng'] != null)
+        'Ubicación': '${contenido['lat']}, ${contenido['lng']}',
+      if (contenido['distanciaKm'] != null)
+        'Distancia': '${contenido['distanciaKm']} km',
+      if (contenido['creadoPorNombre'] != null)
+        'Creado por': contenido['creadoPorNombre'].toString(),
+    };
+    await mostrarDetalleAdmin(
+      context,
+      titulo: nombre,
+      icono: switch (tipo) {
+        'evento' => Icons.event_outlined,
+        'nodo' => Icons.location_on_outlined,
+        'ruta' => Icons.route_outlined,
+        _ => Icons.warning_amber_outlined,
+      },
+      estado: contenido['estado']?.toString() ?? _nombreTipo(tipo),
+      campos: campos,
+      extra: contenido['conFoto'] == true
+          ? _vistaPreviaFoto(tipo, id, nombre)
+          : null,
+    );
+  }
+
   Future<void> _mostrarDetalle(Map<String, dynamic> reporte) async {
     final int id = reporte['id'] as int;
     final String estado = reporte['estado']?.toString() ?? '';
@@ -319,6 +384,7 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       },
       extra: foto,
       acciones: <String, String>{
+        if (contenido != null) 'verContenido': 'Ver contenido',
         if (estado == 'pendiente') ...<String, String>{
           'conservar': _l10n.admRepConservar,
           'desactivar': _l10n.admRepDesactivar,
@@ -326,7 +392,11 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
         if (desactivo && contenido != null) 'reactivar': _l10n.admRepReactivar,
       },
     );
-    if (accion != null && mounted) await _decidir(id, accion);
+    if (accion == 'verContenido' && mounted) {
+      await _mostrarContenido(reporte);
+    } else if (accion != null && mounted) {
+      await _decidir(id, accion);
+    }
   }
 
   @override
@@ -346,9 +416,18 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       return AdminRow(
         icon: Icons.flag_outlined,
         title: '${_nombreTipo(tipo)} $nombre - $motivo',
+        values: <String>[
+          _nombreTipo(tipo),
+          nombre,
+          motivo,
+          _nombreEstado(estado),
+        ],
         subtitle: _l10n.admRepTitulo(reporte['id'] as int),
-        trailing: Chip(label: Text(_nombreEstado(estado))),
         onTap: () => _mostrarDetalle(reporte),
+        trailing: TextButton(
+          onPressed: () => _mostrarContenido(reporte),
+          child: const Text('Ver contenido'),
+        ),
       );
     }).toList();
 
@@ -366,6 +445,13 @@ class _ReportesContenidoScreenState extends State<ReportesContenidoScreen> {
       tabIndex: _tab,
       onTab: (indice) => setState(() => _tab = indice),
       child: AdminDataTable(
+        columns: const <AdminTableColumn>[
+          AdminTableColumn('Reporte', width: 220),
+          AdminTableColumn('Tipo', width: 110),
+          AdminTableColumn('Contenido', width: 175),
+          AdminTableColumn('Motivo', width: 160),
+          AdminTableColumn('Estado', width: 110),
+        ],
         rows: filas,
         loading: _cargando,
         error: _error,

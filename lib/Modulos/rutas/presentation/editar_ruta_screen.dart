@@ -49,8 +49,9 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
   );
   late Set<String> _actividades = Set<String>.of(widget.ruta.actividades);
   late String _dificultad = widget.ruta.dificultad;
-  late String _visibilidad =
-      widget.ruta.estado == 'Publicada' ? 'publica' : 'privada';
+  late String _visibilidad = widget.ruta.estado == 'Publicada'
+      ? 'publica'
+      : 'privada';
   late final List<PuntoRuta> _puntos = List<PuntoRuta>.of(widget.ruta.puntos);
 
   Uint8List? _fotoNueva;
@@ -72,9 +73,7 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_actividades.isEmpty) {
-      setState(
-        () => _errorActividades = l10n.rutasActividades,
-      );
+      setState(() => _errorActividades = l10n.rutasActividades);
       notificarError('Selecciona al menos una actividad.');
       return;
     }
@@ -111,7 +110,9 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
       Navigator.of(context).pop(actualizada);
     } on ApiException catch (e) {
       if (mounted) {
-        notificarError(e.message.isNotEmpty ? e.message : l10n.planificarNoSePudoGuardar);
+        notificarError(
+          e.message.isNotEmpty ? e.message : l10n.planificarNoSePudoGuardar,
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -262,11 +263,25 @@ class _EditarRutaScreenState extends State<EditarRutaScreen> {
                     items: <DropdownMenuItem<String>>[
                       DropdownMenuItem<String>(
                         value: 'privada',
-                        child: Text(l10n.rutasVisibilidadPrivada),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.lock_outline, size: 18),
+                            const SizedBox(width: 8),
+                            Text(l10n.rutasVisibilidadPrivada),
+                          ],
+                        ),
                       ),
                       DropdownMenuItem<String>(
                         value: 'publica',
-                        child: Text(l10n.rutasVisibilidadPublica),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.public, size: 18),
+                            const SizedBox(width: 8),
+                            Text(l10n.rutasVisibilidadPublica),
+                          ],
+                        ),
                       ),
                     ],
                     onChanged: (String? v) {

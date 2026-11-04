@@ -21,10 +21,16 @@ class IconoDificultad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
+    final color = coloresDificultad(dificultad).abajo;
+    return Icon(
+      switch (dificultad) {
+        'facil' => Icons.terrain_rounded,
+        'dificil' => Icons.landscape_rounded,
+        _ => Icons.hiking_rounded,
+      },
       key: ValueKey<String>('icono-dificultad-$dificultad'),
-      size: Size.square(size),
-      painter: _CaraPainter(dificultad),
+      size: size,
+      color: color,
     );
   }
 }
@@ -70,123 +76,4 @@ class EtiquetaDificultad extends StatelessWidget {
       ),
     );
   }
-}
-
-class _CaraPainter extends CustomPainter {
-  const _CaraPainter(this.dificultad);
-
-  final String dificultad;
-
-  static const Color _tinta = Color(0xFF3A2A1C);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double s = size.width;
-    final Offset c = Offset(s / 2, s / 2);
-    final double r = s / 2;
-    final ({Color arriba, Color abajo}) colores = coloresDificultad(dificultad);
-
-    final Rect caja = Rect.fromCircle(center: c, radius: r);
-    canvas.drawCircle(
-      c,
-      r,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[colores.arriba, colores.abajo],
-        ).createShader(caja),
-    );
-    canvas.drawCircle(
-      c,
-      r - s * 0.02,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = s * 0.04
-        ..color = Colors.black.withValues(alpha: 0.12),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(s * 0.36, s * 0.24),
-        width: s * 0.34,
-        height: s * 0.14,
-      ),
-      Paint()..color = Colors.white.withValues(alpha: 0.35),
-    );
-
-    final Paint tinta = Paint()..color = _tinta;
-    final Paint trazo = Paint()
-      ..color = _tinta
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = s * 0.075;
-
-    final double ojosY = s * 0.43;
-    final double ojoDx = s * 0.17;
-    switch (dificultad) {
-      case 'facil':
-        _ojos(canvas, tinta, c.dx, ojosY, ojoDx, s * 0.065);
-        final Path sonrisa = Path()
-          ..moveTo(s * 0.31, s * 0.60)
-          ..quadraticBezierTo(s * 0.5, s * 0.82, s * 0.69, s * 0.60);
-        canvas.drawPath(sonrisa, trazo);
-      case 'dificil':
-        _ojos(canvas, tinta, c.dx, ojosY + s * 0.03, ojoDx, s * 0.06);
-        final Paint ceja = Paint()
-          ..color = _tinta
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = s * 0.07;
-        canvas.drawLine(
-          Offset(c.dx - ojoDx - s * 0.08, ojosY - s * 0.11),
-          Offset(c.dx - ojoDx + s * 0.09, ojosY - s * 0.05),
-          ceja,
-        );
-        canvas.drawLine(
-          Offset(c.dx + ojoDx + s * 0.08, ojosY - s * 0.11),
-          Offset(c.dx + ojoDx - s * 0.09, ojosY - s * 0.05),
-          ceja,
-        );
-        final RRect boca = RRect.fromRectAndRadius(
-          Rect.fromCenter(
-            center: Offset(c.dx, s * 0.69),
-            width: s * 0.34,
-            height: s * 0.17,
-          ),
-          Radius.circular(s * 0.07),
-        );
-        canvas.drawRRect(boca, tinta);
-        canvas.drawRRect(
-          boca.deflate(s * 0.03),
-          Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9),
-        );
-        final Path gota = Path()
-          ..moveTo(s * 0.86, s * 0.20)
-          ..quadraticBezierTo(s * 0.97, s * 0.36, s * 0.86, s * 0.40)
-          ..quadraticBezierTo(s * 0.75, s * 0.36, s * 0.86, s * 0.20)
-          ..close();
-        canvas.drawPath(gota, Paint()..color = const Color(0xFF7CC8FF));
-      default:
-        _ojos(canvas, tinta, c.dx, ojosY, ojoDx, s * 0.065);
-        final Path boca = Path()
-          ..moveTo(s * 0.33, s * 0.66)
-          ..quadraticBezierTo(s * 0.5, s * 0.70, s * 0.67, s * 0.64);
-        canvas.drawPath(boca, trazo);
-    }
-  }
-
-  void _ojos(
-    Canvas canvas,
-    Paint pintura,
-    double centroX,
-    double y,
-    double dx,
-    double radio,
-  ) {
-    canvas.drawCircle(Offset(centroX - dx, y), radio, pintura);
-    canvas.drawCircle(Offset(centroX + dx, y), radio, pintura);
-  }
-
-  @override
-  bool shouldRepaint(_CaraPainter viejo) => viejo.dificultad != dificultad;
 }

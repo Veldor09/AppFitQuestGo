@@ -16,7 +16,7 @@ class Insignia {
       codigo: (json['codigo'] as String?) ?? '',
       nombre: (json['nombre'] as String?) ?? '',
       descripcion: (json['descripcion'] as String?) ?? '',
-      emoji: (json['emoji'] as String?) ?? '🏅',
+      emoji: (json['emoji'] as String?) ?? 'medal',
       desbloqueada: (json['desbloqueada'] as bool?) ?? false,
       fechaObtenida: DateTime.tryParse(
         (json['fechaObtenida'] ?? '').toString(),

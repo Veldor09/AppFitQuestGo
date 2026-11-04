@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
+import 'package:fit_quest_go/Modulos/usuarios/presentation/widgets/paginacion_bar.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/auditoria_api.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -30,8 +31,9 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       TextEditingController();
   final TextEditingController _accionController = TextEditingController();
   final TextEditingController _entidadController = TextEditingController();
+  final GlobalKey _filtrosKey = GlobalKey();
 
-  static const int _limite = 20;
+  int _limite = 5;
   static const Duration _intervalo = Duration(seconds: 5);
 
   static const Color _verde = Color(0xFFA9F32D);
@@ -46,7 +48,6 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
   bool _cargando = false;
   bool _consultando = false;
-  bool _filtrosAbiertos = true;
   String? _error;
 
   int _pagina = 1;
@@ -457,27 +458,42 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _filtros() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        AdminToolbar(
-          searchHint: _l10n.admBuscar,
-          showSearch: false,
-          onFilters: () => setState(() => _filtrosAbiertos = !_filtrosAbiertos),
-          onRefresh: _consultando ? null : () => _cargarRegistros(),
+  Future<void> _mostrarFiltros() async {
+    final boton = _filtrosKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (boton == null || overlay == null) return;
+    final posicion = RelativeRect.fromRect(
+      Rect.fromPoints(
+        boton.localToGlobal(Offset.zero, ancestor: overlay),
+        boton.localToGlobal(
+          boton.size.bottomRight(Offset.zero),
+          ancestor: overlay,
         ),
-        if (_filtrosAbiertos) ...<Widget>[
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: _tarjetaDecoracion(),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 14,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
+      ),
+      Offset.zero & overlay.size,
+    );
+    await showMenu<void>(
+      context: context,
+      position: posicion,
+      items: <PopupMenuEntry<void>>[
+        PopupMenuItem<void>(
+          enabled: false,
+          child: SizedBox(
+            width: 265,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  _l10n.admBuscar,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: _texto,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 _campoFiltro(
                   _l10n.admAudIdAdmin,
                   _administradorController,
@@ -485,50 +501,99 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
                   teclado: TextInputType.number,
                   ejemplo: _l10n.admAudEjemploId,
                 ),
+                const SizedBox(height: 8),
                 _campoFiltro(
                   _l10n.admAccion,
                   _accionController,
                   icono: Icons.list_alt_outlined,
                   ejemplo: 'USUARIO_ACTUALIZADO',
                 ),
+                const SizedBox(height: 8),
                 _campoFiltro(
                   _l10n.admEntidad,
                   _entidadController,
                   icono: Icons.inventory_2_outlined,
                   ejemplo: 'USUARIO',
                 ),
-                FilledButton.icon(
-                  onPressed: _consultando ? null : _aplicarFiltros,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _verde,
-                    foregroundColor: _texto,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 23,
-                      vertical: 19,
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _limpiarFiltros();
+                      },
+                      child: Text(_l10n.planificarLimpiar),
                     ),
-                  ),
-                  icon: const Icon(Icons.search),
-                  label: Text(_l10n.admBuscar),
-                ),
-                OutlinedButton.icon(
-                  onPressed: _consultando ? null : _limpiarFiltros,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _texto,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 19,
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _aplicarFiltros();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _verde,
+                        foregroundColor: _texto,
+                      ),
+                      child: Text(_l10n.admBuscar),
                     ),
-                  ),
-                  icon: const Icon(Icons.close),
-                  label: Text(_l10n.planificarLimpiar),
+                  ],
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ],
     );
   }
+
+  Widget _filtros() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      AdminToolbar(
+        searchHint: _l10n.admBuscar,
+        showSearch: false,
+        filtersKey: _filtrosKey,
+        onFilters: _mostrarFiltros,
+        onRefresh: _consultando ? null : () => _cargarRegistros(),
+      ),
+      if (_filtroAdministrador.isNotEmpty ||
+          _filtroAccion.isNotEmpty ||
+          _filtroEntidad.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Wrap(
+            spacing: 8,
+            children: <Widget>[
+              if (_filtroAdministrador.isNotEmpty)
+                InputChip(
+                  label: Text('${_l10n.admAudIdAdmin}: $_filtroAdministrador'),
+                  onDeleted: () {
+                    _administradorController.clear();
+                    _aplicarFiltros();
+                  },
+                ),
+              if (_filtroAccion.isNotEmpty)
+                InputChip(
+                  label: Text('${_l10n.admAccion}: $_filtroAccion'),
+                  onDeleted: () {
+                    _accionController.clear();
+                    _aplicarFiltros();
+                  },
+                ),
+              if (_filtroEntidad.isNotEmpty)
+                InputChip(
+                  label: Text('${_l10n.admEntidad}: $_filtroEntidad'),
+                  onDeleted: () {
+                    _entidadController.clear();
+                    _aplicarFiltros();
+                  },
+                ),
+            ],
+          ),
+        ),
+    ],
+  );
 
   Widget _tabla() {
     if (_registros.isEmpty) {
@@ -551,11 +616,25 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     }
 
     return AdminDataTable(
+      paginar: false,
+      columns: <AdminTableColumn>[
+        AdminTableColumn(_l10n.admAccion, width: 210),
+        AdminTableColumn(_l10n.admAudAdministrador, width: 160),
+        AdminTableColumn(_l10n.admEntidad, width: 135),
+        AdminTableColumn(_l10n.admAudIdAfectado, width: 110),
+        AdminTableColumn(_l10n.admFecha, width: 170),
+      ],
       rows: <AdminRow>[
         for (final registro in _registros)
           AdminRow(
             icon: Icons.receipt_long_outlined,
             title: _accionLegible(registro['accion']?.toString() ?? '—'),
+            values: <String>[
+              registro['administradorId']?.toString() ?? '—',
+              registro['entidad']?.toString() ?? '—',
+              registro['entidadId']?.toString() ?? '—',
+              _fecha(registro['creadoEn']),
+            ],
             subtitle: <String>[
               _l10n.admAudAdministrador,
               registro['administradorId']?.toString() ?? '—',
@@ -569,54 +648,19 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   }
 
   Widget _paginacion() {
-    return Padding(
-      padding: const EdgeInsets.all(18),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 10,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        alignment: WrapAlignment.spaceBetween,
-        children: [
-          Text(
-            _l10n.admAudTotal(_total),
-            style: const TextStyle(fontWeight: FontWeight.w600, color: _texto),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton.outlined(
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                tooltip: _l10n.admPaginaAnterior,
-                onPressed: _pagina > 1 && !_consultando
-                    ? () => _cambiarPagina(_pagina - 1)
-                    : null,
-                icon: const Icon(Icons.chevron_left),
-              ),
-              Flexible(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    _l10n.admPaginaDe(
-                      _pagina,
-                      _totalPaginas == 0 ? 1 : _totalPaginas,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              IconButton.outlined(
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                tooltip: _l10n.admPaginaSiguiente,
-                onPressed: _pagina < _totalPaginas && !_consultando
-                    ? () => _cambiarPagina(_pagina + 1)
-                    : null,
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return PaginacionBar(
+      total: _total,
+      pagina: _pagina - 1,
+      filasPorPagina: _limite,
+      opciones: const <int>[5, 10, 15, 20],
+      onFilasPorPagina: (n) {
+        setState(() {
+          _limite = n;
+          _pagina = 1;
+        });
+        _cargarRegistros();
+      },
+      onPagina: (p) => _cambiarPagina(p + 1),
     );
   }
 
