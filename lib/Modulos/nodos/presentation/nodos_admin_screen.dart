@@ -11,7 +11,7 @@ import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaff
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo.dart';
 import 'package:fit_quest_go/Modulos/nodos/data/nodo_api.dart';
-import 'package:fit_quest_go/Modulos/nodos/presentation/ficha_nodo.dart';
+import 'package:fit_quest_go/Modulos/nodos/presentation/foto_nodo.dart';
 
 /// ADM-07 · Gestion de nodos / POIs.
 /// Consulta todos los nodos mediante GET /nodos/admin.
@@ -183,6 +183,8 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
         }).toList();
 
         return AdminListScaffold(
+          onRefresh: _recargar,
+          refreshing: cargando,
           searchHint: l10n.nodosSearchHint,
 
           onSearch: (String valor) {
@@ -249,6 +251,7 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
                       'Estado': nodo.estado,
                     },
                   ),
+                  showViewHint: false,
 
                   trailing: _procesando.contains(nodo.id)
                       ? const SizedBox(
@@ -259,8 +262,61 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
                       : PopupMenuButton<String>(
                           tooltip: 'Acciones',
                           onSelected: (accion) {
+                            if (accion == 'ver') {
+                              mostrarDetalleAdmin(
+                                context,
+                                titulo: nodo.nombre,
+                                icono: Icons.location_on_outlined,
+                                estado: nodo.estado,
+                                campos: <String, String>{
+                                  'Nombre': nodo.nombre,
+                                  'Categoría': categoriaNodoLabel(
+                                    l10n,
+                                    nodo.categoria,
+                                    otro: nodo.categoriaOtro,
+                                  ),
+                                  'Creado por': nodo.creadoPorNombre ?? '—',
+                                  'Descripción': nodo.descripcion ?? '—',
+                                  'Beneficio': nodo.beneficio ?? '—',
+                                  'Ubicación':
+                                      '${nodo.lat.toStringAsFixed(5)}, ${nodo.lng.toStringAsFixed(5)}',
+                                  'Estado': nodo.estado,
+                                },
+                              );
+                            }
                             if (accion == 'foto') {
-                              mostrarFichaNodo(context, nodo, _api);
+                              showDialog<void>(
+                                context: context,
+                                builder: (dialogContext) => Dialog(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 460,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          FotoNodo(
+                                            api: _api,
+                                            nodoId: nodo.id,
+                                            altura: 300,
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: TextButton(
+                                              onPressed: () => Navigator.of(
+                                                dialogContext,
+                                              ).pop(),
+                                              child: const Text('Cerrar'),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
                             }
                             if (accion == 'aprobar') {
                               _decidir(l10n, nodo, 'Aprobado');
@@ -271,9 +327,14 @@ class _NodosAdminScreenState extends State<NodosAdminScreen> {
                           },
                           itemBuilder: (_) => <PopupMenuEntry<String>>[
                             const PopupMenuItem(
-                              value: 'foto',
-                              child: Text('Ver foto'),
+                              value: 'ver',
+                              child: Text('Ver'),
                             ),
+                            if (nodo.conFoto)
+                              const PopupMenuItem(
+                                value: 'foto',
+                                child: Text('Ver foto'),
+                              ),
                             if (nodo.estado == 'Pendiente')
                               PopupMenuItem(
                                 value: 'aprobar',

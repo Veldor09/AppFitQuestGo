@@ -12,6 +12,7 @@ class AdminRow {
     this.subtitle,
     this.trailing,
     this.onTap,
+    this.showViewHint = true,
   });
 
   final IconData icon;
@@ -21,6 +22,7 @@ class AdminRow {
   /// Normalmente una [FqTag] con el estado.
   final Widget? trailing;
   final VoidCallback? onTap;
+  final bool showViewHint;
 }
 
 /// Tabla generica del panel de administracion.
@@ -116,7 +118,21 @@ class _AdminTableRowState extends State<_AdminTableRow> {
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final mobile = constraints.maxWidth < 340;
+              final mobile = constraints.maxWidth < 560;
+              final trailing = row.trailing == null
+                  ? null
+                  : ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: mobile
+                            ? constraints.maxWidth - 58
+                            : constraints.maxWidth * 0.36,
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: row.trailing!,
+                      ),
+                    );
               final details = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -161,13 +177,14 @@ class _AdminTableRowState extends State<_AdminTableRow> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               details,
-                              if (row.trailing != null || row.onTap != null)
+                              if (trailing != null ||
+                                  (row.onTap != null && row.showViewHint))
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: <Widget>[
-                                    if (row.trailing != null)
-                                      Flexible(child: row.trailing!),
-                                    if (row.onTap != null)
+                                    if (trailing != null)
+                                      Flexible(child: trailing),
+                                    if (row.onTap != null && row.showViewHint)
                                       const Padding(
                                         padding: EdgeInsets.only(left: 8),
                                         child: Text(
@@ -184,11 +201,13 @@ class _AdminTableRowState extends State<_AdminTableRow> {
                           )
                         : details,
                   ),
-                  if (!mobile && row.trailing != null) ...<Widget>[
+                  if (!mobile && trailing != null) ...<Widget>[
                     const SizedBox(width: 8),
-                    row.trailing!,
+                    trailing,
                   ],
-                  if (!mobile && row.onTap != null) ...<Widget>[
+                  if (!mobile &&
+                      row.onTap != null &&
+                      row.showViewHint) ...<Widget>[
                     const SizedBox(width: 10),
                     const Row(
                       mainAxisSize: MainAxisSize.min,

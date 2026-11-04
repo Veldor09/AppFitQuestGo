@@ -13,6 +13,8 @@ class AdminToolbar extends StatelessWidget {
     this.onChanged,
     this.onFilters,
     this.trailing,
+    this.onRefresh,
+    this.refreshing = false,
   });
 
   final String searchHint;
@@ -24,6 +26,8 @@ class AdminToolbar extends StatelessWidget {
   final VoidCallback? onFilters;
 
   final Widget? trailing;
+  final VoidCallback? onRefresh;
+  final bool refreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +83,46 @@ class AdminToolbar extends StatelessWidget {
               ),
             ),
             _FiltrosButton(onPressed: onFilters),
+            if (onRefresh != null)
+              AdminRefreshButton(onPressed: refreshing ? null : onRefresh),
             ?trailing,
           ],
         );
       },
+    );
+  }
+}
+
+class AdminRefreshButton extends StatelessWidget {
+  const AdminRefreshButton({super.key, required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Actualizar',
+      child: Material(
+        color: FqColors.white,
+        borderRadius: FqRadius.allMd,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: FqRadius.allMd,
+          child: Container(
+            height: 37,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: FqRadius.allMd,
+              border: Border.all(color: FqColors.border),
+            ),
+            child: const Icon(
+              Icons.refresh_rounded,
+              size: 19,
+              color: FqColors.ink,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
 
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
@@ -337,11 +338,7 @@ class _UsuarioDetalleScreenState extends State<UsuarioDetalleScreen> {
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: _l10n.admUsrActualizar,
-                onPressed: _actualizar,
-                icon: const Icon(Icons.refresh),
-              ),
+              AdminRefreshButton(onPressed: _actualizar),
             ],
           ),
         ],

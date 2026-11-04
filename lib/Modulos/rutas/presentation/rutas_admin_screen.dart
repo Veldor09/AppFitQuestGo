@@ -4,7 +4,7 @@ import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
-import 'package:fit_quest_go/Modulos/admin/presentation/screens/detalle_ruta_admin_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
 import 'package:fit_quest_go/Modulos/rutas/data/ruta.dart';
@@ -121,10 +121,19 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
   }
 
   Future<void> _abrirDetalle(Ruta ruta) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => DetalleRutaAdminScreen(ruta: ruta),
-      ),
+    final l10n = AppLocalizations.of(context)!;
+    await mostrarDetalleAdmin(
+      context,
+      titulo: ruta.nombre,
+      icono: Icons.route_outlined,
+      estado: ruta.estado,
+      campos: <String, String>{
+        l10n.rutasActividad: actividadesLabel(l10n, ruta.actividades),
+        l10n.rutasDificultadLabel: dificultadLabel(l10n, ruta.dificultad),
+        'Distancia': '${ruta.distanciaKm.toStringAsFixed(1)} km',
+        'Puntos': '${ruta.puntos.length}',
+        if (ruta.creadoPorNombre != null) 'Creada por': ruta.creadoPorNombre!,
+      },
     );
   }
 
@@ -167,6 +176,8 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
         }).toList();
 
         return AdminListScaffold(
+          onRefresh: _recargar,
+          refreshing: cargando,
           searchHint: l10n.rutasAdminSearchHint,
           onFilters: _abrirFiltros,
           searchController: _busquedaController,
@@ -190,6 +201,7 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
                           ruta.creadoPorNombre!,
                         ),
                   onTap: () => _abrirDetalle(ruta),
+                  showViewHint: false,
                   trailing: _procesando.contains(ruta.id)
                       ? const SizedBox(
                           width: 18,
@@ -199,9 +211,14 @@ class _RutasAdminScreenState extends State<RutasAdminScreen> {
                       : PopupMenuButton<String>(
                           tooltip: 'Acciones',
                           onSelected: (accion) {
+                            if (accion == 'ver') _abrirDetalle(ruta);
                             if (accion == 'desactivar') _desactivar(ruta);
                           },
                           itemBuilder: (_) => <PopupMenuEntry<String>>[
+                            const PopupMenuItem(
+                              value: 'ver',
+                              child: Text('Ver'),
+                            ),
                             if (ruta.estado == 'Publicada' ||
                                 ruta.estado == 'Pendiente')
                               const PopupMenuItem(

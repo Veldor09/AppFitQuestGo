@@ -76,6 +76,8 @@ class _AlertasAdminScreenState extends State<AlertasAdminScreen> {
         final List<Alerta> alertas = snap.data ?? const <Alerta>[];
 
         return AdminListScaffold(
+          onRefresh: _recargar,
+          refreshing: cargando,
           searchHint: l10n.alertasAdminSearchHint,
           onSearch: (value) =>
               setState(() => _busqueda = value.trim().toLowerCase()),
@@ -128,6 +130,7 @@ class _AlertasAdminScreenState extends State<AlertasAdminScreen> {
                         'Estado': alerta.estado,
                       },
                     ),
+                    showViewHint: false,
                     // Menu con texto en vez de check/X: esta pantalla no aprueba
                     // ni rechaza (la alerta ya esta publicada), asi que un par
                     // de iconos check+X se lee como "aprobar/rechazar" por el
@@ -142,12 +145,45 @@ class _AlertasAdminScreenState extends State<AlertasAdminScreen> {
                         : PopupMenuButton<String>(
                             tooltip: l10n.alertasAcciones,
                             onSelected: (String accion) {
+                              if (accion == 'ver') {
+                                mostrarDetalleAdmin(
+                                  context,
+                                  titulo: tipoAlertaLabel(
+                                    l10n,
+                                    alerta.tipo,
+                                    otro: alerta.tipoOtro,
+                                  ),
+                                  icono: _iconoPorGravedad(alerta.gravedad),
+                                  estado: alerta.estado,
+                                  campos: <String, String>{
+                                    'Tipo': tipoAlertaLabel(
+                                      l10n,
+                                      alerta.tipo,
+                                      otro: alerta.tipoOtro,
+                                    ),
+                                    'Gravedad': gravedadLabel(
+                                      l10n,
+                                      alerta.gravedad,
+                                    ),
+                                    'Reportada por':
+                                        alerta.creadoPorNombre ?? '—',
+                                    'Descripción': alerta.descripcion ?? '—',
+                                    'Ubicación':
+                                        '${alerta.lat.toStringAsFixed(5)}, ${alerta.lng.toStringAsFixed(5)}',
+                                    'Estado': alerta.estado,
+                                  },
+                                );
+                              }
                               if (accion == 'resolver') {
                                 _resolver(l10n, alerta);
                               }
                             },
                             itemBuilder: (BuildContext context) =>
                                 <PopupMenuEntry<String>>[
+                                  const PopupMenuItem<String>(
+                                    value: 'ver',
+                                    child: Text('Ver'),
+                                  ),
                                   const PopupMenuItem<String>(
                                     value: 'resolver',
                                     child: Text('Desactivar'),

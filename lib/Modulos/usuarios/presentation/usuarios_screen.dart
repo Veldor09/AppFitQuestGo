@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/core/notificaciones/notificaciones.dart';
@@ -27,7 +28,6 @@ class UsuariosScreen extends StatefulWidget {
 
   /// Inyectable para pruebas; en produccion se crea uno por defecto.
   final UsuariosApi? api;
-
 
   @override
   State<UsuariosScreen> createState() => _UsuariosScreenState();
@@ -380,6 +380,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: <Widget>[
+        AdminRefreshButton(onPressed: _recargar),
         FqButton.primary(
           key: _filtrosKey,
           label: _rolFiltro == 0

@@ -5,6 +5,7 @@ import 'package:fit_quest_go/core/catalogos/categorias_evento.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_list_scaffold.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 /// ADM-08: gestión administrativa de eventos.
 ///
@@ -429,23 +430,6 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     );
   }
 
-  Widget _detalle(String titulo, String valor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 3),
-          Text(valor),
-        ],
-      ),
-    );
-  }
-
   Future<void> _mostrarFiltros() async {
     String? categoria = _categoriaFiltro;
     String? organizador = _organizadorFiltro;
@@ -746,81 +730,27 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
   }
 
   Future<void> _mostrarDetalle(Map<String, dynamic> evento) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: _colorCrema,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: Text(
-            (evento['nombre'] ?? _l10n.admEvtEvento).toString(),
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-          content: SizedBox(
-            width: 480,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _detalle(_l10n.perfilEstado, _nombreEstado(_estado(evento))),
-                  _detalle(
-                    _l10n.admEvtCategoria,
-                    evento['categoria'] == null
-                        ? '-'
-                        : categoriaEventoLabel(
-                            _l10n,
-                            evento['categoria'].toString(),
-                          ),
-                  ),
-                  _detalle(_l10n.rolEmpresa, _empresa(evento)),
-                  _detalle(
-                    _l10n.admEvtInicio,
-                    _formatearFecha(evento['fechaInicio']),
-                  ),
-                  _detalle(
-                    _l10n.admEvtFin,
-                    _formatearFecha(evento['fechaFin']),
-                  ),
-                  _detalle(
-                    _l10n.admDescripcion,
-                    evento['descripcion']?.toString() ??
-                        _l10n.admRepSinDescripcion,
-                  ),
-                  _detalle(
-                    _l10n.admEvtAreas,
-                    '${(evento['areas'] as List?)?.length ?? 0}',
-                  ),
-                  _detalle(
-                    _l10n.admEvtRecorridos,
-                    '${(evento['recorridos'] as List?)?.length ?? 0}',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(_l10n.comunCerrar),
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.delete_outline),
-              label: Text(_l10n.admEvtEliminar),
-              style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
-              onPressed: _eliminando
-                  ? null
-                  : () {
-                      Navigator.of(dialogContext).pop();
-                      _confirmarEliminacion(evento);
-                    },
-            ),
-          ],
-        );
+    final accion = await mostrarDetalleAdmin(
+      context,
+      titulo: (evento['nombre'] ?? _l10n.admEvtEvento).toString(),
+      icono: Icons.event_outlined,
+      estado: _nombreEstado(_estado(evento)),
+      campos: <String, String>{
+        _l10n.admEvtCategoria: evento['categoria'] == null
+            ? '-'
+            : categoriaEventoLabel(_l10n, evento['categoria'].toString()),
+        _l10n.rolEmpresa: _empresa(evento),
+        _l10n.admEvtInicio: _formatearFecha(evento['fechaInicio']),
+        _l10n.admEvtFin: _formatearFecha(evento['fechaFin']),
+        _l10n.admDescripcion:
+            evento['descripcion']?.toString() ?? _l10n.admRepSinDescripcion,
+        _l10n.admEvtAreas: '${(evento['areas'] as List?)?.length ?? 0}',
+        _l10n.admEvtRecorridos:
+            '${(evento['recorridos'] as List?)?.length ?? 0}',
       },
+      acciones: _eliminando ? const {} : {'eliminar': _l10n.admEvtEliminar},
     );
+    if (accion == 'eliminar' && mounted) await _confirmarEliminacion(evento);
   }
 
   Future<void> _confirmarEliminacion(Map<String, dynamic> evento) async {
@@ -889,6 +819,8 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
     final eventos = _eventosFiltrados;
 
     return AdminListScaffold(
+      onRefresh: _cargarEventos,
+      refreshing: _cargando || _eliminando,
       searchHint: _l10n.admEvtBuscar,
       searchController: _busquedaController,
       onSearch: (texto) {
@@ -915,11 +847,6 @@ class _EventosAdminScreenState extends State<EventosAdminScreen> {
                 deleteIcon: const Icon(Icons.close, size: 16),
               ),
             ),
-          IconButton(
-            tooltip: _l10n.admEvtActualizar,
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargando || _eliminando ? null : _cargarEventos,
-          ),
         ],
       ),
       child: AdminDataTable(

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_detail_dialog.dart';
 
 import 'package:fit_quest_go/Modulos/admin/data/auditoria_api.dart';
 import 'package:fit_quest_go/core/api/api_client.dart';
@@ -497,10 +499,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
             icon: const Icon(Icons.close),
             label: Text(_l10n.planificarLimpiar),
           ),
-          IconButton.outlined(
-            tooltip: _l10n.admAudActualizar,
+          AdminRefreshButton(
             onPressed: _consultando ? null : () => _cargarRegistros(),
-            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
@@ -887,126 +887,14 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
     );
   }
 
-  Widget _panelDetalle(Map<String, dynamic> registro, {required bool movil}) {
-    return Material(
-      color: Colors.white,
-      borderRadius: movil
-          ? const BorderRadius.vertical(top: Radius.circular(24))
-          : const BorderRadius.horizontal(left: Radius.circular(24)),
-      clipBehavior: Clip.antiAlias,
-      child: SafeArea(
-        top: !movil,
-        child: Column(
-          children: [
-            if (movil)
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 6),
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 18, 18),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F7E8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.receipt_long, color: _verdeOscuro),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Auditoría #${registro['id'] ?? '—'}',
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        color: _texto,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: _l10n.comunCerrar,
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: _detalleContenido(registro),
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(_l10n.comunCerrar),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _mostrarDetalle(Map<String, dynamic> registro) {
-    final ancho = MediaQuery.sizeOf(context).width;
-
-    if (ancho < 700) {
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        useSafeArea: true,
-        showDragHandle: false,
-        builder: (context) {
-          return FractionallySizedBox(
-            heightFactor: 0.88,
-            child: _panelDetalle(registro, movil: true),
-          );
-        },
-      );
-      return;
-    }
-
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: _l10n.admAudCerrarDetalle,
-      barrierColor: Colors.black.withValues(alpha: 0.42),
-      transitionDuration: const Duration(milliseconds: 280),
-      pageBuilder: (dialogContext, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(
-            width: ancho < 1050 ? ancho * 0.70 : 600,
-            height: double.infinity,
-            child: _panelDetalle(registro, movil: false),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final desplazamiento =
-            Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-            );
-
-        return SlideTransition(position: desplazamiento, child: child);
-      },
+    mostrarDetalleAdmin(
+      context,
+      titulo: 'Auditoría #${registro['id'] ?? '—'}',
+      icono: Icons.receipt_long_outlined,
+      estado: _accionLegible(registro['accion']?.toString() ?? '—'),
+      campos: const <String, String>{},
+      extra: _detalleContenido(registro),
     );
   }
 

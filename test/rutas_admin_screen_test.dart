@@ -68,6 +68,14 @@ Future<void> _montar(WidgetTester tester, _RutaApiFake api) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('ADM-04 agrupa Ver y Desactivar en tres puntos', (tester) async {
+    await _montar(tester, _RutaApiFake(_rutasDePrueba()));
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Ver'), findsOneWidget);
+    expect(find.text('Desactivar'), findsOneWidget);
+  });
+
   testWidgets('ADM-04 abre detalle de ruta en solo lectura', (tester) async {
     final api = _RutaApiFake(_rutasDePrueba());
 
@@ -76,10 +84,10 @@ void main() {
     await tester.tap(find.text('Ruta de montaña'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Estado: Publicada'), findsOneWidget);
-    expect(find.text('Distancia: 12.0 km'), findsOneWidget);
-    expect(find.text('Dificultad: Dificil'), findsOneWidget);
-    expect(find.text('Puntos GPS: 0'), findsOneWidget);
+    expect(find.text('PUBLICADA'), findsOneWidget);
+    expect(find.text('12.0 km'), findsOneWidget);
+    expect(find.text('DIFICULTAD'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
 
     expect(find.text('Aprobar'), findsNothing);
     expect(find.text('Rechazar'), findsNothing);

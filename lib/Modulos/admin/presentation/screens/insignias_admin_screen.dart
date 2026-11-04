@@ -151,16 +151,23 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
         icon: Icons.military_tech_outlined,
         title: '${insignia.emoji} ${insignia.nombre}',
         subtitle: descripcion,
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-          Chip(label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva)),
-          PopupMenuButton<String>(
-            tooltip: l10n.usuariosEditar,
-            onSelected: (_) => _abrirFormulario(insignia: insignia),
-            itemBuilder: (_) => <PopupMenuEntry<String>>[
-              PopupMenuItem(value: 'editar', child: Text(l10n.usuariosEditar)),
-            ],
-          ),
-        ],
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Chip(
+              label: Text(insignia.activa ? l10n.admActiva : l10n.admInactiva),
+            ),
+            PopupMenuButton<String>(
+              tooltip: l10n.usuariosEditar,
+              onSelected: (_) => _abrirFormulario(insignia: insignia),
+              itemBuilder: (_) => <PopupMenuEntry<String>>[
+                PopupMenuItem(
+                  value: 'editar',
+                  child: Text(l10n.usuariosEditar),
+                ),
+              ],
+            ),
+          ],
         ),
         onTap: () => mostrarDetalleAdmin(
           context,
@@ -179,6 +186,8 @@ class _InsigniasAdminScreenState extends State<InsigniasAdminScreen> {
     }).toList();
 
     return AdminListScaffold(
+      onRefresh: _cargarInsignias,
+      refreshing: _cargando,
       searchHint: l10n.admInsigniasSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {

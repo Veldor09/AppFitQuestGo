@@ -182,6 +182,8 @@ class _CatalogosScreenState extends State<CatalogosScreen> {
     }).toList();
 
     return AdminListScaffold(
+      onRefresh: _cargarItems,
+      refreshing: _cargando,
       searchHint: l10n.admCatalogosSearchHint,
       searchController: _busquedaController,
       onSearch: (String valor) {

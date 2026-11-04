@@ -4,6 +4,8 @@ import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuario.dart';
 import 'package:fit_quest_go/Modulos/usuarios/data/usuarios_api.dart';
 import 'package:fit_quest_go/Modulos/usuarios/presentation/usuario_detalle_screen.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_toolbar.dart';
+import 'package:fit_quest_go/Modulos/admin/presentation/widgets/admin_data_table.dart';
 
 /// ADM-03: directorio independiente para consultar perfiles de usuarios.
 class DirectorioUsuariosScreen extends StatefulWidget {
@@ -24,7 +26,6 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
   static const Color _fondo = Color(0xFFF5F7FA);
   static const Color _texto = Color(0xFF18243A);
   static const Color _borde = Color(0xFFE2E8F0);
-  static const Color _verde = Color(0xFFA9F32D);
 
   final TextEditingController _busquedaController = TextEditingController();
 
@@ -37,6 +38,7 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
   bool? _activo;
   bool _ascendente = true;
   int _pagina = 1;
+  bool _filtrosAbiertos = false;
 
   static const int _porPagina = 10;
 
@@ -162,118 +164,128 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
             ],
           ),
         ),
-        IconButton.outlined(
-          tooltip: _l10n.admDirActualizar,
-          onPressed: _cargando ? null : _cargar,
-          icon: const Icon(Icons.refresh),
-        ),
       ],
     );
   }
 
   Widget _filtros() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: _decoracion(),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 14,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: <Widget>[
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: _busquedaController,
-              onChanged: (valor) => _actualizarFiltros(() {
-                _busqueda = valor;
-              }),
-              decoration: InputDecoration(
-                labelText: _l10n.admDirBuscar,
-                hintText: _l10n.admDirBuscarHint,
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                isDense: true,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        AdminToolbar(
+          searchHint: _l10n.admDirBuscarHint,
+          controller: _busquedaController,
+          onChanged: (valor) => _actualizarFiltros(() => _busqueda = valor),
+          onFilters: () => setState(() => _filtrosAbiertos = !_filtrosAbiertos),
+          onRefresh: _cargar,
+          refreshing: _cargando,
+        ),
+        if (_filtrosAbiertos) ...<Widget>[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: _decoracion(),
+            child: LayoutBuilder(
+              builder: (context, constraints) => Wrap(
+                spacing: 12,
+                runSpacing: 14,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  SizedBox(
+                    width: constraints.maxWidth < 380
+                        ? constraints.maxWidth
+                        : 170,
+                    child: DropdownButtonFormField<int?>(
+                      isExpanded: true,
+                      initialValue: _rol,
+                      decoration: InputDecoration(
+                        labelText: _l10n.perfilRol,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: <DropdownMenuItem<int?>>[
+                        DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text(_l10n.usuariosFiltroTodos),
+                        ),
+                        DropdownMenuItem<int?>(
+                          value: 1,
+                          child: Text(_l10n.rolUsuario),
+                        ),
+                        DropdownMenuItem<int?>(
+                          value: 2,
+                          child: Text(_l10n.rolEmpresa),
+                        ),
+                        DropdownMenuItem<int?>(
+                          value: 3,
+                          child: Text(_l10n.rolAdmin),
+                        ),
+                      ],
+                      onChanged: (valor) => _actualizarFiltros(() {
+                        _rol = valor;
+                      }),
+                    ),
+                  ),
+                  SizedBox(
+                    width: constraints.maxWidth < 380
+                        ? constraints.maxWidth
+                        : 180,
+                    child: DropdownButtonFormField<bool?>(
+                      isExpanded: true,
+                      initialValue: _activo,
+                      decoration: InputDecoration(
+                        labelText: _l10n.perfilEstado,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: <DropdownMenuItem<bool?>>[
+                        DropdownMenuItem<bool?>(
+                          value: null,
+                          child: Text(_l10n.usuariosFiltroTodos),
+                        ),
+                        DropdownMenuItem<bool?>(
+                          value: true,
+                          child: Text(_l10n.admDirActivados),
+                        ),
+                        DropdownMenuItem<bool?>(
+                          value: false,
+                          child: Text(_l10n.admDirDesactivados),
+                        ),
+                      ],
+                      onChanged: (valor) => _actualizarFiltros(() {
+                        _activo = valor;
+                      }),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => _actualizarFiltros(() {
+                      _ascendente = !_ascendente;
+                    }),
+                    icon: const Icon(Icons.sort_by_alpha),
+                    label: Text(
+                      _ascendente ? _l10n.admDirNombreAZ : _l10n.admDirNombreZA,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      _busquedaController.clear();
+                      _actualizarFiltros(() {
+                        _busqueda = '';
+                        _rol = null;
+                        _activo = null;
+                        _ascendente = true;
+                      });
+                    },
+                    icon: const Icon(Icons.close),
+                    label: Text(_l10n.admLimpiarFiltros),
+                  ),
+                ],
               ),
             ),
-          ),
-          SizedBox(
-            width: 170,
-            child: DropdownButtonFormField<int?>(
-              initialValue: _rol,
-              decoration: InputDecoration(
-                labelText: _l10n.perfilRol,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-              items: <DropdownMenuItem<int?>>[
-                DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text(_l10n.usuariosFiltroTodos),
-                ),
-                DropdownMenuItem<int?>(value: 1, child: Text(_l10n.rolUsuario)),
-                DropdownMenuItem<int?>(value: 2, child: Text(_l10n.rolEmpresa)),
-                DropdownMenuItem<int?>(value: 3, child: Text(_l10n.rolAdmin)),
-              ],
-              onChanged: (valor) => _actualizarFiltros(() {
-                _rol = valor;
-              }),
-            ),
-          ),
-          SizedBox(
-            width: 180,
-            child: DropdownButtonFormField<bool?>(
-              initialValue: _activo,
-              decoration: InputDecoration(
-                labelText: _l10n.perfilEstado,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-              items: <DropdownMenuItem<bool?>>[
-                DropdownMenuItem<bool?>(
-                  value: null,
-                  child: Text(_l10n.usuariosFiltroTodos),
-                ),
-                DropdownMenuItem<bool?>(
-                  value: true,
-                  child: Text(_l10n.admDirActivados),
-                ),
-                DropdownMenuItem<bool?>(
-                  value: false,
-                  child: Text(_l10n.admDirDesactivados),
-                ),
-              ],
-              onChanged: (valor) => _actualizarFiltros(() {
-                _activo = valor;
-              }),
-            ),
-          ),
-          OutlinedButton.icon(
-            onPressed: () => _actualizarFiltros(() {
-              _ascendente = !_ascendente;
-            }),
-            icon: const Icon(Icons.sort_by_alpha),
-            label: Text(
-              _ascendente ? _l10n.admDirNombreAZ : _l10n.admDirNombreZA,
-            ),
-          ),
-          TextButton.icon(
-            onPressed: () {
-              _busquedaController.clear();
-              _actualizarFiltros(() {
-                _busqueda = '';
-                _rol = null;
-                _activo = null;
-                _ascendente = true;
-              });
-            },
-            icon: const Icon(Icons.close),
-            label: Text(_l10n.admLimpiarFiltros),
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -307,82 +319,17 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
               child: Text(_l10n.admDirSinResultados),
             )
           else
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final ancho = constraints.maxWidth < 850
-                    ? 850.0
-                    : constraints.maxWidth;
-
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: ancho,
-                    child: DataTable(
-                      headingRowColor: WidgetStateProperty.all(
-                        const Color(0xFFF8FAFC),
-                      ),
-                      dataRowMinHeight: 65,
-                      dataRowMaxHeight: 76,
-                      columns: <DataColumn>[
-                        DataColumn(label: Text(_l10n.rolUsuario)),
-                        DataColumn(label: Text(_l10n.admDirColCorreo)),
-                        DataColumn(label: Text(_l10n.perfilRol)),
-                        DataColumn(label: Text(_l10n.perfilEstado)),
-                        DataColumn(label: Text(_l10n.admDetalle)),
-                      ],
-                      rows: visibles.map((usuario) {
-                        return DataRow(
-                          cells: <DataCell>[
-                            DataCell(
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  CircleAvatar(
-                                    backgroundColor: _verde,
-                                    child: Text(
-                                      usuario.iniciales,
-                                      style: const TextStyle(
-                                        color: _texto,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(usuario.nombreUser),
-                                ],
-                              ),
-                            ),
-                            DataCell(Text(usuario.emailUser)),
-                            DataCell(Text(usuario.etiquetaRol)),
-                            DataCell(
-                              Text(
-                                usuario.estado,
-                                style: TextStyle(
-                                  color: usuario.activo
-                                      ? const Color(0xFF277A35)
-                                      : Colors.red.shade700,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              OutlinedButton.icon(
-                                onPressed: () => setState(() {
-                                  _seleccionado = usuario;
-                                }),
-                                icon: const Icon(
-                                  Icons.visibility_outlined,
-                                  size: 17,
-                                ),
-                                label: Text(_l10n.admDirVerDetalle),
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+            AdminDataTable(
+              rows: <AdminRow>[
+                for (final usuario in visibles)
+                  AdminRow(
+                    icon: Icons.person_outline,
+                    title: usuario.nombreUser,
+                    subtitle:
+                        '${usuario.emailUser} · ${usuario.etiquetaRol} · ${usuario.estado}',
+                    onTap: () => setState(() => _seleccionado = usuario),
                   ),
-                );
-              },
+              ],
             ),
           const Divider(height: 1),
           Padding(
@@ -398,6 +345,10 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     IconButton.outlined(
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
                       tooltip: _l10n.admPaginaAnterior,
                       onPressed: pagina > 1
                           ? () => setState(() {
@@ -406,11 +357,21 @@ class _DirectorioUsuariosScreenState extends State<DirectorioUsuariosScreen> {
                           : null,
                       icon: const Icon(Icons.chevron_left),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(_l10n.admPaginaDe(pagina, totalPaginas)),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          _l10n.admPaginaDe(pagina, totalPaginas),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                     IconButton.outlined(
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
                       tooltip: _l10n.admPaginaSiguiente,
                       onPressed: pagina < totalPaginas
                           ? () => setState(() {

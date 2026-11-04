@@ -104,11 +104,14 @@ void main() {
 
     await tester.tap(find.byTooltip('Acciones').first);
     await tester.pumpAndSettle();
+    expect(find.text('Ver'), findsOneWidget);
+    expect(find.text('Desactivar'), findsOneWidget);
     await tester.tap(find.text('Ver foto'));
     await tester.pumpAndSettle();
 
     expect(api.fotosPedidas, <int>[1]);
     expect(find.byType(Image), findsOneWidget);
+    expect(find.text('Categoría'), findsNothing);
   });
 
   testWidgets('una propuesta sin foto abre la ficha sin pedir ninguna', (
