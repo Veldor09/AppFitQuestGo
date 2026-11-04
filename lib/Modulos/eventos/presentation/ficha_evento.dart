@@ -158,6 +158,7 @@ class _FichaEventoState extends State<FichaEvento> {
                 etiquetas: <Widget>[
                   EtiquetaEstadoEvento(evento: evento, ahora: ahoraActual),
                   if (evento.destacado) const EtiquetaDestacado(),
+                  if (resumen != null) Pulgares(resumen: resumen, compacto: true),
                 ],
               ),
 

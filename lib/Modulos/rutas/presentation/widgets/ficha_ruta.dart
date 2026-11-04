@@ -10,7 +10,6 @@ import 'package:fit_quest_go/Modulos/rutas/data/rutas_l10n.dart';
 import 'package:fit_quest_go/core/catalogos/actividades_ruta.dart';
 import 'package:fit_quest_go/core/theme/fq_colors.dart';
 import 'package:fit_quest_go/core/widgets/ficha_lugar.dart';
-import 'package:fit_quest_go/core/widgets/fq_icono_dificultad.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 
 /// Abre la ficha de una ruta desde abajo al tocar su pin en el mapa de exploración:
@@ -74,8 +73,7 @@ class _FichaRutaState extends State<FichaRuta> {
 
     final int tiempoEstimadoMin =
         (ruta.distanciaKm * 6).round().clamp(5, 360);
-    final int desnivelEstimadoM =
-        (ruta.distanciaKm * 28).round().clamp(10, 1500);
+
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -106,9 +104,13 @@ class _FichaRutaState extends State<FichaRuta> {
               ),
             ),
             etiquetas: <Widget>[
-              EtiquetaDificultad(
-                dificultad: ruta.dificultad,
-                texto: dificultadLabel(l10n, ruta.dificultad),
+              AnimatedBuilder(
+                animation: _pulgares,
+                builder: (BuildContext _, Widget? _) {
+                  final ResumenCalificacion? r = _pulgares.resumen;
+                  if (r == null) return const SizedBox.shrink();
+                  return Pulgares(resumen: r, compacto: true);
+                },
               ),
             ],
             onCerrar: () => Navigator.of(context).pop(),
@@ -136,9 +138,9 @@ class _FichaRutaState extends State<FichaRuta> {
               const SizedBox(width: 8),
               Expanded(
                 child: _MetricaFicha(
-                  etiqueta: 'Desnivel',
-                  valor: '+$desnivelEstimadoM m',
-                  icono: Icons.terrain_rounded,
+                  etiqueta: l10n.rutasDificultadLabel,
+                  valor: dificultadLabel(l10n, ruta.dificultad),
+                  icono: Icons.speed_rounded,
                 ),
               ),
             ],

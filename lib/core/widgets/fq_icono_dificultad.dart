@@ -34,25 +34,30 @@ class EtiquetaDificultad extends StatelessWidget {
     super.key,
     required this.dificultad,
     required this.texto,
+    this.mostrarIcono = true,
   });
 
   final String dificultad;
   final String texto;
+  final bool mostrarIcono;
 
   @override
   Widget build(BuildContext context) {
     final Color color = coloresDificultad(dificultad).abajo;
     return Container(
-      padding: const EdgeInsets.fromLTRB(5, 3, 10, 3),
+      padding: EdgeInsets.fromLTRB(mostrarIcono ? 5 : 10, 4, 10, 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          IconoDificultad(dificultad: dificultad, size: 18),
-          const SizedBox(width: 5),
+          if (mostrarIcono) ...<Widget>[
+            IconoDificultad(dificultad: dificultad, size: 18),
+            const SizedBox(width: 5),
+          ],
           Text(
             texto,
             style: TextStyle(

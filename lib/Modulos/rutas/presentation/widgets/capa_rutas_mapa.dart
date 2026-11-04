@@ -47,6 +47,7 @@ class CapaRutasMapa {
   final Map<String, int> _porLinea = <String, int>{};
   final Map<String, int> _porPin = <String, int>{};
   final List<Cancelable> _escuchas = <Cancelable>[];
+  PointAnnotation? _pinFinSeleccion;
 
   void _tocar(int? rutaId) {
     if (rutaId != null) alTocarRuta?.call(rutaId);
@@ -105,10 +106,16 @@ class CapaRutasMapa {
     }
   }
 
-  /// Dibuja dinámicamente en el mapa únicamente el trazado de la ruta seleccionada en azul.
-  Future<void> seleccionarRuta(Ruta ruta) async {
+  /// Dibuja dinámicamente en el mapa el trazado de la ruta seleccionada en azul y el pin de final.
+  Future<void> seleccionarRuta(Ruta ruta, {double densidad = 2.0}) async {
     await _lineas.deleteAll();
     _porLinea.clear();
+    if (_pinFinSeleccion != null) {
+      try {
+        await _iconos.delete(_pinFinSeleccion!);
+      } catch (_) {}
+      _pinFinSeleccion = null;
+    }
     if (ruta.puntos.length < 2) return;
 
     final linea = await _lineas.create(
@@ -123,11 +130,30 @@ class CapaRutasMapa {
       ),
     );
     _porLinea[linea.id] = ruta.id;
+
+    // Pin de meta/fin de la ruta al seleccionarla
+    final PuntoRuta fin = ruta.puntos.last;
+    final PointAnnotation pinFin = await _iconos.create(
+      opcionesDePin(
+        lat: fin.lat,
+        lng: fin.lng,
+        imagen: await imagenPin(TipoPin.rutaFin),
+        densidad: densidad,
+      ),
+    );
+    _pinFinSeleccion = pinFin;
+    _porPin[pinFin.id] = ruta.id;
   }
 
-  /// Limpia el trazo resaltado, devolviendo el mapa a su estado limpio y despejado.
+  /// Limpia el trazo resaltado y el pin de fin, devolviendo el mapa a su estado limpio y despejado.
   Future<void> limpiarSeleccion() async {
     await _lineas.deleteAll();
     _porLinea.clear();
+    if (_pinFinSeleccion != null) {
+      try {
+        await _iconos.delete(_pinFinSeleccion!);
+      } catch (_) {}
+      _pinFinSeleccion = null;
+    }
   }
 }
