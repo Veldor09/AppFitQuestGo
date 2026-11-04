@@ -1200,5 +1200,9 @@
   "admRutaDetEstado": "Status: {valor}",
   "admRutaDetDistancia": "Distância: {km} km",
   "admRutaDetDificultad": "Dificuldade: {valor}",
-  "admRutaDetPuntos": "Pontos GPS: {n}"
+  "admRutaDetPuntos": "Pontos GPS: {n}",
+  "planRegionTitulo": "Pagar de",
+  "planRegionCostaRica": "Costa Rica",
+  "planRegionOtro": "Outro país",
+  "planRegionAyuda": "O método de pagamento e os preços dependem do seu país. Altere isto se o seu telefone estiver configurado em outro país."
 }

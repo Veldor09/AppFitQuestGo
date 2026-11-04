@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/region_pago.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 
@@ -22,6 +23,9 @@ class _PlanApiFalsa extends PlanApi {
     planes: <PlanPatrocinio>[_mensual],
     sinpeNumero: '83722969',
   );
+
+  /// Si se da, la respuesta depende del pais consultado (como el servidor).
+  RespuestaPlanes Function(String pais)? segunPais;
   Object? errorAlSolicitar;
   Object? errorAlCargar;
   final List<({int planId, String pais})> pedidos =
@@ -37,7 +41,7 @@ class _PlanApiFalsa extends PlanApi {
   @override
   Future<RespuestaPlanes> planes(String pais) async {
     paisesConsultados.add(pais);
-    return respuesta;
+    return segunPais?.call(pais) ?? respuesta;
   }
 
   @override
@@ -68,6 +72,18 @@ class _PlanApiFalsa extends PlanApi {
   }
 }
 
+class _AlmacenRegionFalso implements AlmacenRegionPago {
+  _AlmacenRegionFalso([this.guardada]);
+
+  RegionPago? guardada;
+
+  @override
+  Future<RegionPago?> leer() async => guardada;
+
+  @override
+  Future<void> guardar(RegionPago region) async => guardada = region;
+}
+
 final DateTime _hoy = DateTime(2026, 10, 27, 10);
 
 void main() {
@@ -85,6 +101,7 @@ void main() {
       PlanPatrocinioScreen(
         api: api,
         pais: pais,
+        almacenRegion: _AlmacenRegionFalso(),
         ahora: () => _hoy,
         esEmpresa: empresa,
         nombre: 'Ana Mora',
@@ -232,6 +249,168 @@ void main() {
       expect(api.pedidos, isEmpty);
     },
   );
+
+  group('region del telefono', () {
+    const RespuestaPlanes paypal = RespuestaPlanes(
+      planes: <PlanPatrocinio>[
+        PlanPatrocinio(
+          id: 1,
+          nombre: 'Plan Mensual',
+          duracionDias: 30,
+          moneda: 'USD',
+          importe: 20,
+        ),
+      ],
+      metodoPago: MetodoPago.paypal,
+      pagoDisponible: false,
+    );
+    const RespuestaPlanes sinpe = RespuestaPlanes(
+      planes: <PlanPatrocinio>[_mensual],
+      sinpeNumero: '83722969',
+    );
+
+    setUp(() {
+      api.segunPais = (String pais) => pais == 'CR' ? sinpe : paypal;
+    });
+
+    void ponerRegion(WidgetTester tester, Locale locale) {
+      tester.platformDispatcher.localeTestValue = locale;
+      tester.platformDispatcher.localesTestValue = <Locale>[locale];
+    }
+
+    Future<void> abrirSinPais(
+      WidgetTester tester,
+      Locale region, {
+      AlmacenRegionPago? almacen,
+    }) async {
+      await montarApp(
+        tester,
+        regionTelefono: region,
+        PlanPatrocinioScreen(
+          api: api,
+          almacenRegion: almacen ?? _AlmacenRegionFalso(),
+          ahora: () => _hoy,
+          esEmpresa: false,
+          nombre: 'Ana Mora',
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'si cambia la region con la pantalla abierta, se vuelven a pedir los planes y sale SINPE',
+      (WidgetTester tester) async {
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        await abrirSinPais(tester, const Locale('en', 'US'));
+        expect(
+          find.byKey(const ValueKey<String>('plan-paypal')),
+          findsOneWidget,
+        );
+
+        ponerRegion(tester, const Locale('es', 'CR'));
+        await tester.pumpAndSettle();
+
+        expect(api.paisesConsultados, <String>['US', 'CR']);
+        expect(find.byKey(const ValueKey<String>('plan-paypal')), findsNothing);
+        expect(find.text('₡10.000'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'al volver a la app despues de cambiar la region en Ajustes tambien se actualiza',
+      (WidgetTester tester) async {
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        await abrirSinPais(tester, const Locale('en', 'US'));
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        ponerRegion(tester, const Locale('es', 'CR'));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+
+        expect(api.paisesConsultados.last, 'CR');
+        expect(find.byKey(const ValueKey<String>('plan-paypal')), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'desde un telefono en otra region, elegir Costa Rica da SINPE y se recuerda',
+      (WidgetTester tester) async {
+        final _AlmacenRegionFalso almacen = _AlmacenRegionFalso();
+        await abrirSinPais(tester, const Locale('en', 'US'), almacen: almacen);
+        expect(
+          find.byKey(const ValueKey<String>('plan-paypal')),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('region-costa-rica')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(api.paisesConsultados, <String>['US', 'CR']);
+        expect(find.byKey(const ValueKey<String>('plan-paypal')), findsNothing);
+        expect(find.text('₡10.000'), findsOneWidget);
+        expect(almacen.guardada, RegionPago.costaRica);
+      },
+    );
+
+    testWidgets(
+      'lo elegido antes manda sobre lo que dice el telefono, y un cambio de region del telefono no lo pisa',
+      (WidgetTester tester) async {
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        await abrirSinPais(
+          tester,
+          const Locale('en', 'US'),
+          almacen: _AlmacenRegionFalso(RegionPago.costaRica),
+        );
+        expect(api.paisesConsultados, <String>['CR']);
+
+        ponerRegion(tester, const Locale('de', 'DE'));
+        await tester.pumpAndSettle();
+
+        expect(api.paisesConsultados, <String>['CR']);
+        expect(find.byKey(const ValueKey<String>('plan-paypal')), findsNothing);
+      },
+    );
+
+    testWidgets(
+      '"Otro país" desde un telefono que dice Costa Rica muestra PayPal',
+      (WidgetTester tester) async {
+        await abrirSinPais(tester, const Locale('es', 'CR'));
+        expect(find.byKey(const ValueKey<String>('plan-paypal')), findsNothing);
+
+        await tester.tap(find.byKey(const ValueKey<String>('region-otro')));
+        await tester.pumpAndSettle();
+
+        expect(api.paisesConsultados.last, isNot('CR'));
+        expect(
+          find.byKey(const ValueKey<String>('plan-paypal')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('si la region no cambia, no vuelve a consultar', (
+      WidgetTester tester,
+    ) async {
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      await abrirSinPais(tester, const Locale('es', 'CR'));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(api.paisesConsultados, <String>['CR']);
+    });
+  });
 
   testWidgets('si el servidor dice que el pago no esta disponible lo explica', (
     WidgetTester tester,

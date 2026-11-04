@@ -5169,5 +5169,21 @@
   "@admRutaDetPuntos": {
     "description": "Admin route detail",
     "placeholders": {"n":{"type":"int"}}
+  },
+  "planRegionTitulo": "Pagar desde",
+  "@planRegionTitulo": {
+    "description": "Label of the region selector on the plan screen"
+  },
+  "planRegionCostaRica": "Costa Rica",
+  "@planRegionCostaRica": {
+    "description": "Region option: Costa Rica (pays by SINPE Móvil)"
+  },
+  "planRegionOtro": "Otro país",
+  "@planRegionOtro": {
+    "description": "Region option: any other country (pays by PayPal)"
+  },
+  "planRegionAyuda": "El método de pago y los precios dependen de tu país. Cambia esto si tu teléfono está configurado en otro país.",
+  "@planRegionAyuda": {
+    "description": "Help text under the region selector"
   }
 }

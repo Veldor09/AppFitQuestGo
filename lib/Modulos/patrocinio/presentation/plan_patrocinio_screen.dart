@@ -14,6 +14,7 @@ import 'package:fit_quest_go/core/widgets/fq_empty_state.dart';
 import 'package:fit_quest_go/l10n/gen/app_localizations.dart';
 import 'package:fit_quest_go/Modulos/auth/application/auth_scope.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/application/plan_usuario.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/application/region_pago.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
 
 /// La suscripcion de quien usa la app: "Plan de patrocinio" para una cuenta de
@@ -32,13 +33,18 @@ class PlanPatrocinioScreen extends StatefulWidget {
     this.ahora,
     this.esEmpresa,
     this.nombre,
+    this.almacenRegion,
   });
 
   /// Inyectable para pruebas.
   final PlanApi? api;
 
-  /// Codigo ISO de dos letras. Por defecto, la region del telefono; si no tiene,
-  /// Costa Rica (donde opera FitQuest Go).
+  /// Donde se recuerda la region de pago elegida; inyectable para pruebas.
+  final AlmacenRegionPago? almacenRegion;
+
+  /// Codigo ISO de dos letras con el que se detecta la region. Por defecto, la
+  /// del telefono; si no tiene, Costa Rica (donde opera FitQuest Go). Lo que la
+  /// persona elija en el selector manda sobre esto.
   final String? pais;
 
   /// Reloj inyectable para pruebas.
@@ -63,11 +69,21 @@ class _Datos {
   final RespuestaPlanes? respuesta;
 }
 
-class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
+class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen>
+    with WidgetsBindingObserver {
   late final PlanApi _api = widget.api ?? PlanApi();
 
   Future<_Datos>? _carga;
   int? _solicitando;
+
+  /// El pais con el que se pidieron los planes que se estan viendo.
+  String? _paisCargado;
+
+  /// Lo que la persona eligio en el selector (null = lo que detecta el telefono).
+  RegionPago? _eleccion;
+  bool _eleccionLeida = false;
+  late final AlmacenRegionPago _almacenRegion =
+      widget.almacenRegion ?? const AlmacenRegionPagoSeguro();
 
   DateTime get _ahora => (widget.ahora ?? DateTime.now)();
 
@@ -78,7 +94,19 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
   String get _nombre =>
       widget.nombre ?? AuthScope.maybeOf(context)?.usuario?.nombre ?? '';
 
+  /// El pais con el que se piden los planes y la solicitud: lo elegido en el
+  /// selector o, si no, el detectado.
   String get _pais {
+    final String detectado = _paisDetectado;
+    return switch (_eleccion) {
+      RegionPago.costaRica => 'CR',
+      // "Otro pais" desde un telefono que dice Costa Rica: cualquiera que no sea CR.
+      RegionPago.otro => detectado == 'CR' ? 'US' : detectado,
+      null => detectado,
+    };
+  }
+
+  String get _paisDetectado {
     final String? dado = widget.pais?.trim().toUpperCase();
     if (dado != null && dado.length == 2) return dado;
     // La region del telefono, no el idioma de la app: la app resuelve "en-US" a
@@ -91,12 +119,53 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _carga ??= _cargar();
   }
 
+  // La region se lee al abrir la pantalla; si la persona la cambia en Ajustes
+  // (con la app abierta o al volver a ella), lo que se ve debe cambiar tambien:
+  // el metodo de pago y los precios dependen del pais.
+  @override
+  void didChangeLocales(List<Locale>? locales) => _revisarPais();
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _revisarPais();
+  }
+
+  void _revisarPais() {
+    if (!mounted || !_eleccionLeida || _pais == _paisCargado) return;
+    _recargar();
+  }
+
+  Future<void> _elegirRegion(RegionPago region) async {
+    if (_eleccion == region) return;
+    _eleccion = region;
+    unawaited(_almacenRegion.guardar(region));
+    _recargar();
+  }
+
   Future<_Datos> _cargar() async {
+    if (!_eleccionLeida) {
+      _eleccion = await _almacenRegion.leer();
+      _eleccionLeida = true;
+    }
+    final String pais = _pais;
+    _paisCargado = pais;
     final MiSuscripcion? suscripcion = await _api.miSuscripcion();
     // Aprovecha para que las descargas offline sepan si hay plan de usuario.
     if (!_esEmpresa) unawaited(PlanUsuario.instancia.recordar(suscripcion));
@@ -107,7 +176,7 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
             suscripcion.estado != EstadoSuscripcion.solicitada);
     return _Datos(
       suscripcion: suscripcion,
-      respuesta: puedePedir ? await _api.planes(_pais) : null,
+      respuesta: puedePedir ? await _api.planes(pais) : null,
     );
   }
 
@@ -306,6 +375,13 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
       }
       final RespuestaPlanes respuesta =
           datos.respuesta ?? const RespuestaPlanes(planes: <PlanPatrocinio>[]);
+      hijos.add(
+        _SelectorRegion(
+          region: _pais == 'CR' ? RegionPago.costaRica : RegionPago.otro,
+          alElegir: _elegirRegion,
+        ),
+      );
+      hijos.add(const SizedBox(height: FqGap.lg));
       if (!respuesta.pagoDisponible) {
         hijos.add(
           _Estado(
@@ -353,6 +429,52 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(FqGap.xl),
       children: hijos,
+    );
+  }
+}
+
+/// Desde donde se paga: decide el metodo (SINPE o PayPal) y la moneda. Parte de
+/// lo que dice el telefono, pero la persona lo puede corregir.
+class _SelectorRegion extends StatelessWidget {
+  const _SelectorRegion({required this.region, required this.alElegir});
+
+  final RegionPago region;
+  final ValueChanged<RegionPago> alElegir;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          l10n.planRegionTitulo,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: FqGap.sm),
+        Wrap(
+          spacing: 8,
+          children: <Widget>[
+            ChoiceChip(
+              key: const ValueKey<String>('region-costa-rica'),
+              label: Text(l10n.planRegionCostaRica),
+              selected: region == RegionPago.costaRica,
+              onSelected: (_) => alElegir(RegionPago.costaRica),
+            ),
+            ChoiceChip(
+              key: const ValueKey<String>('region-otro'),
+              label: Text(l10n.planRegionOtro),
+              selected: region == RegionPago.otro,
+              onSelected: (_) => alElegir(RegionPago.otro),
+            ),
+          ],
+        ),
+        const SizedBox(height: FqGap.sm),
+        Text(
+          l10n.planRegionAyuda,
+          style: const TextStyle(fontSize: 11, color: FqColors.muted),
+        ),
+      ],
     );
   }
 }
