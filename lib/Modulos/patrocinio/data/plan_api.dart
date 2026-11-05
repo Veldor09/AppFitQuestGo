@@ -7,11 +7,12 @@ class AudienciaPlan {
   static const String usuario = 'usuario';
 }
 
-/// Como se paga: SINPE Movil en Costa Rica; PayPal en el resto (aun no esta
-/// configurado, asi que todavia no se puede solicitar fuera de Costa Rica).
+/// Como se paga: por ONVO (tarjeta o SINPE Movil) en Costa Rica; PayPal en el
+/// resto (aun no esta configurado, asi que todavia no se puede pagar fuera de
+/// Costa Rica).
 class MetodoPago {
   const MetodoPago._();
-  static const String sinpe = 'sinpe';
+  static const String onvo = 'onvo';
   static const String paypal = 'paypal';
 }
 
@@ -49,9 +50,8 @@ class PlanPatrocinio {
 class RespuestaPlanes {
   const RespuestaPlanes({
     required this.planes,
-    this.metodoPago = MetodoPago.sinpe,
+    this.metodoPago = MetodoPago.onvo,
     this.pagoDisponible = true,
-    this.sinpeNumero,
   });
 
   factory RespuestaPlanes.fromJson(Map<String, dynamic> json) =>
@@ -61,19 +61,16 @@ class RespuestaPlanes {
               (dynamic e) => PlanPatrocinio.fromJson(e as Map<String, dynamic>),
             )
             .toList(),
-        metodoPago: (json['metodoPago'] as String?) ?? MetodoPago.sinpe,
+        metodoPago: (json['metodoPago'] as String?) ?? MetodoPago.onvo,
         pagoDisponible: json['pagoDisponible'] != false,
-        sinpeNumero: json['sinpeNumero'] as String?,
       );
 
   final List<PlanPatrocinio> planes;
   final String metodoPago;
 
-  /// `false` fuera de Costa Rica mientras PayPal no este configurado.
+  /// `false` fuera de Costa Rica mientras PayPal no este configurado (o si el
+  /// servidor aun no tiene las llaves de ONVO).
   final bool pagoDisponible;
-
-  /// Numero que recibe el SINPE Movil y los comprobantes.
-  final String? sinpeNumero;
 }
 
 /// Los estados de una suscripcion tal como los manda el servidor.
@@ -97,8 +94,7 @@ class MiSuscripcion {
     this.numeroSolicitud,
     this.monto,
     this.moneda,
-    this.metodoPago,
-    this.sinpeNumero,
+    this.pagoEnLinea = false,
     this.audiencia,
   });
 
@@ -113,8 +109,7 @@ class MiSuscripcion {
     numeroSolicitud: json['numeroSolicitud'] as String?,
     monto: json['monto'] == null ? null : num.tryParse('${json['monto']}'),
     moneda: json['moneda'] as String?,
-    metodoPago: json['metodoPago'] as String?,
-    sinpeNumero: json['sinpeNumero'] as String?,
+    pagoEnLinea: json['pagoEnLinea'] == true,
     audiencia: json['audiencia'] as String?,
   );
 
@@ -126,14 +121,17 @@ class MiSuscripcion {
   final String planNombre;
   final DateTime? venceEn;
 
-  /// Numero de 6 digitos que va en el detalle del SINPE Movil.
+  /// Numero de 6 digitos que identifica la solicitud (tambien lo ve el admin).
   final String? numeroSolicitud;
 
-  /// Lo que hay que transferir, en [moneda].
+  /// Lo que cuesta el plan, en [moneda].
   final num? monto;
   final String? moneda;
-  final String? metodoPago;
-  final String? sinpeNumero;
+
+  /// Se pidio pagando en linea: si sigue `Solicitada`, el pago no se completo.
+  /// Una solicitud sin esto es una de las de SINPE manual de antes, que el
+  /// equipo revisa a mano.
+  final bool pagoEnLinea;
   final String? audiencia;
 
   /// Dias que le quedan (0 = vence hoy), o null si no tiene fecha.
@@ -145,31 +143,30 @@ class MiSuscripcion {
   }
 }
 
-/// Lo que devuelve el servidor al pedir un plan.
-class SolicitudCreada {
-  const SolicitudCreada({
+/// Lo que devuelve el servidor al empezar un pago.
+class PagoIniciado {
+  const PagoIniciado({
+    required this.suscripcionId,
     required this.numeroSolicitud,
-    required this.monto,
-    required this.moneda,
-    required this.sinpeNumero,
+    required this.url,
   });
 
-  factory SolicitudCreada.fromJson(Map<String, dynamic> json) =>
-      SolicitudCreada(
-        numeroSolicitud: (json['numeroSolicitud'] as String?) ?? '',
-        monto: num.tryParse('${json['monto']}') ?? 0,
-        moneda: (json['moneda'] as String?) ?? 'CRC',
-        sinpeNumero: (json['sinpeNumero'] as String?) ?? '',
-      );
+  factory PagoIniciado.fromJson(Map<String, dynamic> json) => PagoIniciado(
+    suscripcionId: (json['suscripcionId'] as num).toInt(),
+    numeroSolicitud: (json['numeroSolicitud'] as String?) ?? '',
+    url: json['url'] as String,
+  );
 
+  final int suscripcionId;
   final String numeroSolicitud;
-  final num monto;
-  final String moneda;
-  final String sinpeNumero;
+
+  /// La pantalla de pago de ONVO.
+  final String url;
 }
 
-/// Planes y suscripcion (ADM-09A): la persona los consulta y pide uno; el
-/// equipo lo activa o rechaza desde "Gestion de suscripciones".
+/// Planes y suscripcion (ADM-09A): la persona los consulta y paga uno; el plan
+/// se activa solo al confirmarse el pago. "Gestion de suscripciones" (admin)
+/// puede ademas aprobar, rechazar o suspender.
 class PlanApi {
   PlanApi([ApiClient? client]) : _client = client ?? ApiClient();
 
@@ -189,17 +186,19 @@ class PlanApi {
     return MiSuscripcion.fromJson(data);
   }
 
-  /// Pide el plan [planId]. Lanza [ApiException] 409 si ya tiene una solicitud
-  /// pendiente o un plan activo, 400 `PAGO_NO_DISPONIBLE` fuera de Costa Rica
-  /// y 403 `PLAN_NO_APLICA` si el plan es de otro tipo de cuenta.
-  Future<SolicitudCreada> solicitar({
+  /// Empieza el pago del plan [planId] y devuelve la URL de la pantalla de pago.
+  /// El plan se activa solo cuando el pago se confirma. Lanza [ApiException] 409
+  /// si ya tiene una solicitud pendiente o un plan activo, 400
+  /// `PAGO_NO_DISPONIBLE` fuera de Costa Rica (o sin llaves de ONVO), 403
+  /// `PLAN_NO_APLICA` si el plan es de otro tipo de cuenta y 503 si ONVO fallo.
+  Future<PagoIniciado> iniciarPago({
     required int planId,
     required String pais,
   }) async {
     final dynamic data = await _client.post(
-      '/patrocinio/suscripciones',
+      '/patrocinio/suscripciones/pagar',
       <String, Object?>{'planId': planId, 'pais': pais},
     );
-    return SolicitudCreada.fromJson(data as Map<String, dynamic>);
+    return PagoIniciado.fromJson(data as Map<String, dynamic>);
   }
 }

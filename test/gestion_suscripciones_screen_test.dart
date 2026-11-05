@@ -13,6 +13,7 @@ SuscripcionAdmin _fila({
   String nombre = 'Ana Mora',
   String audiencia = 'usuario',
   num monto = 2500,
+  String? pagoRef,
 }) => SuscripcionAdmin(
   id: id,
   numeroSolicitud: numero,
@@ -26,6 +27,7 @@ SuscripcionAdmin _fila({
   moneda: 'CRC',
   pais: 'CR',
   monto: monto,
+  pagoRef: pagoRef,
   creadoEn: DateTime(2026, 10, 29, 10),
 );
 
@@ -78,6 +80,58 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('un plan pagado en linea muestra la referencia del pago', (
+    WidgetTester tester,
+  ) async {
+    api.datos = <SuscripcionAdmin>[
+      _fila(estado: 'Activa', pagoRef: 'clcs0001abc'),
+    ];
+    await abrir(tester);
+    await tester.tap(find.text('Activas'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('#482913 · Ana Mora'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('REFERENCIA DE PAGO'), findsOneWidget);
+    expect(find.text('clcs0001abc'), findsOneWidget);
+  });
+
+  testWidgets('una solicitud manual no muestra referencia de pago', (
+    WidgetTester tester,
+  ) async {
+    await abrir(tester);
+
+    await tester.tap(find.text('#482913 · Ana Mora'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('REFERENCIA DE PAGO'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('accion-aprobar')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'un pago en linea en curso no se puede aprobar ni rechazar a mano (se activa solo al pagarse)',
+    (WidgetTester tester) async {
+      api.datos = <SuscripcionAdmin>[_fila(pagoRef: 'clcs0001abc')];
+      await abrir(tester);
+
+      await tester.tap(find.text('#482913 · Ana Mora'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('accion-aprobar')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('accion-rechazar')),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets(
     'abre en "Pendientes" y muestra numero de solicitud, nombre, plan y monto',
@@ -296,6 +350,7 @@ void main() {
       'venceEn': '2026-11-28T19:29:08.623Z',
     });
     expect(s.monto, 15000);
+    expect(s.pagoRef, isNull);
     expect(s.venceEn, isNotNull);
     expect(s.planAudiencia, 'empresa');
   });

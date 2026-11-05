@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fit_quest_go/core/api/api_client.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/application/region_pago.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/data/plan_api.dart';
+import 'package:fit_quest_go/Modulos/patrocinio/presentation/pago_webview_screen.dart';
 import 'package:fit_quest_go/Modulos/patrocinio/presentation/plan_patrocinio_screen.dart';
 
 import 'helpers/montar.dart';
@@ -21,7 +21,6 @@ class _PlanApiFalsa extends PlanApi {
   MiSuscripcion? suscripcion;
   RespuestaPlanes respuesta = const RespuestaPlanes(
     planes: <PlanPatrocinio>[_mensual],
-    sinpeNumero: '83722969',
   );
 
   /// Si se da, la respuesta depende del pais consultado (como el servidor).
@@ -45,13 +44,13 @@ class _PlanApiFalsa extends PlanApi {
   }
 
   @override
-  Future<SolicitudCreada> solicitar({
+  Future<PagoIniciado> iniciarPago({
     required int planId,
     required String pais,
   }) async {
     if (errorAlSolicitar != null) throw errorAlSolicitar!;
     pedidos.add((planId: planId, pais: pais));
-    // Como el servidor: lo recien pedido queda en revision, con su numero.
+    // Como el servidor: lo recien pedido queda sin pagar, con su numero.
     suscripcion = const MiSuscripcion(
       id: 9,
       estado: EstadoSuscripcion.solicitada,
@@ -60,14 +59,12 @@ class _PlanApiFalsa extends PlanApi {
       numeroSolicitud: '482913',
       monto: 10000,
       moneda: 'CRC',
-      metodoPago: MetodoPago.sinpe,
-      sinpeNumero: '83722969',
+      pagoEnLinea: true,
     );
-    return const SolicitudCreada(
+    return const PagoIniciado(
+      suscripcionId: 9,
       numeroSolicitud: '482913',
-      monto: 10000,
-      moneda: 'CRC',
-      sinpeNumero: '83722969',
+      url: 'https://checkout.onvopay.com/pay/cs_1',
     );
   }
 }
@@ -89,7 +86,24 @@ final DateTime _hoy = DateTime(2026, 10, 27, 10);
 void main() {
   late _PlanApiFalsa api;
 
-  setUp(() => api = _PlanApiFalsa());
+  /// Lo que hace la pantalla de pago de mentira: guarda la URL que le abrieron,
+  /// deja que el "servidor" reaccione y devuelve como termino.
+  late List<String> urlsAbiertas;
+  ResultadoPago? terminaCon;
+  void Function()? alPagar;
+
+  setUp(() {
+    api = _PlanApiFalsa();
+    urlsAbiertas = <String>[];
+    terminaCon = null;
+    alPagar = null;
+  });
+
+  Future<ResultadoPago?> abrirPago(BuildContext context, String url) async {
+    urlsAbiertas.add(url);
+    alPagar?.call();
+    return terminaCon;
+  }
 
   Future<void> abrir(
     WidgetTester tester, {
@@ -102,9 +116,9 @@ void main() {
         api: api,
         pais: pais,
         almacenRegion: _AlmacenRegionFalso(),
+        abrirPago: abrirPago,
         ahora: () => _hoy,
         esEmpresa: empresa,
-        nombre: 'Ana Mora',
       ),
     );
     await tester.pumpAndSettle();
@@ -136,89 +150,150 @@ void main() {
     expect(find.textContaining('destacar'), findsNothing);
   });
 
-  testWidgets(
-    'pedir un plan en Costa Rica: confirma y salen las instrucciones de SINPE con el numero de solicitud',
-    (WidgetTester tester) async {
+  const ValueKey<String> claveSolicitar = ValueKey<String>('solicitar-plan-1');
+  const ValueKey<String> claveConfirmar = ValueKey<String>('confirmar-plan');
+
+  Future<void> pagar(WidgetTester tester) async {
+    await tester.tap(find.byKey(claveSolicitar));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(claveConfirmar));
+    await tester.pumpAndSettle();
+  }
+
+  group('pago en linea', () {
+    testWidgets(
+      'pagar en Costa Rica: confirma, abre la pantalla de pago con la URL y no cobra antes de confirmar',
+      (WidgetTester tester) async {
+        await abrir(tester);
+
+        await tester.tap(find.byKey(claveSolicitar));
+        await tester.pumpAndSettle();
+        expect(find.text('¿Pagar este plan?'), findsOneWidget);
+        expect(find.textContaining('₡10.000 por 30 días'), findsOneWidget);
+        expect(api.pedidos, isEmpty);
+        expect(urlsAbiertas, isEmpty);
+
+        await tester.tap(find.byKey(claveConfirmar));
+        await tester.pumpAndSettle();
+
+        expect(api.pedidos, <({int planId, String pais})>[
+          (planId: 1, pais: 'CR'),
+        ]);
+        expect(urlsAbiertas, <String>['https://checkout.onvopay.com/pay/cs_1']);
+      },
+    );
+
+    testWidgets(
+      'si el pago termina bien y el plan ya esta activo, lo muestra y avisa',
+      (WidgetTester tester) async {
+        terminaCon = ResultadoPago.exito;
+        alPagar = () => api.suscripcion = MiSuscripcion(
+          id: 9,
+          estado: EstadoSuscripcion.activa,
+          vigente: true,
+          planNombre: 'Plan Mensual',
+          venceEn: DateTime(2026, 11, 26),
+        );
+        await abrir(tester);
+
+        await pagar(tester);
+
+        expect(find.text('Plan activo'), findsOneWidget);
+        expect(
+          find.text('¡Pago recibido! Tu plan ya está activo.'),
+          findsOneWidget,
+        );
+        expect(find.byKey(claveSolicitar), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'si volvio del pago pero ONVO aun no confirma, no dice que esta activo',
+      (WidgetTester tester) async {
+        terminaCon = ResultadoPago.exito;
+        await abrir(tester);
+
+        await pagar(tester);
+
+        expect(
+          find.text('¡Pago recibido! Tu plan ya está activo.'),
+          findsNothing,
+        );
+        expect(find.text('Plan activo'), findsNothing);
+      },
+    );
+
+    testWidgets('cancelar el pago lo dice y deja pagar de nuevo', (
+      WidgetTester tester,
+    ) async {
+      terminaCon = ResultadoPago.cancelado;
       await abrir(tester);
 
-      await tester.tap(find.byKey(const ValueKey<String>('solicitar-plan-1')));
-      await tester.pumpAndSettle();
-      expect(find.text('¿Solicitar este plan?'), findsOneWidget);
-      expect(find.textContaining('₡10.000 por 30 días'), findsOneWidget);
-      expect(api.pedidos, isEmpty);
+      await pagar(tester);
 
-      await tester.tap(find.byKey(const ValueKey<String>('confirmar-plan')));
-      await tester.pumpAndSettle();
-
-      expect(api.pedidos, <({int planId, String pais})>[
-        (planId: 1, pais: 'CR'),
-      ]);
-      expect(find.text('Solicitud en revisión'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('solicitar-plan-1')),
-        findsNothing,
-      );
-      // Las instrucciones del pago.
-      expect(
-        find.byKey(const ValueKey<String>('instrucciones-sinpe')),
+        find.text('El pago se canceló. No se hizo ningún cobro.'),
         findsOneWidget,
       );
-      expect(find.text('482913'), findsOneWidget);
-      expect(
-        find.textContaining('SINPE Móvil al 8372-2969 por ₡10.000'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('número de solicitud (482913) y tu nombre'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('comprobante al mismo número (8372-2969)'),
-        findsOneWidget,
-      );
-    },
-  );
+      expect(find.byKey(claveSolicitar), findsOneWidget);
+    });
 
-  testWidgets(
-    '"Copiar detalle" deja en el portapapeles el numero y el nombre',
-    (WidgetTester tester) async {
-      api.suscripcion = const MiSuscripcion(
-        id: 9,
-        estado: EstadoSuscripcion.solicitada,
-        vigente: false,
-        planNombre: 'Plan Mensual',
-        numeroSolicitud: '482913',
-        monto: 10000,
-        moneda: 'CRC',
-        metodoPago: MetodoPago.sinpe,
-        sinpeNumero: '83722969',
-      );
-      String? copiado;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (MethodCall llamada) async {
-          if (llamada.method == 'Clipboard.setData') {
-            copiado =
-                (llamada.arguments as Map<Object?, Object?>)['text'] as String?;
-          }
-          return null;
-        },
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        ),
-      );
-      await abrir(tester);
+    testWidgets(
+      'cerrar la pantalla de pago a mano no avisa nada y vuelve a consultar',
+      (WidgetTester tester) async {
+        terminaCon = null;
+        await abrir(tester);
 
-      await tester.tap(find.byKey(const ValueKey<String>('copiar-detalle')));
-      await tester.pumpAndSettle();
+        await pagar(tester);
 
-      expect(copiado, '482913 Ana Mora');
-      expect(find.text('Detalle copiado. Pégalo en el SINPE.'), findsOneWidget);
-    },
-  );
+        expect(find.textContaining('canceló'), findsNothing);
+        expect(find.textContaining('Pago recibido'), findsNothing);
+        expect(find.byKey(claveSolicitar), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'un pago en linea sin completar muestra los planes con el aviso, no "en revision"',
+      (WidgetTester tester) async {
+        api.suscripcion = const MiSuscripcion(
+          id: 9,
+          estado: EstadoSuscripcion.solicitada,
+          vigente: false,
+          planNombre: 'Plan Mensual',
+          numeroSolicitud: '482913',
+          pagoEnLinea: true,
+        );
+        await abrir(tester);
+
+        expect(
+          find.text(
+            'Tu pago anterior no se completó. Puedes intentarlo de nuevo.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.byKey(claveSolicitar), findsOneWidget);
+        expect(find.text('Solicitud en revisión'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'una solicitud manual de antes sigue "en revision" y ya no trae instrucciones de SINPE',
+      (WidgetTester tester) async {
+        api.suscripcion = const MiSuscripcion(
+          id: 9,
+          estado: EstadoSuscripcion.solicitada,
+          vigente: false,
+          planNombre: 'Plan Mensual',
+          numeroSolicitud: '482913',
+        );
+        await abrir(tester);
+
+        expect(find.text('Solicitud en revisión'), findsOneWidget);
+        expect(find.byKey(claveSolicitar), findsNothing);
+        expect(find.textContaining('SINPE'), findsNothing);
+      },
+    );
+  });
 
   testWidgets(
     'fuera de Costa Rica se ven los planes pero PayPal aun no esta: no se puede pedir',
@@ -245,7 +320,7 @@ void main() {
       // Tocarlo no hace nada: ni confirmacion ni solicitud.
       await tester.tap(find.byKey(const ValueKey<String>('solicitar-plan-1')));
       await tester.pumpAndSettle();
-      expect(find.text('¿Solicitar este plan?'), findsNothing);
+      expect(find.text('¿Pagar este plan?'), findsNothing);
       expect(api.pedidos, isEmpty);
     },
   );
@@ -264,13 +339,12 @@ void main() {
       metodoPago: MetodoPago.paypal,
       pagoDisponible: false,
     );
-    const RespuestaPlanes sinpe = RespuestaPlanes(
+    const RespuestaPlanes onvo = RespuestaPlanes(
       planes: <PlanPatrocinio>[_mensual],
-      sinpeNumero: '83722969',
     );
 
     setUp(() {
-      api.segunPais = (String pais) => pais == 'CR' ? sinpe : paypal;
+      api.segunPais = (String pais) => pais == 'CR' ? onvo : paypal;
     });
 
     void ponerRegion(WidgetTester tester, Locale locale) {
@@ -291,14 +365,13 @@ void main() {
           almacenRegion: almacen ?? _AlmacenRegionFalso(),
           ahora: () => _hoy,
           esEmpresa: false,
-          nombre: 'Ana Mora',
         ),
       );
       await tester.pumpAndSettle();
     }
 
     testWidgets(
-      'si cambia la region con la pantalla abierta, se vuelven a pedir los planes y sale SINPE',
+      'si cambia la region con la pantalla abierta, se vuelven a pedir los planes y sale el pago por ONVO',
       (WidgetTester tester) async {
         addTearDown(tester.platformDispatcher.clearAllTestValues);
         await abrirSinPais(tester, const Locale('en', 'US'));
@@ -341,7 +414,7 @@ void main() {
     );
 
     testWidgets(
-      'desde un telefono en otra region, elegir Costa Rica da SINPE y se recuerda',
+      'desde un telefono en otra region, elegir Costa Rica da el pago por ONVO y se recuerda',
       (WidgetTester tester) async {
         final _AlmacenRegionFalso almacen = _AlmacenRegionFalso();
         await abrirSinPais(tester, const Locale('en', 'US'), almacen: almacen);
@@ -485,7 +558,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('No se pudo enviar la solicitud. Inténtalo de nuevo.'),
+        find.text('No se pudo iniciar el pago. Inténtalo de nuevo.'),
         findsOneWidget,
       );
       expect(
@@ -634,11 +707,31 @@ void main() {
       final RespuestaPlanes r = RespuestaPlanes.fromJson(<String, dynamic>{
         'metodoPago': 'paypal',
         'pagoDisponible': false,
-        'sinpeNumero': null,
         'planes': <dynamic>[],
       });
       expect(r.metodoPago, MetodoPago.paypal);
       expect(r.pagoDisponible, isFalse);
+    });
+
+    test('PagoIniciado lee la URL de pago y el numero de solicitud', () {
+      final PagoIniciado p = PagoIniciado.fromJson(<String, dynamic>{
+        'suscripcionId': 9,
+        'numeroSolicitud': '482913',
+        'url': 'https://checkout.onvopay.com/pay/cs_1',
+      });
+      expect(p.suscripcionId, 9);
+      expect(p.numeroSolicitud, '482913');
+      expect(p.url, 'https://checkout.onvopay.com/pay/cs_1');
+    });
+
+    test('una solicitud de antes no es un pago en linea', () {
+      final MiSuscripcion s = MiSuscripcion.fromJson(<String, dynamic>{
+        'id': 1,
+        'estado': 'Solicitada',
+        'vigente': false,
+        'planNombre': 'P',
+      });
+      expect(s.pagoEnLinea, isFalse);
     });
 
     test('MiSuscripcion lee el numero de solicitud y el monto', () {
@@ -650,11 +743,11 @@ void main() {
         'numeroSolicitud': '123456',
         'monto': '2500.00',
         'moneda': 'CRC',
-        'metodoPago': 'sinpe',
-        'sinpeNumero': '83722969',
+        'pagoEnLinea': true,
         'audiencia': 'usuario',
       });
       expect(s.numeroSolicitud, '123456');
+      expect(s.pagoEnLinea, isTrue);
       expect(s.monto, 2500);
       expect(s.audiencia, 'usuario');
     });

@@ -223,6 +223,7 @@ class _GestionSuscripcionesScreenState
         l10n.admSusCampoCuenta: _cuenta(s),
         l10n.admSusCampoPlan: s.planNombre,
         l10n.admSusCampoMonto: _monto(s),
+        if (s.pagoRef != null) l10n.admSusRefPago: s.pagoRef!,
         l10n.admSusCampoPais: s.pais,
         l10n.admSusCampoSolicitada: _fecha(s.creadoEn),
         if (s.iniciaEn != null && s.venceEn != null)
@@ -232,7 +233,11 @@ class _GestionSuscripcionesScreenState
           ),
       },
       acciones: <String, String>{
-        if (s.estado == EstadoSuscripcion.solicitada) ...<String, String>{
+        // Un pago en linea en curso no se aprueba ni se rechaza a mano: se
+        // activaria un plan sin cobro, o se perderia uno cobrado. Se activa solo
+        // cuando ONVO confirma el pago.
+        if (s.estado == EstadoSuscripcion.solicitada &&
+            s.pagoRef == null) ...<String, String>{
           'rechazar': l10n.comunRechazar,
           'aprobar': l10n.comunAprobar,
         },
