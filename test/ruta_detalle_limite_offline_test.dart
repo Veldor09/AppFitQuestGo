@@ -74,10 +74,8 @@ class _PlanApiFalsa extends PlanApi {
   Future<MiSuscripcion?> miSuscripcion() async => respuesta;
 
   @override
-  Future<RespuestaPlanes> planes(String pais) async => const RespuestaPlanes(
-        planes: <PlanPatrocinio>[],
-        sinpeNumero: '88888888',
-      );
+  Future<RespuestaPlanes> planes(String pais) async =>
+      const RespuestaPlanes(planes: <PlanPatrocinio>[]);
 }
 
 void main() {
