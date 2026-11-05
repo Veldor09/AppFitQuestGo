@@ -27,6 +27,11 @@ class _PlanApiFalsa extends PlanApi {
   RespuestaPlanes Function(String pais)? segunPais;
   Object? errorAlSolicitar;
   Object? errorAlCargar;
+
+  /// Si se da, el plan pasa a activo recien en la consulta numero N de
+  /// `miSuscripcion` (como cuando ONVO tarda en marcar el pago).
+  int? activarEnConsulta;
+  int consultas = 0;
   final List<({int planId, String pais})> pedidos =
       <({int planId, String pais})>[];
   final List<String> paisesConsultados = <String>[];
@@ -34,6 +39,16 @@ class _PlanApiFalsa extends PlanApi {
   @override
   Future<MiSuscripcion?> miSuscripcion() async {
     if (errorAlCargar != null) throw errorAlCargar!;
+    consultas++;
+    if (activarEnConsulta != null && consultas >= activarEnConsulta!) {
+      return MiSuscripcion(
+        id: 9,
+        estado: EstadoSuscripcion.activa,
+        vigente: true,
+        planNombre: 'Plan Mensual',
+        venceEn: DateTime(2026, 11, 26),
+      );
+    }
     return suscripcion;
   }
 
@@ -117,6 +132,7 @@ void main() {
         pais: pais,
         almacenRegion: _AlmacenRegionFalso(),
         abrirPago: abrirPago,
+        esperaReintento: Duration.zero,
         ahora: () => _hoy,
         esEmpresa: empresa,
       ),
@@ -222,6 +238,39 @@ void main() {
         expect(find.text('Plan activo'), findsNothing);
       },
     );
+
+    testWidgets(
+      'si ONVO tarda en marcar el pago, la pantalla reintenta hasta ver el plan activo',
+      (WidgetTester tester) async {
+        terminaCon = ResultadoPago.exito;
+        // Consulta 1: al abrir. 2: al volver (aun sin confirmar). 3 en adelante:
+        // ya confirmado.
+        api.activarEnConsulta = 4;
+        await abrir(tester);
+
+        await pagar(tester);
+
+        expect(find.text('Plan activo'), findsOneWidget);
+        expect(
+          find.text('¡Pago recibido! Tu plan ya está activo.'),
+          findsOneWidget,
+        );
+        expect(api.consultas, greaterThanOrEqualTo(4));
+      },
+    );
+
+    testWidgets('no reintenta para siempre si ONVO nunca confirma', (
+      WidgetTester tester,
+    ) async {
+      terminaCon = ResultadoPago.exito;
+      await abrir(tester);
+
+      await pagar(tester);
+
+      expect(find.text('Plan activo'), findsNothing);
+      // Una consulta al abrir, una al recargar y unos pocos reintentos: no infinito.
+      expect(api.consultas, lessThan(12));
+    });
 
     testWidgets('cancelar el pago lo dice y deja pagar de nuevo', (
       WidgetTester tester,

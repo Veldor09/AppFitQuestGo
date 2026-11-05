@@ -34,6 +34,7 @@ class PlanPatrocinioScreen extends StatefulWidget {
     this.esEmpresa,
     this.almacenRegion,
     this.abrirPago,
+    this.esperaReintento = const Duration(seconds: 2),
   });
 
   /// Inyectable para pruebas.
@@ -46,6 +47,10 @@ class PlanPatrocinioScreen extends StatefulWidget {
   /// inyectable para pruebas (la de verdad lleva un WebView).
   final Future<ResultadoPago?> Function(BuildContext context, String url)?
   abrirPago;
+
+  /// Cuanto se espera entre consultas cuando se vuelve del pago y ONVO aun no lo
+  /// marca como pagado (lo hace un instante despues de devolver a la persona).
+  final Duration esperaReintento;
 
   /// Codigo ISO de dos letras con el que se detecta la region. Por defecto, la
   /// del telefono; si no tiene, Costa Rica (donde opera FitQuest Go). Lo que la
@@ -61,6 +66,9 @@ class PlanPatrocinioScreen extends StatefulWidget {
   @override
   State<PlanPatrocinioScreen> createState() => _PlanPatrocinioScreenState();
 }
+
+/// Cuantas veces se consulta el plan al volver de un pago antes de rendirse.
+const int _intentosTrasPago = 6;
 
 class _Datos {
   const _Datos({required this.suscripcion, required this.respuesta});
@@ -255,12 +263,21 @@ class _PlanPatrocinioScreenState extends State<PlanPatrocinioScreen>
     if (resultado == ResultadoPago.cancelado) {
       notificarInfo(l10n.planPagoCancelado);
     } else if (resultado == ResultadoPago.exito) {
-      try {
-        final _Datos? datos = await _carga;
-        if (mounted && datos?.suscripcion?.vigente == true) {
-          notificarExito(l10n.planPagoRecibido);
-        }
-      } catch (_) {}
+      // ONVO marca el pago como hecho un instante despues de devolver a la
+      // persona: se vuelve a consultar unos segundos antes de rendirse.
+      for (int intento = 0; intento < _intentosTrasPago && mounted; intento++) {
+        try {
+          final _Datos? datos = await _carga;
+          if (datos?.suscripcion?.vigente == true) {
+            if (mounted) notificarExito(l10n.planPagoRecibido);
+            break;
+          }
+        } catch (_) {}
+        if (intento == _intentosTrasPago - 1) break;
+        await Future<void>.delayed(widget.esperaReintento);
+        if (!mounted) return;
+        _recargar();
+      }
     }
   }
 
