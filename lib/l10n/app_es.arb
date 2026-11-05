@@ -3450,7 +3450,7 @@
   "@planTitulo": {
     "description": "Title of the sponsorship plan screen"
   },
-  "planIntro": "Con un plan puedes destacar tus comercios y eventos en el mapa. El equipo revisa cada solicitud antes de activarla.",
+  "planIntro": "Con un plan puedes destacar tus comercios y eventos en el mapa. Pagas en línea y el plan se activa al confirmarse el pago.",
   "@planIntro": {
     "description": "Intro text"
   },
@@ -3521,15 +3521,15 @@
       }
     }
   },
-  "planSolicitar": "Solicitar plan",
+  "planSolicitar": "Pagar plan",
   "@planSolicitar": {
     "description": "Button"
   },
-  "planConfirmarTitulo": "¿Solicitar este plan?",
+  "planConfirmarTitulo": "¿Pagar este plan?",
   "@planConfirmarTitulo": {
     "description": "Dialog title"
   },
-  "planConfirmarMensaje": "{plan} · {precio} por {dias} días. El equipo revisará tu solicitud antes de activarlo.",
+  "planConfirmarMensaje": "{plan} · {precio} por {dias} días. Pagarás con tarjeta o SINPE Móvil y el plan se activa al confirmarse el pago.",
   "@planConfirmarMensaje": {
     "description": "Dialog message",
     "placeholders": {
@@ -3544,15 +3544,11 @@
       }
     }
   },
-  "planSolicitudEnviada": "Solicitud enviada. Te avisaremos cuando la revisen.",
-  "@planSolicitudEnviada": {
-    "description": "Success toast"
-  },
   "planYaTiene": "Ya tienes una solicitud pendiente o un plan activo.",
   "@planYaTiene": {
     "description": "Conflict toast"
   },
-  "planErrorSolicitar": "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+  "planErrorSolicitar": "No se pudo iniciar el pago. Inténtalo de nuevo.",
   "@planErrorSolicitar": {
     "description": "Generic error toast"
   },
@@ -4838,7 +4834,7 @@
   "@planTituloUsuario": {
     "description": "Subscription screen title for regular users"
   },
-  "planIntroUsuario": "Con una suscripción puedes guardar más rutas para verlas sin conexión: hasta {max} en vez de {gratis}. El equipo revisa cada solicitud antes de activarla.",
+  "planIntroUsuario": "Con una suscripción puedes guardar más rutas para verlas sin conexión: hasta {max} en vez de {gratis}. Pagas en línea y se activa al confirmarse el pago.",
   "@planIntroUsuario": {
     "description": "Intro for regular users",
     "placeholders": {"max":{"type":"int"},"gratis":{"type":"int"}}
@@ -4848,36 +4844,9 @@
     "description": "Help under the active plan for regular users",
     "placeholders": {"max":{"type":"int"}}
   },
-  "planPagoTitulo": "Cómo pagar",
+  "planPagoTitulo": "Pagar suscripción",
   "@planPagoTitulo": {
-    "description": "SINPE instructions title"
-  },
-  "planPagoPaso1": "Haz una transferencia por SINPE Móvil al {numero} por {monto}.",
-  "@planPagoPaso1": {
-    "description": "Step 1",
-    "placeholders": {"numero":{"type":"String"},"monto":{"type":"String"}}
-  },
-  "planPagoPaso2": "En el detalle escribe tu número de solicitud ({solicitud}) y tu nombre.",
-  "@planPagoPaso2": {
-    "description": "Step 2",
-    "placeholders": {"solicitud":{"type":"String"}}
-  },
-  "planPagoPaso3": "Envía el comprobante al mismo número ({numero}) para que un administrador active tu plan.",
-  "@planPagoPaso3": {
-    "description": "Step 3",
-    "placeholders": {"numero":{"type":"String"}}
-  },
-  "planNumeroSolicitud": "Tu número de solicitud",
-  "@planNumeroSolicitud": {
-    "description": "Label above the 6-digit number"
-  },
-  "planCopiarDetalle": "Copiar detalle del pago",
-  "@planCopiarDetalle": {
-    "description": "Button"
-  },
-  "planDetalleCopiado": "Detalle copiado. Pégalo en el SINPE.",
-  "@planDetalleCopiado": {
-    "description": "Toast"
+    "description": "Payment screen title"
   },
   "planPaypalProximamente": "El pago con PayPal para tu región estará disponible pronto. Mientras tanto puedes ver los planes.",
   "@planPaypalProximamente": {
@@ -5197,5 +5166,25 @@
   "mapasOfflineBloqueadaAviso": "Esta ruta descargada requiere una suscripción activa para usarla sin conexión.",
   "@mapasOfflineBloqueadaAviso": {
     "description": "Notice when tapping a locked offline route"
+  },
+  "planPagoCerrar": "Cerrar",
+  "@planPagoCerrar": {
+    "description": "Close button of the payment screen"
+  },
+  "planPagoCancelado": "El pago se canceló. No se hizo ningún cobro.",
+  "@planPagoCancelado": {
+    "description": "Toast"
+  },
+  "planPagoAnterior": "Tu pago anterior no se completó. Puedes intentarlo de nuevo.",
+  "@planPagoAnterior": {
+    "description": "Notice above the plans"
+  },
+  "planPagoRecibido": "¡Pago recibido! Tu plan ya está activo.",
+  "@planPagoRecibido": {
+    "description": "Success toast"
+  },
+  "admSusRefPago": "Referencia de pago",
+  "@admSusRefPago": {
+    "description": "Admin detail label"
   }
 }

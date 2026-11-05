@@ -15,6 +15,8 @@ class SuscripcionAdmin {
     required this.pais,
     this.numeroSolicitud,
     this.monto,
+    this.pagoRef,
+    this.pagadaEn,
     this.iniciaEn,
     this.venceEn,
     this.creadoEn,
@@ -36,6 +38,8 @@ class SuscripcionAdmin {
       moneda: (json['moneda'] as String?) ?? 'CRC',
       pais: (json['pais'] as String?) ?? '',
       monto: json['monto'] == null ? null : num.tryParse('${json['monto']}'),
+      pagoRef: json['pagoRef'] as String?,
+      pagadaEn: fecha(json['pagadaEn']),
       iniciaEn: fecha(json['iniciaEn']),
       venceEn: fecha(json['venceEn']),
       creadoEn: fecha(json['creadoEn']),
@@ -44,7 +48,7 @@ class SuscripcionAdmin {
 
   final int id;
 
-  /// Los 6 digitos que la persona puso en el detalle del SINPE Movil.
+  /// Los 6 digitos que identifican la solicitud (van en la descripcion del cobro).
   final String? numeroSolicitud;
   final String estado;
   final int usuarioId;
@@ -56,8 +60,14 @@ class SuscripcionAdmin {
   final String moneda;
   final String pais;
 
-  /// Lo que debe haber recibido el administrador por SINPE.
+  /// Lo que cuesta el plan.
   final num? monto;
+
+  /// Id de la sesion de pago en la pasarela (ONVO): con el, la solicitud es un
+  /// pago en linea y el plan se activa solo al confirmarse; sin el, es una
+  /// solicitud manual de antes que el equipo aprueba a mano.
+  final String? pagoRef;
+  final DateTime? pagadaEn;
   final DateTime? iniciaEn;
   final DateTime? venceEn;
   final DateTime? creadoEn;
